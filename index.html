@@ -5,12 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lin Academy | Dashboard</title>
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class', // Enables Dark Mode toggling
             theme: {
                 extend: {
                     fontFamily: {
@@ -24,309 +29,297 @@
             }
         }
     </script>
+    
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
-        body { background-color: #f8fafc; overflow-x: hidden; }
-        /* Hide Scrollbar for Horizontal Scroll Areas */
+        /* Smooth background transitions for dark mode */
+        body { overflow-x: hidden; transition: background-color 0.3s ease, color 0.3s ease; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Glassmorphism for Bottom Nav */
-        .bottom-nav-glass {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(226, 232, 240, 0.8);
-        }
     </style>
 </head>
-<body class="text-slate-800 antialiased pb-24 md:pb-0 md:pl-24">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
 
-    <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white border-r border-slate-200 py-8 items-center justify-between z-50">
-        <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-brand-blue shadow-sm">
+    <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
+        <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-brand-blue dark:text-blue-400 shadow-sm">
             <i class="fa-solid fa-graduation-cap text-2xl"></i>
         </div>
-        <div class="flex flex-col gap-8 text-slate-400">
-            <button onclick="showScreen('screen-dashboard')" class="text-brand-blue flex flex-col items-center gap-1 hover:text-brand-blue transition-colors"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
-            <button class="flex flex-col items-center gap-1 hover:text-brand-blue transition-colors"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
-            <button class="flex flex-col items-center gap-1 hover:text-brand-blue transition-colors"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
+        <div class="flex flex-col gap-8 text-slate-400 dark:text-slate-500">
+            <button onclick="showScreen('screen-dashboard')" class="text-brand-blue dark:text-blue-400 flex flex-col items-center gap-1 transition-colors"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
+            <button class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
+            <button class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
         </div>
-        <div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden cursor-pointer">
+        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden cursor-pointer">
             <img src="https://ui-avatars.com/api/?name=Director+Sir&background=0D8ABC&color=fff" alt="Profile" class="w-full h-full object-cover">
         </div>
     </nav>
 
     <main class="max-w-4xl mx-auto w-full min-h-screen flex flex-col">
         
-        <header class="px-6 pt-8 pb-4 flex items-center justify-between bg-slate-50 sticky top-0 z-40">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full shadow-md overflow-hidden border-2 border-white bg-white">
+        <header class="px-4 py-3 md:px-6 md:pt-8 md:pb-4 flex items-center justify-between bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
+            <div class="flex items-center gap-3 md:gap-4">
+                <div class="w-9 h-9 md:w-12 md:h-12 rounded-full shadow-md overflow-hidden border-2 border-white dark:border-slate-800 bg-white">
                     <img src="https://ui-avatars.com/api/?name=Future+Officer&background=2563eb&color=fff" alt="Student Profile" class="w-full h-full object-cover">
                 </div>
-                <div>
-                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Welcome back,</p>
-                    <h2 class="text-xl font-extrabold text-slate-900">Future Officer</h2>
+                <div class="hidden md:block">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Welcome back,</p>
+                    <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Future Officer</h2>
                 </div>
             </div>
-            <button class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:text-brand-blue relative">
-                <i class="fa-regular fa-bell text-lg"></i>
-                <span class="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full"></span>
-            </button>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" class="w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue transition-colors duration-300 border border-slate-100 dark:border-slate-700">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+                <button class="w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue transition-colors duration-300 relative border border-slate-100 dark:border-slate-700">
+                    <i class="fa-regular fa-bell text-base md:text-lg"></i>
+                    <span class="absolute top-2 right-2 md:right-2.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+                </button>
+            </div>
         </header>
 
-        <div class="px-6 mt-4 pb-10 relative">
+        <div class="px-4 md:px-6 mt-2 md:mt-4 pb-10 relative">
 
-            <div id="screen-dashboard" class="app-screen space-y-10">
+            <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
 
-                <section class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
+                <section class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
                     <div class="absolute top-0 left-1/4 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
                     <div class="absolute -bottom-8 left-1/2 w-72 h-72 bg-rose-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
                     
                     <div class="relative z-10 max-w-xl">
-                        <span class="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-6 inline-block backdrop-blur-md">Featured Event / Update</span>
-                        <h3 class="text-4xl md:text-5xl font-extrabold font-serif mb-4 leading-tight">[User Event Title Goes Here]</h3>
-                        <p class="text-blue-100 text-base md:text-lg mb-8 max-w-lg mx-auto">[User descriptive text about the latest events or details of your updates can go here later.]</p>
-                        <button class="bg-white text-brand-blue text-base font-bold px-8 py-3 rounded-2xl hover:scale-105 transition-transform shadow-md">Main Action Button</button>
+                        <span class="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-6 inline-block backdrop-blur-md border border-white/10">Featured Event / Update</span>
+                        <h3 class="text-3xl md:text-5xl font-extrabold font-serif mb-4 leading-tight text-white">Mastering Mains Answer Writing</h3>
+                        <p class="text-blue-100 text-sm md:text-lg mb-8 max-w-lg mx-auto">Join Biswajit Sir for an exclusive live strategy session designed to elevate your structure and scoring potential.</p>
+                        <button class="bg-white text-brand-blue text-sm md:text-base font-bold px-8 py-3 rounded-2xl hover:scale-105 transition-transform shadow-md">Register Now</button>
                     </div>
                 </section>
 
                 <section>
-                    <div class="flex items-end justify-between mb-5">
+                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
                         <div>
-                            <h3 class="text-2xl font-extrabold text-slate-900 font-serif">Competitive Bundles</h3>
-                            <p class="text-sm text-slate-500 font-medium">Your premium dedicated exam ecosystems</p>
+                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Competitive Bundles</h3>
+                            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Your premium dedicated exam ecosystems</p>
                         </div>
-                        <button onclick="showScreen('screen-view-competitive')" class="text-brand-blue text-sm font-bold hover:underline">View All</button>
+                        <button onclick="showScreen('screen-view-competitive')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                     </div>
                     
-                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-5 pb-4">
-                        <div class="snap-center shrink-0 w-64 bg-white rounded-3xl p-6 border border-slate-100 shadow-md hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
-                            <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 text-2xl"><i class="fa-solid fa-microscope"></i></div>
-                            <h4 class="text-lg font-bold text-slate-900 mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
-                            <p class="text-xs text-slate-500 font-medium mb-6 line-clamp-2">Master all 13 pillars with our clinical, high-scoring ecosystem.</p>
-                            <button class="mt-auto w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100">Enroll Now</button>
+                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
+                        <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
+                            <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">Master all 13 pillars with our clinical, high-scoring ecosystem.</p>
+                            <button class="mt-auto w-full bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100 dark:border-emerald-800">Enroll Now</button>
                         </div>
-                        <div class="snap-center shrink-0 w-64 bg-white rounded-3xl p-6 border border-slate-100 shadow-md hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
-                            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-5 text-blue-600 text-2xl"><i class="fa-solid fa-landmark"></i></div>
-                            <h4 class="text-lg font-bold text-slate-900 mb-2 leading-snug">UPSC General Studies</h4>
-                            <p class="text-xs text-slate-500 font-medium mb-6 line-clamp-2">Comprehensive coverage of GS Papers I, II, III, and IV.</p>
-                            <button class="mt-auto w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100">Enroll Now</button>
+                        <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
+                            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 dark:text-blue-400 text-2xl"><i class="fa-solid fa-landmark"></i></div>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC General Studies</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">Comprehensive coverage of GS Papers I, II, III, and IV.</p>
+                            <button class="mt-auto w-full bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100 dark:border-blue-800">Enroll Now</button>
                         </div>
-                        <div class="snap-center shrink-0 w-64 bg-white rounded-3xl p-6 border border-slate-100 shadow-md hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
-                            <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-5 text-rose-600 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
-                            <h4 class="text-lg font-bold text-slate-900 mb-2 leading-snug">NEET Undergraduate</h4>
-                            <p class="text-xs text-slate-500 font-medium mb-6 line-clamp-2">The ultimate medical entrance preparation ecosystem.</p>
-                            <button class="mt-auto w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100">Enroll Now</button>
+                        <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
+                            <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">The ultimate medical entrance preparation ecosystem.</p>
+                            <button class="mt-auto w-full bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100 dark:border-rose-800">Enroll Now</button>
                         </div>
                     </div>
                 </section>
 
                 <section>
-                    <div class="flex items-end justify-between mb-5">
+                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
                         <div>
-                            <h3 class="text-2xl font-extrabold text-slate-900 font-serif">Academics</h3>
-                            <p class="text-sm text-slate-500 font-medium">School & Foundation</p>
+                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Academics</h3>
+                            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">School & Foundation</p>
                         </div>
-                        <button onclick="showScreen('screen-view-academics')" class="text-brand-blue text-sm font-bold hover:underline">View All</button>
+                        <button onclick="showScreen('screen-view-academics')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                     </div>
                     
-                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 pb-4">
-                        <div class="snap-center shrink-0 w-36 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-xl"><i class="fa-solid fa-pencil"></i></div>
-                            <h4 class="text-sm font-bold text-slate-900">Class VI</h4>
+                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-3 md:gap-4 pb-4">
+                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-lg md:text-xl"><i class="fa-solid fa-pencil"></i></div>
+                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class VI</h4>
                         </div>
-                        <div class="snap-center shrink-0 w-36 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-xl"><i class="fa-solid fa-book"></i></div>
-                            <h4 class="text-sm font-bold text-slate-900">Class VII</h4>
+                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-lg md:text-xl"><i class="fa-solid fa-book"></i></div>
+                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class VII</h4>
                         </div>
-                        <div class="snap-center shrink-0 w-36 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-xl"><i class="fa-solid fa-flask"></i></div>
-                            <h4 class="text-sm font-bold text-slate-900">Class VIII</h4>
+                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-lg md:text-xl"><i class="fa-solid fa-flask"></i></div>
+                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class VIII</h4>
                         </div>
-                        <div class="snap-center shrink-0 w-36 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-12 h-12 bg-fuchsia-50 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-xl"><i class="fa-solid fa-atom"></i></div>
-                            <h4 class="text-sm font-bold text-slate-900">Class IX</h4>
+                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-lg md:text-xl"><i class="fa-solid fa-atom"></i></div>
+                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class IX</h4>
                         </div>
-                        <div class="snap-center shrink-0 w-36 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-xl"><i class="fa-solid fa-square-root-variable"></i></div>
-                            <h4 class="text-sm font-bold text-slate-900">Class X</h4>
+                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-lg md:text-xl"><i class="fa-solid fa-square-root-variable"></i></div>
+                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class X</h4>
                         </div>
                     </div>
                 </section>
 
-                <section class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                <section class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
                     <div class="flex items-end justify-between mb-6">
                         <div>
-                            <h3 class="text-2xl font-extrabold text-slate-900 font-serif flex items-center gap-2">
+                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-2">
                                 <i class="fa-solid fa-bolt text-amber-500"></i> Challenger Arena
                             </h3>
-                            <p class="text-sm text-slate-500 font-medium mt-1">Free Strict Evaluation Portal</p>
+                            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Free Strict Evaluation Portal</p>
                         </div>
                     </div>
 
                     <div class="mb-6">
                         <div class="flex items-end justify-between mb-3">
-                            <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">NEET UG Minor Tests</h5>
-                            <button onclick="showScreen('screen-view-arena-neet')" class="text-brand-blue text-xs font-bold hover:underline">View All</button>
+                            <h5 class="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">NEET UG Minor Tests</h5>
+                            <button onclick="showScreen('screen-view-arena-neet')" class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
                         </div>
                         <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2">
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700">Test 1</span>
+                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span>
                             </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700">Test 2</span>
+                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span>
                             </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700">Test 3</span>
+                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 3</span>
                             </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
-                                <i class="fa-solid fa-lock text-slate-400 mb-1"></i>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase">Locked</span>
+                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
+                                <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
+                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
                             </button>
                         </div>
                     </div>
 
                     <div>
                         <div class="flex items-end justify-between mb-3">
-                            <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">UPSC CSE GS Tests</h5>
-                            <button onclick="showScreen('screen-view-arena-upsc')" class="text-brand-blue text-xs font-bold hover:underline">View All</button>
+                            <h5 class="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">UPSC CSE GS Tests</h5>
+                            <button onclick="showScreen('screen-view-arena-upsc')" class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
                         </div>
                         <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2">
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700">Test 1</span>
+                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span>
                             </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700">Test 2</span>
+                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span>
                             </button>
                         </div>
                     </div>
                 </section>
             </div>
 
-
-            <div id="screen-view-competitive" class="app-screen hidden">
-                <div class="flex items-center gap-4 mb-8">
-                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:text-brand-blue transition-colors">
+            <div id="screen-view-competitive" class="app-screen hidden space-y-6">
+                <div class="flex items-center gap-4">
+                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
                     <div>
-                        <h3 class="text-2xl font-extrabold text-slate-900 font-serif">Competitive Bundles</h3>
-                        <p class="text-xs text-slate-500">All available courses</p>
+                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Competitive Bundles</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">All available courses</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-md hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
-                        <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 text-2xl"><i class="fa-solid fa-microscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
-                        <p class="text-xs text-slate-500 font-medium mb-6">Master all 13 pillars with our clinical, high-scoring ecosystem.</p>
-                        <button class="mt-auto w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100">Enroll Now</button>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col">
+                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Master all 13 pillars with our clinical, high-scoring ecosystem.</p>
+                        <button class="mt-auto w-full bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100 dark:border-emerald-800">Enroll Now</button>
                     </div>
-                    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-md hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
-                        <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-5 text-blue-600 text-2xl"><i class="fa-solid fa-landmark"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 mb-2 leading-snug">UPSC General Studies</h4>
-                        <p class="text-xs text-slate-500 font-medium mb-6">Comprehensive coverage of GS Papers I, II, III, and IV.</p>
-                        <button class="mt-auto w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100">Enroll Now</button>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col">
+                        <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 dark:text-blue-400 text-2xl"><i class="fa-solid fa-landmark"></i></div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC General Studies</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Comprehensive coverage of GS Papers I, II, III, and IV.</p>
+                        <button class="mt-auto w-full bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100 dark:border-blue-800">Enroll Now</button>
                     </div>
-                    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-md hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
-                        <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-5 text-rose-600 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 mb-2 leading-snug">NEET Undergraduate</h4>
-                        <p class="text-xs text-slate-500 font-medium mb-6">The ultimate medical entrance preparation ecosystem.</p>
-                        <button class="mt-auto w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100">Enroll Now</button>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col">
+                        <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">The ultimate medical entrance preparation ecosystem.</p>
+                        <button class="mt-auto w-full bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100 dark:border-rose-800">Enroll Now</button>
                     </div>
                 </div>
             </div>
 
-
-            <div id="screen-view-academics" class="app-screen hidden">
-                <div class="flex items-center gap-4 mb-8">
-                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:text-brand-blue transition-colors">
+            <div id="screen-view-academics" class="app-screen hidden space-y-6">
+                <div class="flex items-center gap-4">
+                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
                     <div>
-                        <h3 class="text-2xl font-extrabold text-slate-900 font-serif">Academics</h3>
-                        <p class="text-xs text-slate-500">School & Foundation Classes</p>
+                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Academics</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">School & Foundation Classes</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-xl"><i class="fa-solid fa-pencil"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900">Class VI</h4>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
+                        <div class="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-xl"><i class="fa-solid fa-pencil"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VI</h4>
                     </div>
-                    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-xl"><i class="fa-solid fa-book"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900">Class VII</h4>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
+                        <div class="w-12 h-12 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-xl"><i class="fa-solid fa-book"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VII</h4>
                     </div>
-                    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-xl"><i class="fa-solid fa-flask"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900">Class VIII</h4>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
+                        <div class="w-12 h-12 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-xl"><i class="fa-solid fa-flask"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VIII</h4>
                     </div>
-                    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-fuchsia-50 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-xl"><i class="fa-solid fa-atom"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900">Class IX</h4>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
+                        <div class="w-12 h-12 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-xl"><i class="fa-solid fa-atom"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class IX</h4>
                     </div>
-                    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-xl"><i class="fa-solid fa-square-root-variable"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900">Class X</h4>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
+                        <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-xl"><i class="fa-solid fa-square-root-variable"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class X</h4>
                     </div>
                 </div>
             </div>
 
-
-            <div id="screen-view-arena-neet" class="app-screen hidden">
-                <div class="flex items-center gap-4 mb-8">
-                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:text-brand-blue transition-colors">
+            <div id="screen-view-arena-neet" class="app-screen hidden space-y-6">
+                <div class="flex items-center gap-4">
+                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
                     <div>
-                        <h3 class="text-2xl font-extrabold text-slate-900 font-serif">NEET UG Arena</h3>
-                        <p class="text-xs text-slate-500">All available minor & major tests</p>
+                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">NEET UG Arena</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">All available minor & major tests</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 1</span>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
+                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span>
                     </button>
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 2</span>
+                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
+                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span>
                     </button>
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 3</span>
-                    </button>
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 4</span>
-                    </button>
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 5</span>
-                    </button>
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 6</span>
-                    </button>
-                    <button class="h-20 bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
-                        <i class="fa-solid fa-lock text-slate-400 mb-1"></i>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Locked</span>
-                    </button>
-                    <button class="h-20 bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
-                        <i class="fa-solid fa-lock text-slate-400 mb-1"></i>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Locked</span>
+                    <button class="h-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
+                        <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
                     </button>
                 </div>
             </div>
 
-            <div id="screen-view-arena-upsc" class="app-screen hidden">
-                <div class="flex items-center gap-4 mb-8">
-                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:text-brand-blue transition-colors">
+            <div id="screen-view-arena-upsc" class="app-screen hidden space-y-6">
+                <div class="flex items-center gap-4">
+                    <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
                     <div>
-                        <h3 class="text-2xl font-extrabold text-slate-900 font-serif">UPSC GS Arena</h3>
-                        <p class="text-xs text-slate-500">All available GS tests</p>
+                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">UPSC GS Arena</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">All available GS tests</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 1</span>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
+                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span>
                     </button>
-                    <button class="h-20 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
-                        <span class="text-sm font-bold text-slate-700">Test 2</span>
+                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm">
+                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span>
                     </button>
                 </div>
             </div>
@@ -334,38 +327,75 @@
         </div>
     </main>
 
-    <nav class="md:hidden fixed bottom-0 left-0 w-full bottom-nav-glass z-50 px-6 py-4 pb-safe flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button onclick="showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue">
-            <i class="fa-solid fa-house text-xl mb-1"></i>
+    <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
+        <button onclick="showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95">
+            <i class="fa-solid fa-house text-xl mb-0.5"></i>
             <span class="text-[10px] font-bold">Home</span>
         </button>
-        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 transition-colors">
-            <i class="fa-solid fa-layer-group text-xl mb-1"></i>
+        <button class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95">
+            <i class="fa-solid fa-layer-group text-xl mb-0.5"></i>
             <span class="text-[10px] font-bold">Enrollments</span>
         </button>
-        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 transition-colors">
-            <i class="fa-solid fa-user text-xl mb-1"></i>
+        <button class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95">
+            <i class="fa-solid fa-user text-xl mb-0.5"></i>
             <span class="text-[10px] font-bold">Profile</span>
         </button>
     </nav>
 
     <script>
+        // 1. SPA Routing Logic
         function showScreen(screenId) {
-            // Step 1: Find all screens and hide them
             const screens = document.querySelectorAll('.app-screen');
             screens.forEach(screen => {
                 screen.classList.add('hidden');
             });
-            
-            // Step 2: Show the target screen
             const targetScreen = document.getElementById(screenId);
             if(targetScreen) {
                 targetScreen.classList.remove('hidden');
             }
-            
-            // Step 3: Instantly scroll back to the top of the app
             window.scrollTo(0, 0);
         }
+
+        // 2. Dark Mode Logic with LocalStorage Memory
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // 3. PWA Engine - Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    console.log('LA 2.0 Engine (Service Worker) registered successfully.', reg);
+                }).catch(err => {
+                    console.log('LA 2.0 Engine registration failed: ', err);
+                });
+            });
+        }
+
+        // 4. PWA Install Prompt Logic
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile natively right away if you wish to control it
+            e.preventDefault();
+            // Stash the event so it can be triggered later via a custom button
+            deferredPrompt = e;
+            console.log('LA 2.0 is ready to be installed on the home screen!');
+            // Here we can show a custom "Install App" banner in the UI if needed
+        });
+
+        // The browser automatically suppresses the prompt if already installed.
+        // This listener confirms when the user has successfully installed the app.
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('Success: LA 2.0 was securely installed to the device.');
+            // Clear the deferredPrompt so it doesn't get called again
+            deferredPrompt = null;
+        });
     </script>
 
 </body>
