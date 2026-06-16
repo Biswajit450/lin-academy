@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- #region HEAD & CONFIGURATION -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -15,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', // Enables Dark Mode toggling
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -39,14 +40,16 @@
     </script>
 
     <style>
-        /* Smooth background transitions for dark mode */
         body { overflow-x: hidden; transition: background-color 0.3s ease, color 0.3s ease; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
+<!-- #endregion -->
+
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
 
+    <!-- #region DESKTOP SIDEBAR -->
     <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
         <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-brand-blue dark:text-blue-400 shadow-sm">
             <i class="fa-solid fa-graduation-cap text-2xl"></i>
@@ -60,9 +63,11 @@
             <img src="https://ui-avatars.com/api/?name=Director+Sir&background=0D8ABC&color=fff" alt="Profile" class="w-full h-full object-cover">
         </div>
     </nav>
+    <!-- #endregion -->
 
     <main class="max-w-4xl mx-auto w-full min-h-screen flex flex-col">
         
+        <!-- #region TOP HEADER -->
         <header class="px-4 py-3 md:px-6 md:pt-8 md:pb-4 flex items-center justify-between bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
             <div class="flex items-center gap-3 md:gap-4">
                 <div class="w-9 h-9 md:w-12 md:h-12 rounded-full shadow-md overflow-hidden border-2 border-white dark:border-slate-800 bg-white">
@@ -84,9 +89,11 @@
                 </button>
             </div>
         </header>
+        <!-- #endregion -->
 
         <div class="px-4 md:px-6 mt-2 md:mt-4 pb-10 relative">
 
+            <!-- #region SCREEN: MAIN DASHBOARD -->
             <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
 
                 <section class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
@@ -213,7 +220,9 @@
                     </div>
                 </section>
             </div>
+            <!-- #endregion -->
 
+            <!-- #region SCREEN: VIEW COMPETITIVE BUNDLES -->
             <div id="screen-view-competitive" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -245,7 +254,9 @@
                     </div>
                 </div>
             </div>
+            <!-- #endregion -->
 
+            <!-- #region SCREEN: VIEW ACADEMICS -->
             <div id="screen-view-academics" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -279,7 +290,9 @@
                     </div>
                 </div>
             </div>
+            <!-- #endregion -->
 
+            <!-- #region SCREEN: VIEW ARENA NEET -->
             <div id="screen-view-arena-neet" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -303,7 +316,9 @@
                     </button>
                 </div>
             </div>
+            <!-- #endregion -->
 
+            <!-- #region SCREEN: VIEW ARENA UPSC -->
             <div id="screen-view-arena-upsc" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -323,10 +338,12 @@
                     </button>
                 </div>
             </div>
+            <!-- #endregion -->
 
         </div>
     </main>
 
+    <!-- #region MOBILE BOTTOM NAV -->
     <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
         <button onclick="showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95">
             <i class="fa-solid fa-house text-xl mb-0.5"></i>
@@ -341,7 +358,9 @@
             <span class="text-[10px] font-bold">Profile</span>
         </button>
     </nav>
+    <!-- #endregion -->
 
+    <!-- #region JAVASCRIPT & APP LOGIC -->
     <script>
         // 1. SPA Routing Logic
         function showScreen(screenId) {
@@ -381,22 +400,51 @@
         // 4. PWA Install Prompt Logic
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent the mini-infobar from appearing on mobile natively right away if you wish to control it
             e.preventDefault();
-            // Stash the event so it can be triggered later via a custom button
             deferredPrompt = e;
             console.log('LA 2.0 is ready to be installed on the home screen!');
-            // Here we can show a custom "Install App" banner in the UI if needed
         });
 
-        // The browser automatically suppresses the prompt if already installed.
-        // This listener confirms when the user has successfully installed the app.
         window.addEventListener('appinstalled', (evt) => {
             console.log('Success: LA 2.0 was securely installed to the device.');
-            // Clear the deferredPrompt so it doesn't get called again
             deferredPrompt = null;
         });
     </script>
+    <!-- #endregion -->
+
+    <!-- ========================================== -->
+    <!-- #region FIREBASE BACKEND ENGINE -->
+    <!-- ========================================== -->
+    <script type="module">
+        // 1. Import Firebase core and features from the official Google CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 2. YOUR FIREBASE CONFIGURATION 👇
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgJowFUpgzqf9nEyW6vPowdqGSw1WcBSM",
+            authDomain: "lin-academy.firebaseapp.com",
+            projectId: "lin-academy",
+            storageBucket: "lin-academy.firebasestorage.app",
+            messagingSenderId: "138973997932",
+            appId: "1:138973997932:web:3e2a41b1774c8a9e69a149",
+            measurementId: "G-9Z8VZKV7CH"
+        };
+        // 👆 -----------------------------------------
+
+        // 3. Initialize the App, Authentication, and Database
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Make auth and db available globally for our app functions
+        window.laAuth = auth;
+        window.laDb = db;
+
+        console.log("🔥 Firebase Engine is officially LIVE and connected!");
+    </script>
+    <!-- #endregion -->
 
 </body>
 </html>
