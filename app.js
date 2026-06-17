@@ -103,8 +103,70 @@ window.toggleNotifications = function() {
     document.getElementById('notification-panel').classList.toggle('hidden'); 
 }
 
-window.initiateCheckout = function(courseName) { 
+// ==========================================
+// VAULT VISIBILITY ENGINE (NEW)
+// ==========================================
+window.renderEnrollments = function(unlockedCourses = [], role = 'student') {
+    const tiles = document.querySelectorAll('.enrollment-tile');
+    
+    tiles.forEach(tile => {
+        const courseName = tile.getAttribute('data-course');
+        // Admin aur Educator ko sab dikhega test karne ke liye
+        if (role === 'admin' || role === 'educator') {
+            tile.style.display = 'flex'; 
+        } else {
+            // Student ko sirf uske kharide hue courses dikhenge
+            if (unlockedCourses.includes(courseName)) {
+                tile.style.display = 'flex';
+            } else {
+                tile.style.display = 'none';
+            }
+        }
+    });
+
+    // Clean UI: Agar kisi category me ek bhi course nahi hai, toh uska heading hide kar do
+    const compGrid = document.getElementById('enrollments-grid-competitive');
+    const acadGrid = document.getElementById('enrollments-grid-academics');
+    
+    if(compGrid) {
+        const visibleComp = Array.from(compGrid.children).filter(el => el.style.display !== 'none');
+        compGrid.parentElement.style.display = visibleComp.length > 0 ? 'block' : 'none';
+    }
+    if(acadGrid) {
+        const visibleAcad = Array.from(acadGrid.children).filter(el => el.style.display !== 'none');
+        acadGrid.parentElement.style.display = visibleAcad.length > 0 ? 'block' : 'none';
+    }
+}
+
+// CHECKOUT ENGINE (With Testing Auto-Unlock feature)
+window.initiateCheckout = async function(courseName) { 
     alert(`Razorpay Gateway Initiated for: ${courseName}\n\nOnce payment is successful, our Webhook will automatically tell Firebase to unlock this for the student!`); 
+    
+    // Developer Test Auto-Unlock Logic
+    if (auth.currentUser) {
+        if(confirm(`[DEV TESTING]: Do you want to instantly unlock "${courseName}" and add it to your Enrollments Vault?`)) {
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                if(userSnap.exists()) {
+                    let unlocked = userSnap.data().unlocked_courses || [];
+                    if(!unlocked.includes(courseName)) {
+                        unlocked.push(courseName);
+                        await setDoc(userRef, { unlocked_courses: unlocked }, { merge: true });
+                        alert("Course Unlocked Successfully! Go check your Enrollments tab.");
+                        window.renderEnrollments(unlocked, userSnap.data().role);
+                    } else {
+                        alert("You already own this course!");
+                    }
+                }
+            } catch(e) {
+                console.error("Unlock error", e);
+            }
+        }
+    } else {
+        alert("Please login first to enroll.");
+        window.openAuthModal('login');
+    }
 }
 
 // Image Preview & Clear Utilities for CMS
@@ -148,7 +210,6 @@ async function uploadFileToStorage(file, folderPath, fallbackPreviewId) {
         return await getDownloadURL(storageRef);
     } catch(err) {
         console.warn("Storage upload failed (probably security rules). Executing Smart Base64 Fallback.", err.message);
-        // Fallback: Agar storage upload fail hua, toh preview element se directly base64 data utha lo!
         if (fallbackPreviewId) {
             const imgEl = document.getElementById(fallbackPreviewId);
             if (imgEl && imgEl.src) return imgEl.src;
@@ -240,11 +301,17 @@ onAuthStateChanged(auth, async (user) => {
                     unlocked_courses: [], 
                     joinedAt: new Date().toISOString() 
                 }); 
-            } else if (userSnap.data().role === "admin" || userSnap.data().role === "educator") {
-                document.getElementById('nav-admin-btn').classList.remove('hidden'); 
-                document.getElementById('nav-admin-btn').classList.add('flex');
-                document.getElementById('mobile-nav-admin-btn').classList.remove('hidden'); 
-                document.getElementById('mobile-nav-admin-btn').classList.add('flex');
+                window.renderEnrollments([], "student");
+            } else {
+                const userData = userSnap.data();
+                if (userData.role === "admin" || userData.role === "educator") {
+                    document.getElementById('nav-admin-btn').classList.remove('hidden'); 
+                    document.getElementById('nav-admin-btn').classList.add('flex');
+                    document.getElementById('mobile-nav-admin-btn').classList.remove('hidden'); 
+                    document.getElementById('mobile-nav-admin-btn').classList.add('flex');
+                }
+                // Update Vault visibility based on user data
+                window.renderEnrollments(userData.unlocked_courses || [], userData.role || 'student');
             }
         } catch (error) { 
             console.error(error); 
@@ -255,6 +322,8 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('header-auth').classList.remove('flex');
         document.getElementById('nav-admin-btn').classList.add('hidden'); 
         document.getElementById('mobile-nav-admin-btn').classList.add('hidden');
+        
+        window.renderEnrollments([], "student"); // Hide Vault items if logged out
         
         setTimeout(() => { 
             if(document.getElementById('header-auth').classList.contains('hidden')){ 
@@ -267,7 +336,6 @@ onAuthStateChanged(auth, async (user) => {
 // ==========================================
 // 3. ADMIN CMS ENGINE (PRO LEVEL)
 // ==========================================
-
 window.switchAdminSubTab = function(tabId) {
     document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -279,17 +347,11 @@ window.switchAdminSubTab = function(tabId) {
     event.currentTarget.classList.remove('text-slate-500', 'border-transparent');
     event.currentTarget.classList.add('active', 'text-brand-blue', 'border-brand-blue');
     
-    // Auto-load CMS data when the Homepage CMS tab is opened
     if(tabId === 'homecms') { 
         window.loadCMSDataIntoAdmin(); 
     }
 }
 
-// ------------------------------------------
-// CMS Builders (Notifications, Categories, Educators)
-// ------------------------------------------
-
-// BUG FIX: Notification Manager Wiping Bug Resolved via createElement
 window.cmsAddNotification = function(text = '') {
     const list = document.getElementById('cms-notification-list');
     const placeholder = list.querySelector('.text-slate-400');
@@ -310,7 +372,6 @@ window.cmsAddNotification = function(text = '') {
     list.appendChild(div);
 }
 
-// Drag logic specifically for reordering notifications
 window.dropSort = function(ev) {
     ev.preventDefault();
     if(window.draggedElement && window.draggedElement.classList.contains('cms-notif-item')) {
@@ -345,7 +406,7 @@ window.cmsAddArenaCategory = function(catData = null) {
             </div>
         </div>
         <div class="cat-tests-list space-y-3 pl-4 border-l-2 border-slate-200 dark:border-slate-800">
-            </div>`;
+        </div>`;
     list.appendChild(div);
     
     if(catData && catData.tests) {
@@ -353,7 +414,6 @@ window.cmsAddArenaCategory = function(catData = null) {
     }
 }
 
-// BUG FIX: Added "Create New in Vault" button directly linked to Test Modal
 window.cmsAddArenaTestToCat = function(catId, testData = null) {
     const testList = document.getElementById(catId).querySelector('.cat-tests-list');
     const testId = 'test-' + Date.now() + Math.floor(Math.random()*1000);
@@ -436,10 +496,6 @@ window.cmsAddEducator = function(eduData = null) {
     list.appendChild(div);
 }
 
-// ------------------------------------------
-// Save and Load Core CMS Logic
-// ------------------------------------------
-
 window.saveCMSData = async function() {
     const btn = event.currentTarget; 
     const originalHtml = btn.innerHTML;
@@ -447,7 +503,6 @@ window.saveCMSData = async function() {
     btn.disabled = true;
 
     try {
-        // 1. Handle Global Logo Upload with Smart Fallback
         let globalLogoUrl = document.getElementById('cms-logo-preview').src;
         const logoFileInput = document.getElementById('cms-logo-upload').files[0];
         if(logoFileInput) {
@@ -457,14 +512,12 @@ window.saveCMSData = async function() {
             globalLogoUrl = ''; 
         }
 
-        // 2. Gather Notifications
         const notifications = [];
         document.querySelectorAll('.cms-notif-item').forEach(item => {
             const text = item.querySelector('.notif-text').value.trim();
             if(text) notifications.push(text);
         });
 
-        // 3. Handle Featured Event Banner Upload with Smart Fallback
         let eventBannerUrl = document.getElementById('cms-event-img-preview').src;
         const eventFileInput = document.getElementById('cms-event-img-upload').files[0];
         if(eventFileInput) {
@@ -482,7 +535,6 @@ window.saveCMSData = async function() {
             link: document.getElementById('cms-event-link').value
         };
 
-        // 4. Gather Arena Categories & Nested Tests
         const arenaCategories = [];
         document.querySelectorAll('.cms-arena-cat-item').forEach(catItem => {
             const catName = catItem.querySelector('.cat-name').value.trim();
@@ -499,7 +551,6 @@ window.saveCMSData = async function() {
             arenaCategories.push({ name: catName, tests: tests });
         });
 
-        // 5. Gather Educators & Upload Photos
         const educators = [];
         const eduNodes = document.querySelectorAll('.cms-edu-item');
         for (let item of eduNodes) {
@@ -507,7 +558,6 @@ window.saveCMSData = async function() {
             const fileInput = item.querySelector('.edu-upload').files[0];
             
             if (fileInput) {
-                // Pass the specific preview ID for fallback
                 const pUrl = await uploadFileToStorage(fileInput, 'cms_images/educators', item.querySelector('img').id);
                 if(pUrl) photoUrl = pUrl;
             }
@@ -520,7 +570,6 @@ window.saveCMSData = async function() {
             });
         }
 
-        // FINAL SAVE TO FIRESTORE
         const finalCmsData = {
             appLogo: globalLogoUrl,
             notifications: notifications,
@@ -550,7 +599,6 @@ window.loadCMSDataIntoAdmin = async function() {
         if(snap.exists()) {
             const data = snap.data();
             
-            // Load Logo
             if(data.appLogo) {
                 const logoImg = document.getElementById('cms-logo-preview');
                 logoImg.src = data.appLogo;
@@ -558,7 +606,6 @@ window.loadCMSDataIntoAdmin = async function() {
                 document.getElementById('cms-logo-upload').parentElement.querySelector('i').style.display = 'none';
             }
 
-            // Load Notifications
             document.getElementById('cms-notification-list').innerHTML = '';
             if(data.notifications && data.notifications.length > 0) {
                 data.notifications.forEach(text => window.cmsAddNotification(text));
@@ -566,7 +613,6 @@ window.loadCMSDataIntoAdmin = async function() {
                 document.getElementById('cms-notification-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Notification" to create alerts. Drag to reorder priority.</div>';
             }
 
-            // Load Event
             if(data.event) { 
                 document.getElementById('cms-event-title').value = data.event.title || ''; 
                 document.getElementById('cms-event-btn-text').value = data.event.btnText || ''; 
@@ -582,7 +628,6 @@ window.loadCMSDataIntoAdmin = async function() {
                 }
             }
             
-            // Load Arena Categories
             document.getElementById('cms-arena-category-list').innerHTML = '';
             if(data.arenaCategories && data.arenaCategories.length > 0) { 
                 data.arenaCategories.forEach(cat => window.cmsAddArenaCategory(cat)); 
@@ -590,7 +635,6 @@ window.loadCMSDataIntoAdmin = async function() {
                 document.getElementById('cms-arena-category-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.</div>'; 
             }
 
-            // Load Educators
             document.getElementById('cms-educator-list').innerHTML = '';
             if(data.educators && data.educators.length > 0) { 
                 data.educators.forEach(edu => window.cmsAddEducator(edu)); 
@@ -613,9 +657,7 @@ window.renderHomepage = async function() {
         if(snap.exists()) {
             const data = snap.data();
             
-            // 1. Render App Logo (Desktop and Mobile)
             if(data.appLogo) {
-                // Desktop
                 const desktopLogoImg = document.getElementById('app-logo-img');
                 const desktopLogoText = document.getElementById('app-logo-text');
                 if(desktopLogoImg) {
@@ -624,7 +666,6 @@ window.renderHomepage = async function() {
                     if(desktopLogoText) desktopLogoText.classList.add('hidden');
                 }
                 
-                // Mobile
                 const mobileLogoImg = document.getElementById('mobile-logo-img');
                 const mobileLogoText = document.getElementById('mobile-logo-text');
                 if(mobileLogoImg) {
@@ -634,7 +675,6 @@ window.renderHomepage = async function() {
                 }
             }
 
-            // 2. Render Bell Notifications
             const notifList = document.getElementById('bell-notif-list');
             const notifCount = document.getElementById('bell-notif-count');
             const notifIndicator = document.getElementById('bell-notif-indicator');
@@ -656,7 +696,6 @@ window.renderHomepage = async function() {
                 notifIndicator.classList.add('hidden');
             }
 
-            // 3. Render Featured Event
             if(data.event) {
                 const eventSection = document.getElementById('student-featured-event');
                 document.getElementById('student-event-title').innerText = data.event.title || 'Welcome';
@@ -671,7 +710,6 @@ window.renderHomepage = async function() {
                 }
             }
 
-            // 4. Render Dynamic Arena Categories
             if(data.arenaCategories) {
                 const arenaContainer = document.getElementById('dynamic-arena-container');
                 arenaContainer.innerHTML = ''; 
@@ -709,7 +747,6 @@ window.renderHomepage = async function() {
                 });
             }
 
-            // 5. Render Educator Profiles
             if(data.educators) {
                 const eduContainer = document.getElementById('dynamic-educator-container');
                 eduContainer.innerHTML = '';
@@ -734,7 +771,6 @@ window.renderHomepage = async function() {
                     eduContainer.insertAdjacentHTML('beforeend', eduHtml);
                 });
                 
-                // Map the Educator View All button
                 const eduViewAllBtn = document.getElementById('view-all-edu-btn');
                 if(eduViewAllBtn) {
                     eduViewAllBtn.onclick = () => window.showGenericViewAll('Our Top Educators', 'educators');
@@ -744,9 +780,7 @@ window.renderHomepage = async function() {
     } catch(e) { console.error("Error rendering homepage", e); }
 }
 
-// Call renderHomepage initially to build the dashboard
 window.renderHomepage();
-
 
 // ==========================================
 // 4. COURSE BUILDER CANVAS ENGINE
@@ -787,8 +821,14 @@ window.addBlock = function(type) {
             </div>
             <div class="overflow-x-auto">
                 <table class="editor-table w-full text-sm">
-                    <tr><th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 1</th><th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 2</th></tr>
-                    <tr><td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td><td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td></tr>
+                    <tr>
+                        <th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 1</th>
+                        <th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 2</th>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td>
+                        <td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td>
+                    </tr>
                 </table>
             </div>
         </div>`;
@@ -797,14 +837,32 @@ window.addBlock = function(type) {
         if(type === 'live') { 
             icon = 'fa-video'; color = 'text-red-400 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Google Meet Link';
             actionBtnText = '🔴 Join Live Session'; actionColor = 'bg-red-500 hover:bg-red-600 text-white';
-            extraInputs = `<div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3"><div><label class="text-[10px] font-bold text-slate-400 block mb-1">START TIME</label><input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none"></div><div><label class="text-[10px] font-bold text-slate-400 block mb-1">END TIME</label><input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none"></div></div>`;
+            extraInputs = `
+                <div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 block mb-1">START TIME</label>
+                        <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 block mb-1">END TIME</label>
+                        <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
+                    </div>
+                </div>`;
         }
-        if(type === 'video') { icon = 'fa-play'; color = 'text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Bunny.net Video ID'; actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white'; }
-        if(type === 'pdf') { icon = 'fa-file-pdf'; color = 'text-rose-400 bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800'; typeName = 'PDF Notes'; placeholderText = 'Firebase PDF URL'; actionBtnText = '📄 Open Handout'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white'; }
+        if(type === 'video') { 
+            icon = 'fa-play'; color = 'text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Bunny.net Video ID'; 
+            actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white'; 
+        }
+        if(type === 'pdf') { 
+            icon = 'fa-file-pdf'; color = 'text-rose-400 bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800'; typeName = 'PDF Notes'; placeholderText = 'Firebase PDF URL'; 
+            actionBtnText = '📄 Open Handout'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white'; 
+        }
 
         blockHTML = `
         <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-start gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center border ${color} shrink-0 text-xl"><i class="fa-solid ${icon}"></i></div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center border ${color} shrink-0 text-xl">
+                <i class="fa-solid ${icon}"></i>
+            </div>
             <div class="flex-grow w-full">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${typeName}</span>
