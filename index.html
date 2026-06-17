@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- #region HEAD & CONFIGURATION -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -44,16 +45,13 @@
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         .dark .glass-panel { background: rgba(15, 23, 42, 0.7); border-color: rgba(255,255,255,0.05); }
-        
-        /* Visual Builder Styles */
-        .builder-canvas { min-height: 50vh; border: 2px dashed transparent; transition: all 0.3s ease; }
-        .builder-canvas.edit-mode { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.02); border-radius: 1rem; padding: 1rem; }
-        .block-hover-effect { transition: transform 0.2s, box-shadow 0.2s; }
-        .edit-mode .block-hover-effect:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: grab; }
     </style>
 </head>
+<!-- #endregion -->
+
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
 
+    <!-- #region DESKTOP SIDEBAR -->
     <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
         <div class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-xl">
             LA
@@ -63,6 +61,7 @@
             <button onclick="showScreen('screen-dashboard')" class="text-brand-blue dark:text-blue-400 flex flex-col items-center gap-1 transition-colors"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
             <button onclick="showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
             
+            <!-- SECRET ADMIN NAV BUTTON -->
             <button id="nav-admin-btn" onclick="showScreen('screen-admin')" class="hidden flex-col items-center gap-1 hover:text-rose-500 text-rose-400 transition-colors drop-shadow-md">
                 <i class="fa-solid fa-wand-magic-sparkles text-xl"></i><span class="text-[10px] font-bold">Admin</span>
             </button>
@@ -72,8 +71,11 @@
         
         <div class="w-10 h-10"></div>
     </nav>
+    <!-- #endregion -->
+
     <main class="max-w-4xl mx-auto w-full min-h-screen flex flex-col">
         
+        <!-- #region TOP HEADER -->
         <header class="px-4 py-3 md:px-6 md:pt-8 md:pb-4 flex items-center justify-between bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
             
             <div id="header-unauth" class="flex items-center gap-3">
@@ -117,8 +119,11 @@
                 </div>
             </div>
         </header>
+        <!-- #endregion -->
+
         <div class="px-4 md:px-6 mt-2 md:mt-4 pb-10 relative">
 
+            <!-- #region SCREEN: MAIN DASHBOARD -->
             <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
 
                 <section class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
@@ -245,53 +250,9 @@
                     </div>
                 </section>
             </div>
-            <div id="screen-enrollments" class="app-screen hidden space-y-6">
-                <div>
-                    <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">My Enrollments</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Your purchased ecosystems and courses.</p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 dark:border-blue-500/30 shadow-md flex flex-col relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
-                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
-                        
-                        <button onclick="openCourseView('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2">
-                            Explore Course <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 dark:border-blue-500/30 shadow-md flex flex-col relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
-                        <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
-                        
-                        <button onclick="openCourseView('NEET Undergraduate')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2">
-                            Explore Course <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div id="screen-course-view" class="app-screen hidden space-y-6">
-                <div class="flex items-center gap-4 mb-6">
-                    <button id="btn-back-to-enrollments" onclick="showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <div>
-                        <h3 id="course-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading Course...</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Lin Academy Premium</p>
-                    </div>
-                </div>
+            <!-- #endregion -->
 
-                <div id="course-render-canvas" class="space-y-4 builder-canvas">
-                    <div class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm">
-                        <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i><br>Fetching your ecosystem...
-                    </div>
-                </div>
-            </div>
+            <!-- #region SCREEN: VIEW COMPETITIVE BUNDLES -->
             <div id="screen-view-competitive" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -323,6 +284,9 @@
                     </div>
                 </div>
             </div>
+            <!-- #endregion -->
+
+            <!-- #region SCREEN: VIEW ACADEMICS -->
             <div id="screen-view-academics" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -356,6 +320,9 @@
                     </div>
                 </div>
             </div>
+            <!-- #endregion -->
+
+            <!-- #region SCREEN: VIEW ARENA NEET & UPSC -->
             <div id="screen-view-arena-neet" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4">
                     <button onclick="showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
@@ -390,116 +357,141 @@
                     <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm"><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span></button>
                 </div>
             </div>
+            <!-- #endregion -->
+
+            <!-- ========================================== -->
+            <!-- #region SCREEN: STUDENT ENROLLMENTS -->
+            <!-- ========================================== -->
+            <div id="screen-enrollments" class="app-screen hidden space-y-6">
+                <div>
+                    <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">My Enrollments</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Your purchased ecosystems and courses.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Tile 1 (Paid Example) -->
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 dark:border-blue-500/30 shadow-md flex flex-col relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
+                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
+                        
+                        <button onclick="openCourseView('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2">
+                            Explore Course <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Tile 2 (Paid Example) -->
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 dark:border-blue-500/30 shadow-md flex flex-col relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
+                        <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
+                        
+                        <button onclick="openCourseView('NEET Undergraduate')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2">
+                            Explore Course <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- #endregion -->
+
+            <!-- ========================================== -->
+            <!-- #region SCREEN: COURSE VIEWER (STUDENT CONSUMPTION) -->
+            <!-- ========================================== -->
+            <div id="screen-course-view" class="app-screen hidden space-y-6">
+                <!-- Back Header -->
+                <div class="flex items-center gap-4 mb-6">
+                    <button id="btn-back-to-enrollments" onclick="showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h3 id="course-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading Course...</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Lin Academy Premium</p>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC CONTENT CONTAINER (Where the JSON blocks render) -->
+                <div id="course-render-canvas" class="space-y-4 builder-canvas">
+                    <!-- Blocks will be injected here via JavaScript -->
+                    <div class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i><br>Fetching your ecosystem...
+                    </div>
+                </div>
+            </div>
+            <!-- #endregion -->
+
+            <!-- ========================================== -->
+            <!-- #region MS WORD STYLE ADMIN COMMAND CENTER -->
+            <!-- ========================================== -->
             <div id="screen-admin" class="app-screen hidden space-y-6">
                 
                 <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
                     <div class="absolute -right-10 -top-10 text-9xl opacity-5"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <div class="relative z-10">
                         <span class="bg-rose-500/20 text-rose-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block border border-rose-500/30">Educator Superpower</span>
-                        <h2 class="text-3xl md:text-4xl font-extrabold font-serif mb-2 text-white">Command Center</h2>
-                        <p class="text-slate-400 text-sm">Build courses visually. What you see here is exactly what the student gets.</p>
+                        <h2 class="text-3xl md:text-4xl font-extrabold font-serif mb-2 text-white">Visual Command Center</h2>
+                        <p class="text-slate-400 text-sm">Build courses exactly how students will see them.</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <button onclick="switchAdminTab('builder')" class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center hover:border-brand-blue transition-colors">
-                        <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center text-xl mb-2"><i class="fa-solid fa-cubes"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Visual Builder</h4>
-                    </button>
-                    <button onclick="switchAdminTab('exam')" class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center hover:border-emerald-500 transition-colors">
-                        <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center text-xl mb-2"><i class="fa-solid fa-file-signature"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Test Creator</h4>
-                    </button>
-                    <button onclick="switchAdminTab('access')" class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center hover:border-purple-500 transition-colors col-span-2 md:col-span-1">
-                        <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center text-xl mb-2"><i class="fa-solid fa-key"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Access Control</h4>
-                    </button>
-                </div>
-
-                <div id="admin-tab-builder" class="admin-tab hidden bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <!-- THE RIBBON (Tools) -->
+                <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
                     
-                    <div class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
-                        <div class="flex-grow">
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Course to Edit</label>
-                            <select id="admin-course-selector" onchange="loadDraftForAdmin(this.value)" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white font-bold">
-                                <option value="" disabled selected>-- Choose Course --</option>
+                    <!-- Top Row: Course Select & Access Control -->
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
+                        <div class="flex-grow w-full md:w-auto">
+                            <select id="admin-course-selector" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
+                                <option value="" disabled selected>-- Select Course to Edit --</option>
                                 <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
                                 <option value="NEET Undergraduate">NEET Undergraduate</option>
                             </select>
                         </div>
-                        <button onclick="publishDraft()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md flex items-center gap-2">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Publish Live
+                        <button onclick="openAccessControlModal()" class="text-sm font-bold bg-purple-600/20 text-purple-400 border border-purple-500/30 px-4 py-2 rounded-lg hover:bg-purple-600/40 transition-colors shrink-0">
+                            <i class="fa-solid fa-users-gear mr-1"></i> Access Control
                         </button>
                     </div>
-
-                    <div id="admin-editor-toolbar" class="hidden sticky top-[72px] z-30 bg-slate-900 dark:bg-slate-800 rounded-2xl p-2 mb-6 shadow-xl flex flex-wrap justify-center gap-2 border border-slate-700">
-                        <button onclick="addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 hover:border-slate-500"><i class="fa-solid fa-folder-plus text-amber-400"></i> Add Folder</button>
-                        <div class="w-px bg-slate-700 mx-1 my-1"></div>
-                        <button onclick="addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 hover:border-slate-500"><i class="fa-solid fa-video text-red-400"></i> Live Meet</button>
-                        <button onclick="addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 hover:border-slate-500"><i class="fa-solid fa-play text-blue-400"></i> Video</button>
-                        <button onclick="addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 hover:border-slate-500"><i class="fa-solid fa-file-pdf text-rose-400"></i> PDF Note</button>
-                        <button onclick="addBlock('test')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 hover:border-slate-500"><i class="fa-solid fa-clipboard-list text-emerald-400"></i> Test</button>
-                    </div>
-
-                    <div id="admin-draft-canvas" class="hidden builder-canvas edit-mode space-y-4">
-                        <div class="text-center text-slate-400 dark:text-slate-500 py-10 text-sm">
-                            <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Use the toolbar above to build this course.<br>Drag and drop blocks to reorder them.
-                        </div>
-                    </div>
-                </div>
-
-                <div id="admin-tab-exam" class="admin-tab hidden bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-flask text-emerald-500"></i> Interactive Test Creator
-                            </h3>
-                            <p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p>
-                        </div>
-                        <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm">
-                            <span id="draft-counter">0</span> Drafted
-                        </div>
-                    </div>
                     
-                    <form id="exam-builder-form" class="space-y-6">
-                        <div class="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative">
-                            <span class="absolute -top-2.5 left-4 bg-slate-100 dark:bg-slate-800 px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded shadow-sm">Global Exam Settings</span>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                                <div class="col-span-2 md:col-span-4"><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Exam Title</label><input type="text" id="exam-setting-title" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                                <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Duration (Mins)</label><input type="number" id="exam-setting-time" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                                <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider mb-2">Correct (+)</label><input type="number" step="0.1" id="exam-setting-pos" class="w-full bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                                <div><label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Incorrect (-)</label><input type="number" step="0.1" id="exam-setting-neg" class="w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-white"></div>
-                                <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Pass %</label><input type="number" id="exam-setting-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Question Text</label><textarea id="q-text" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label><input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label><input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label><input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label><input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                                <div>
-                                    <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Correct Answer</label>
-                                    <select id="q-correct" class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 dark:text-emerald-300 font-bold"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
-                                </div>
-                                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Explanation</label><textarea id="q-exp" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <button type="button" onclick="addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all">+ Add Question to Draft</button>
-                            <button type="button" onclick="publishExamToFirebase()" class="px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Save Exam</button>
-                        </div>
-                    </form>
+                    <!-- Bottom Row: Insert Tools -->
+                    <div class="flex flex-wrap gap-2 justify-center md:justify-start">
+                        <button onclick="addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-folder-plus text-amber-400"></i> Folder</button>
+                        <div class="w-px bg-slate-700 mx-1 my-1"></div>
+                        <button onclick="addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-video text-red-400"></i> Live Meet</button>
+                        <button onclick="addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-play text-blue-400"></i> Video</button>
+                        <button onclick="addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-file-pdf text-rose-400"></i> PDF</button>
+                        <!-- Opens the Test Creator Modal -->
+                        <button onclick="openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-flask text-emerald-400"></i> Mock Test</button>
+                    </div>
                 </div>
+
+                <!-- THE CANVAS (The Document) -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
+                    
+                    <input type="text" placeholder="Course Title (e.g., Complete Physiology)" class="text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
+                    <input type="text" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
+                    
+                    <!-- Dropzone for Folders and Blocks -->
+                    <div id="editor-canvas-dropzone" class="flex-grow space-y-4 border-2 border-dashed border-brand-blue/30 bg-blue-50/30 dark:border-slate-700 dark:bg-slate-800/30 rounded-2xl p-4 transition-colors">
+                        <div class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium">
+                            <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.
+                        </div>
+                    </div>
+
+                    <!-- Final Publish Button -->
+                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                        <button onclick="publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Publish to Enrollments
+                        </button>
+                    </div>
+                </div>
+
             </div>
-            </div>
+            <!-- #endregion -->
+
+        </div>
     </main>
 
+    <!-- #region MOBILE BOTTOM NAV -->
     <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full glass-panel border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
         <button onclick="showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95">
             <i class="fa-solid fa-house text-xl mb-0.5"></i><span class="text-[10px] font-bold">Home</span>
@@ -507,6 +499,7 @@
         <button onclick="showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95">
             <i class="fa-solid fa-layer-group text-xl mb-0.5"></i><span class="text-[10px] font-bold">Enrollments</span>
         </button>
+        <!-- Mobile Secret Admin Nav -->
         <button id="mobile-nav-admin-btn" onclick="showScreen('screen-admin')" class="hidden flex-col items-center gap-1 text-rose-500 hover:text-rose-600 transition-all active:scale-95">
             <i class="fa-solid fa-wand-magic-sparkles text-xl mb-0.5"></i><span class="text-[10px] font-bold">Admin</span>
         </button>
@@ -514,107 +507,141 @@
             <i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span>
         </button>
     </nav>
+    <!-- #endregion -->
+
+    <!-- ========================================== -->
+    <!-- #region MODALS (Auth, Test Creator, Access) -->
+    <!-- ========================================== -->
+
+    <!-- 1. AUTH MODAL -->
     <div id="auth-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transform transition-all relative">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-
             <div class="p-8">
-                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 mb-6 shadow-sm border border-blue-100 dark:border-blue-800/50">
-                    <i class="fa-solid fa-user-shield text-2xl"></i>
-                </div>
-                
+                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 mb-6 shadow-sm border border-blue-100 dark:border-blue-800/50"><i class="fa-solid fa-user-shield text-2xl"></i></div>
                 <h3 id="auth-title" class="text-2xl font-extrabold text-slate-900 dark:text-white font-serif mb-1">Welcome Back</h3>
                 <p id="auth-subtitle" class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Enter your credentials to access your vault.</p>
-
                 <button type="button" onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl transition-all shadow-sm mb-4">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                     Continue with Google
                 </button>
-
-                <div class="relative flex items-center py-2 mb-4">
-                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
-                    <span class="flex-shrink-0 mx-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">OR EMAIL</span>
-                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
-                </div>
-
+                <div class="relative flex items-center py-2 mb-4"><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div><span class="flex-shrink-0 mx-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">OR EMAIL</span><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div></div>
                 <form id="auth-form" class="space-y-4" onsubmit="handleAuth(event)">
-                    <div>
-                        <input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="student@gmail.com">
-                    </div>
-                    <div>
-                        <input type="password" id="auth-password" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="••••••••">
-                    </div>
+                    <div><input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="student@gmail.com"></div>
+                    <div><input type="password" id="auth-password" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="••••••••"></div>
                     <button type="submit" id="auth-submit-btn" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all mt-2">Sign In</button>
                 </form>
+                <div class="mt-6 text-center"><button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-sm text-slate-500 hover:text-brand-blue font-semibold transition-colors">Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span></button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. TEST CREATOR MODAL -->
+    <div id="test-creator-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative hide-scrollbar">
+            <button onclick="closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
+            <div class="p-6 md:p-8">
+                <div class="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div><h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> Interactive Test Creator</h3><p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p></div>
+                    <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm"><span id="draft-counter">0</span> Drafted</div>
+                </div>
                 
-                <div class="mt-6 text-center">
-                    <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-sm text-slate-500 hover:text-brand-blue font-semibold transition-colors">
-                        Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span>
-                    </button>
+                <form id="exam-builder-form" class="space-y-6">
+                    <div class="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative">
+                        <span class="absolute -top-2.5 left-4 bg-slate-100 dark:bg-slate-800 px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded shadow-sm">Global Exam Settings</span>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                            <div class="col-span-2 md:col-span-4"><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Exam Title</label><input type="text" id="exam-setting-title" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Duration (Mins)</label><input type="number" id="exam-setting-time" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider mb-2">Correct (+)</label><input type="number" step="0.1" id="exam-setting-pos" class="w-full bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Incorrect (-)</label><input type="number" step="0.1" id="exam-setting-neg" class="w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-white"></div>
+                            <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Pass %</label><input type="number" id="exam-setting-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Question Text</label><textarea id="q-text" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label><input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label><input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label><input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label><input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Correct Answer</label>
+                                <select id="q-correct" class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 dark:text-emerald-300 font-bold"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
+                            </div>
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Explanation</label><textarea id="q-exp" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" onclick="addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all">+ Add Question to Draft</button>
+                        <button type="button" onclick="publishExamToFirebase()" class="px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center gap-2">Save & Drop to Canvas</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ACCESS CONTROL MODAL -->
+    <div id="access-control-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative">
+            <button onclick="closeAccessControlModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            <div class="p-6 md:p-8">
+                <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-key"></i></div>
+                <h3 class="text-xl font-extrabold text-slate-900 dark:text-white font-serif mb-1">Access Control</h3>
+                <p class="text-xs text-slate-500 mb-6">Manually unlock courses for specific students.</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Student Email</label>
+                        <input type="email" placeholder="student@gmail.com" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Course to Unlock</label>
+                        <select class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white">
+                            <option>UPSC CSE Optional Zoology</option>
+                            <option>NEET Undergraduate</option>
+                        </select>
+                    </div>
+                    <button class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all mt-2">Grant Access</button>
                 </div>
             </div>
         </div>
     </div>
+    <!-- #endregion -->
+
+    <!-- #region JAVASCRIPT & APP LOGIC -->
     <script>
         // 1. SPA Routing
         function showScreen(screenId) {
-            // Hide all screens
             document.querySelectorAll('.app-screen').forEach(screen => screen.classList.add('hidden'));
-            
-            // If the user clicks out of the Admin screen, ensure we pause editing.
-            if(screenId !== 'screen-admin') {
-                document.getElementById('admin-course-selector').value = "";
-                document.getElementById('admin-editor-toolbar').classList.add('hidden');
-                document.getElementById('admin-draft-canvas').classList.add('hidden');
-            }
-
-            // Show selected screen
             document.getElementById(screenId)?.classList.remove('hidden');
             window.scrollTo(0, 0);
         }
 
-        // 2. Admin UI: Tab Switcher
-        function switchAdminTab(tabId) {
-            document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.add('hidden'));
-            
-            // Remove active highlight from all buttons
-            document.querySelectorAll('#screen-admin button').forEach(btn => {
-                if(btn.classList.contains('border-emerald-500')) {
-                    btn.classList.remove('border-emerald-500', 'bg-emerald-50/10', 'dark:bg-emerald-900/10');
-                }
-            });
+        // 2. Modal Controls
+        function openTestModal() { document.getElementById('test-creator-modal').classList.remove('hidden'); }
+        function closeTestModal() { document.getElementById('test-creator-modal').classList.add('hidden'); }
+        
+        function openAccessControlModal() { document.getElementById('access-control-modal').classList.remove('hidden'); }
+        function closeAccessControlModal() { document.getElementById('access-control-modal').classList.add('hidden'); }
 
-            document.getElementById('admin-tab-' + tabId)?.classList.remove('hidden');
-        }
+        // 3. Admin Builder (Dummy functions waiting for Firebase wire-up)
+        function addDynamicFolder() { alert("Will add an expandable HTML Folder to the canvas below."); }
+        function addBlock(type) { alert(`Will drop a [${type}] block directly onto the canvas below.`); }
+        function publishCourse() { alert("Will convert this visual canvas to JSON and push it to the Enrollments tab!"); }
 
-        // 3. Admin UI: Load Draft
-        function loadDraftForAdmin(courseName) {
-            if(!courseName) return;
-            // 1. Show the toolbar and canvas
-            document.getElementById('admin-editor-toolbar').classList.remove('hidden');
-            const canvas = document.getElementById('admin-draft-canvas');
-            canvas.classList.remove('hidden');
-            
-            // Note: In the future, this is where we will query Firebase to fetch the existing JSON layout for this course!
-            console.log("Loading draft visual layout for:", courseName);
-        }
-
-        // 4. Admin UI: Visual Builder (Dummy Block Adders for now)
-        function addDynamicFolder() { alert("Firebase Wire-up Pending: Will add an expandable HTML Folder to the canvas."); }
-        function addBlock(type) { alert(`Firebase Wire-up Pending: Will add a [${type}] block to the canvas.`); }
-        function publishDraft() { alert("Will convert visual layout to JSON and push to Firebase 'Enrollments' structure."); }
-
-        // 5. Student UI: Open Course Viewer
+        // 4. Student UI: Open Course Viewer
         function openCourseView(courseName) {
             document.getElementById('course-view-title').innerText = courseName;
             showScreen('screen-course-view');
-            
-            // Note: In the future, this is where we will fetch the PUBLISHED JSON layout and render the blocks!
         }
 
-        // 6. Global Utilities
+        // 5. Global Utilities
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
@@ -624,7 +651,7 @@
             document.getElementById('notification-panel').classList.toggle('hidden');
         }
 
-        // 7. Auth Modal UI
+        // 6. Auth Modal UI
         let isLoginMode = true;
         function openAuthModal(mode = 'login') {
             document.getElementById('auth-modal').classList.remove('hidden');
@@ -646,6 +673,11 @@
         function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
         function toggleAuthMode() { openAuthModal(!isLoginMode ? 'login' : 'signup'); }
     </script>
+    <!-- #endregion -->
+
+    <!-- ========================================== -->
+    <!-- #region FIREBASE BACKEND ENGINE -->
+    <!-- ========================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -670,7 +702,7 @@
         window.laDb = db;
 
         // ----------------------------------------------------
-        // ADMIN EXAM BUILDER LOGIC (PRESERVED)
+        // EXAM BUILDER LOGIC
         // ----------------------------------------------------
         window.draftQuestions = []; 
 
@@ -712,11 +744,12 @@
                     questions: window.draftQuestions,
                     createdAt: new Date().toISOString()
                 });
-                alert("Successfully published exam to Firebase Vault! ID: " + docRef.id);
+                alert("Exam saved! It will now drop onto your canvas.");
                 
                 window.draftQuestions = [];
                 document.getElementById('draft-counter').innerText = "0";
                 document.getElementById('exam-builder-form').reset();
+                closeTestModal();
             } catch (e) { console.error(e); alert("Failed to publish exam. Check console."); }
         }
 
