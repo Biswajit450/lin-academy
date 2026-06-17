@@ -58,15 +58,22 @@
         .dark .editor-table th, .dark .editor-table td { border-color: #334155; }
 
         /* 🔥 NEW: Student Consumption Shield 🔥 */
-        /* Yeh jadu sirf tab apply hoga jab student view karega */
+        .student-action-btn { display: none; } /* Hidden by default in Admin Draft */
+        
+        /* When wrapped in student consumption mode, do the magic */
         .student-consumption-mode .block-hover-effect { cursor: default !important; transform: none !important; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; }
         .student-consumption-mode button[onclick*="remove"], .student-consumption-mode button[title="Delete Folder"] { display: none !important; }
-        .student-consumption-mode button[onclick*="addRow"], .student-consumption-mode button[onclick*="addCol"] { display: none !important; }
-        .student-consumption-mode input, .student-consumption-mode textarea { pointer-events: none !important; border: none !important; background: transparent !important; resize: none !important; color: inherit !important; }
+        .student-consumption-mode button[onclick*="addRow"], .student-consumption-mode button[onclick*="addCol"], .student-consumption-mode button[onclick*="removeRow"], .student-consumption-mode button[onclick*="removeCol"] { display: none !important; }
+        
+        /* Hide the ugly inputs and show the beautiful Play/Start buttons */
+        .student-consumption-mode .admin-input-area { display: none !important; }
+        .student-consumption-mode .student-action-btn { display: inline-flex !important; }
+        
+        .student-consumption-mode input.course-title-input, .student-consumption-mode textarea { pointer-events: none !important; border: none !important; background: transparent !important; resize: none !important; color: inherit !important; }
         .student-consumption-mode .folder-dropzone { border: none !important; min-height: auto !important; padding: 0 !important; background: transparent !important; }
         .student-consumption-mode .folder-dropzone .text-slate-400 { display: none !important; }
         .student-consumption-mode [draggable="true"] { pointer-events: none !important; } 
-        .student-consumption-mode .fa-folder-open { color: #3b82f6 !important; } /* Change folder color for students */
+        .student-consumption-mode .fa-folder-open { color: #3b82f6 !important; } 
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
@@ -403,8 +410,8 @@
                 </div>
 
                 <div class="student-consumption-mode">
-                    <input type="text" id="student-main-title" readonly class="text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white pointer-events-none px-0" />
-                    <input type="text" id="student-sub-title" readonly class="text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 pointer-events-none px-0" />
+                    <input type="text" id="student-main-title" readonly class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white pointer-events-none px-0" />
+                    <input type="text" id="student-sub-title" readonly class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 pointer-events-none px-0" />
                     
                     <div id="course-render-canvas" class="space-y-4 transition-colors">
                         </div>
@@ -421,46 +428,59 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
-                    
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
-                        <div class="flex-grow w-full md:w-auto flex items-center gap-3">
-                            <select id="admin-course-selector" onchange="loadDraftForAdmin(this.value)" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
-                                <option value="" disabled selected>-- Select Course to Edit --</option>
-                                <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
-                                <option value="NEET Undergraduate">NEET Undergraduate</option>
-                            </select>
-                            <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
-                        </div>
-                    </div>
-                    
-                    <div id="admin-editor-toolbar" class="hidden flex flex-wrap gap-2 justify-center md:justify-start">
-                        <button onclick="addBlock('text')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-heading text-purple-400"></i> Text</button>
-                        <button onclick="addBlock('table')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-table text-cyan-400"></i> Table</button>
-                        <div class="w-px bg-slate-700 mx-1 my-1"></div>
-                        <button onclick="addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-folder-plus text-amber-400"></i> Folder</button>
-                        <button onclick="addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-video text-red-400"></i> Live Meet</button>
-                        <button onclick="addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-play text-blue-400"></i> Video</button>
-                        <button onclick="addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-file-pdf text-rose-400"></i> PDF</button>
-                        <button onclick="openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-flask text-emerald-400"></i> Mock Test</button>
-                    </div>
+                <div class="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto hide-scrollbar">
+                    <button onclick="switchAdminSubTab('course')" class="admin-tab-btn active text-brand-blue font-bold px-4 py-2 border-b-2 border-brand-blue whitespace-nowrap">Course Builder</button>
+                    <button onclick="switchAdminSubTab('homecms')" class="admin-tab-btn text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-laptop-code mr-1"></i> Homepage CMS</button>
                 </div>
 
-                <div id="admin-draft-canvas-wrapper" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
-                    
-                    <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
-                    <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
-                    
-                    <div id="editor-canvas-dropzone" ondragover="allowDrop(event)" ondrop="drop(event)" onchange="window.autoSaveDraft()" class="flex-grow space-y-4 border-2 border-dashed border-brand-blue/30 bg-blue-50/30 dark:border-slate-700 dark:bg-slate-800/30 rounded-2xl p-4 transition-colors">
-                        <div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium">
-                            <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.
+                <div id="admin-subtab-homecms" class="admin-subtab hidden bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+                    <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-brand-blue dark:text-blue-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4"><i class="fa-solid fa-hammer"></i></div>
+                    <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mb-2">Dashboard CMS Engine</h3>
+                    <p class="text-sm text-slate-500 max-w-md mx-auto">This is the dedicated space where you will upload Carousel Images, Event Links, and Dynamic Arena Tests without touching code. (Next Module)</p>
+                </div>
+
+                <div id="admin-subtab-course" class="admin-subtab space-y-6">
+                    <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
+                        
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
+                            <div class="flex-grow w-full md:w-auto flex items-center gap-3">
+                                <select id="admin-course-selector" onchange="loadDraftForAdmin(this.value)" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
+                                    <option value="" disabled selected>-- Select Course to Edit --</option>
+                                    <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
+                                    <option value="NEET Undergraduate">NEET Undergraduate</option>
+                                </select>
+                                <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
+                            </div>
+                        </div>
+                        
+                        <div id="admin-editor-toolbar" class="hidden flex flex-wrap gap-2 justify-center md:justify-start">
+                            <button onclick="addBlock('text')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-heading text-purple-400"></i> Text</button>
+                            <button onclick="addBlock('table')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-table text-cyan-400"></i> Table</button>
+                            <div class="w-px bg-slate-700 mx-1 my-1"></div>
+                            <button onclick="addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-folder-plus text-amber-400"></i> Folder</button>
+                            <button onclick="addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-video text-red-400"></i> Live Meet</button>
+                            <button onclick="addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-play text-blue-400"></i> Video</button>
+                            <button onclick="addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-file-pdf text-rose-400"></i> PDF</button>
+                            <button onclick="openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-flask text-emerald-400"></i> Mock Test</button>
                         </div>
                     </div>
 
-                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                        <button onclick="window.publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Publish to Enrollments
-                        </button>
+                    <div id="admin-draft-canvas-wrapper" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
+                        
+                        <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
+                        <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
+                        
+                        <div id="editor-canvas-dropzone" ondragover="allowDrop(event)" ondrop="drop(event)" onchange="window.autoSaveDraft()" class="flex-grow space-y-4 border-2 border-dashed border-brand-blue/30 bg-blue-50/30 dark:border-slate-700 dark:bg-slate-800/30 rounded-2xl p-4 transition-colors">
+                            <div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium">
+                                <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                            <button onclick="window.publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Publish to Enrollments
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -565,11 +585,21 @@
             window.scrollTo(0, 0);
         }
 
+        // Admin Sub-Tab Switcher
+        function switchAdminSubTab(tabId) {
+            document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-brand-blue', 'border-brand-blue');
+                btn.classList.add('text-slate-500', 'border-transparent');
+            });
+            document.getElementById('admin-subtab-' + tabId).classList.remove('hidden');
+            event.currentTarget.classList.remove('text-slate-500', 'border-transparent');
+            event.currentTarget.classList.add('active', 'text-brand-blue', 'border-brand-blue');
+        }
+
         // 2. Modals & UI Controls
         function openTestModal() { document.getElementById('test-creator-modal').classList.remove('hidden'); }
         function closeTestModal() { document.getElementById('test-creator-modal').classList.add('hidden'); }
-
-        // Razorpay Placeholder Hook
         function initiateCheckout(courseName) { alert(`Razorpay Gateway Initiated for: ${courseName}\n\nOnce payment is successful, our Webhook will automatically tell Firebase to unlock this for the student!`); }
 
         // ========================================================
@@ -581,7 +611,6 @@
             if (placeholder) placeholder.remove();
         }
 
-        // TEXT / HEADING BLOCK
         window.addBlock = function(type) {
             window.clearCanvasPlaceholder();
             const dropzone = document.getElementById('editor-canvas-dropzone');
@@ -606,32 +635,36 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-table text-cyan-400 mr-1"></i> Syllabus Table</span>
                         <div class="flex items-center gap-2">
-                            <button onclick="addRow(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">+ Row</button>
-                            <button onclick="addCol(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">+ Col</button>
+                            <button onclick="window.addRow(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">+ Row</button>
+                            <button onclick="window.removeRow(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">- Row</button>
+                            <button onclick="window.addCol(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 ml-2">+ Col</button>
+                            <button onclick="window.removeCol(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">- Col</button>
                             <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors ml-2"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    <table class="editor-table w-full text-sm">
-                        <tr><th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 1</th><th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 2</th></tr>
-                        <tr><td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td><td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td></tr>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="editor-table w-full text-sm">
+                            <tr><th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 1</th><th contenteditable="true" class="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold p-2">Column 2</th></tr>
+                            <tr><td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td><td contenteditable="true" class="p-2 text-slate-600 dark:text-slate-400">Data</td></tr>
+                        </table>
+                    </div>
                 </div>`;
             }
 
             else if(type === 'live' || type === 'video' || type === 'pdf') {
-                let icon = ''; let color = ''; let placeholderText = ''; let typeName = ''; let extraInputs = '';
+                let icon = ''; let color = ''; let placeholderText = ''; let typeName = ''; let extraInputs = ''; let actionBtnText = ''; let actionColor = '';
                 
                 if(type === 'live') { 
                     icon = 'fa-video'; color = 'text-red-400 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Google Meet Link';
-                    // Added Start and End Time inputs
+                    actionBtnText = '🔴 Join Live Session'; actionColor = 'bg-red-500 hover:bg-red-600 text-white';
                     extraInputs = `
                         <div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
                             <div><label class="text-[10px] font-bold text-slate-400 block mb-1">START TIME</label><input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none"></div>
                             <div><label class="text-[10px] font-bold text-slate-400 block mb-1">END TIME</label><input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none"></div>
                         </div>`;
                 }
-                if(type === 'video') { icon = 'fa-play'; color = 'text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Bunny.net Video ID'; }
-                if(type === 'pdf') { icon = 'fa-file-pdf'; color = 'text-rose-400 bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800'; typeName = 'PDF Notes'; placeholderText = 'Firebase PDF URL'; }
+                if(type === 'video') { icon = 'fa-play'; color = 'text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Bunny.net Video ID'; actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white'; }
+                if(type === 'pdf') { icon = 'fa-file-pdf'; color = 'text-rose-400 bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800'; typeName = 'PDF Notes'; placeholderText = 'Firebase PDF URL'; actionBtnText = '📄 Open Handout'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white'; }
 
                 blockHTML = `
                 <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-start gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="drag(event)">
@@ -642,8 +675,15 @@
                             <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <input type="text" placeholder="${typeName} Title" class="w-full bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-brand-blue outline-none text-sm font-bold text-slate-900 dark:text-white pb-1 mb-2 transition-colors">
-                        <input type="text" placeholder="${placeholderText}" class="w-full bg-transparent border-none outline-none text-xs text-slate-500 dark:text-slate-400">
-                        ${extraInputs}
+                        
+                        <div class="admin-input-area">
+                            <input type="text" placeholder="${placeholderText}" class="link-input w-full bg-transparent border-none outline-none text-xs text-slate-500 dark:text-slate-400">
+                            ${extraInputs}
+                        </div>
+                        
+                        <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 ${actionColor}" onclick="window.consumeContent('${type}', this)">
+                            ${actionBtnText}
+                        </button>
                     </div>
                 </div>`;
             }
@@ -673,13 +713,18 @@
             setTimeout(window.autoSaveDraft, 200);
         }
 
-        // Table Helper Functions
+        // Table Helper Functions (UPGRADED)
         window.addRow = function(btn) {
             const table = btn.closest('div[id^="block-"]').querySelector('table');
             const cols = table.rows[0].cells.length;
             let row = table.insertRow();
             for(let i=0; i<cols; i++) { row.insertCell(i).innerHTML = "Data"; row.cells[i].contentEditable = "true"; row.cells[i].className = "p-2 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"; }
             window.autoSaveDraft();
+        }
+        window.removeRow = function(btn) {
+            const table = btn.closest('div[id^="block-"]').querySelector('table');
+            if(table.rows.length > 2) { table.deleteRow(-1); window.autoSaveDraft(); }
+            else { alert("You must have at least one row of data!"); }
         }
         window.addCol = function(btn) {
             const table = btn.closest('div[id^="block-"]').querySelector('table');
@@ -690,6 +735,13 @@
                 cell.contentEditable = "true";
             }
             window.autoSaveDraft();
+        }
+        window.removeCol = function(btn) {
+            const table = btn.closest('div[id^="block-"]').querySelector('table');
+            if(table.rows[0].cells.length > 1) {
+                for(let i=0; i<table.rows.length; i++) { table.rows[i].deleteCell(-1); }
+                window.autoSaveDraft();
+            } else { alert("You must have at least one column!"); }
         }
 
         // Drag & Drop
@@ -725,6 +777,24 @@
         }
         function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
         function toggleAuthMode() { openAuthModal(!isLoginMode ? 'login' : 'signup'); }
+        
+        // 🔥 NEW: The Consumption Engine (What happens when a student clicks the magic buttons)
+        window.consumeContent = function(type, elementOrId) {
+            if(type === 'test') {
+                alert(`Redirecting to Exam Engine for Vault ID: ${elementOrId} \n\n(Note for Boss: We will build the actual Exam Engine UI module next!)`);
+                return;
+            }
+            
+            const block = elementOrId.closest('[id^="block-"]');
+            const linkInput = block.querySelector('.link-input');
+            const val = linkInput ? linkInput.value : '';
+            
+            if(!val) { alert("Your educator hasn't provided a link for this resource yet."); return; }
+            
+            if(type === 'pdf') { window.open(val, '_blank'); }
+            else if(type === 'live') { window.open(val, '_blank'); }
+            else if(type === 'video') { alert(`Opening Video Player Modal for Bunny.net ID: ${val}`); }
+        }
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -756,10 +826,11 @@
             const courseName = document.getElementById('admin-course-selector').value;
             if(!courseName) return;
             
-            // DOM QUIRK FIX: Sync values to attributes before grabbing HTML
             const dropzone = document.getElementById('editor-canvas-dropzone');
             dropzone.querySelectorAll('input').forEach(input => input.setAttribute('value', input.value));
             dropzone.querySelectorAll('textarea').forEach(ta => ta.innerHTML = ta.value);
+            // Ensure table headers and cells save their edits
+            dropzone.querySelectorAll('th, td').forEach(cell => { if(cell.contentEditable === "true") cell.setAttribute('data-content', cell.innerHTML); });
 
             const dropzoneHtml = dropzone.innerHTML;
             const mainTitle = document.getElementById('draft-main-title').value;
@@ -800,7 +871,6 @@
             const courseName = document.getElementById('admin-course-selector').value;
             if(!courseName) { alert("Please select a course first!"); return; }
 
-            // Ensure attributes are synced before publishing
             const dropzone = document.getElementById('editor-canvas-dropzone');
             dropzone.querySelectorAll('input').forEach(input => input.setAttribute('value', input.value));
             dropzone.querySelectorAll('textarea').forEach(ta => ta.innerHTML = ta.value);
@@ -893,6 +963,10 @@
                             <div class="flex items-center justify-between mb-1"><span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span><button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></div>
                             <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
                             <div class="text-[10px] text-slate-500 font-medium mt-0.5">Vault ID: ${docRef.id} • ${window.draftQuestions.length} Questions</div>
+                            
+                            <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${docRef.id}')">
+                                📝 Start Mock Test
+                            </button>
                         </div>
                     </div>`;
                 dropzone.insertAdjacentHTML('beforeend', testHtml);
