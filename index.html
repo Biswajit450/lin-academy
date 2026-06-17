@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- #region HEAD & CONFIGURATION -->
+<!-- ========================================== -->
+<!-- HEAD & CONFIGURATION -->
+<!-- ========================================== -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -40,79 +42,176 @@
     </script>
 
     <style>
-        body { overflow-x: hidden; transition: background-color 0.3s ease, color 0.3s ease; }
+        body { 
+            overflow-x: hidden; 
+            transition: background-color 0.3s ease, color 0.3s ease; 
+        }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-        .dark .glass-panel { background: rgba(15, 23, 42, 0.7); border-color: rgba(255,255,255,0.05); }
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px); 
+        }
+        .dark .glass-panel { 
+            background: rgba(15, 23, 42, 0.7); 
+            border-color: rgba(255,255,255,0.05); 
+        }
         
         /* Visual Builder Styles */
-        .builder-canvas { min-height: 50vh; border: 2px dashed transparent; transition: all 0.3s ease; }
-        .builder-canvas.edit-mode { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.02); border-radius: 1rem; padding: 1rem; }
-        .block-hover-effect { transition: transform 0.2s, box-shadow 0.2s; }
-        .edit-mode .block-hover-effect:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: grab; }
-        .dragging { opacity: 0.5; border: 2px dashed #3b82f6 !important; }
+        .builder-canvas { 
+            min-height: 50vh; 
+            border: 2px dashed transparent; 
+            transition: all 0.3s ease; 
+        }
+        .builder-canvas.edit-mode { 
+            border-color: #3b82f6; 
+            background-color: rgba(59, 130, 246, 0.02); 
+            border-radius: 1rem; 
+            padding: 1rem; 
+        }
+        .block-hover-effect { 
+            transition: transform 0.2s, box-shadow 0.2s; 
+        }
+        .edit-mode .block-hover-effect:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+            cursor: grab; 
+        }
+        .dragging { 
+            opacity: 0.5; 
+            border: 2px dashed #3b82f6 !important; 
+        }
         
         /* Table Styles for Canvas */
-        .editor-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        .editor-table th, .editor-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-        .dark .editor-table th, .dark .editor-table td { border-color: #334155; }
+        .editor-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 8px; 
+        }
+        .editor-table th, .editor-table td { 
+            border: 1px solid #cbd5e1; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        .dark .editor-table th, .dark .editor-table td { 
+            border-color: #334155; 
+        }
 
         /* Student Consumption Shield */
         .student-action-btn { display: none; } 
-        .student-consumption-mode .block-hover-effect { cursor: default !important; transform: none !important; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; }
-        .student-consumption-mode button[onclick*="remove"], .student-consumption-mode button[title="Delete Folder"] { display: none !important; }
-        .student-consumption-mode button[onclick*="addRow"], .student-consumption-mode button[onclick*="addCol"], .student-consumption-mode button[onclick*="removeRow"], .student-consumption-mode button[onclick*="removeCol"] { display: none !important; }
         
-        .student-consumption-mode .admin-input-area { display: none !important; }
-        .student-consumption-mode .student-action-btn { display: inline-flex !important; }
+        .student-consumption-mode .block-hover-effect { 
+            cursor: default !important; 
+            transform: none !important; 
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; 
+        }
+        .student-consumption-mode button[onclick*="remove"], 
+        .student-consumption-mode button[title="Delete Folder"] { 
+            display: none !important; 
+        }
+        .student-consumption-mode button[onclick*="addRow"], 
+        .student-consumption-mode button[onclick*="addCol"], 
+        .student-consumption-mode button[onclick*="removeRow"], 
+        .student-consumption-mode button[onclick*="removeCol"] { 
+            display: none !important; 
+        }
+        .student-consumption-mode .admin-input-area { 
+            display: none !important; 
+        }
+        .student-consumption-mode .student-action-btn { 
+            display: inline-flex !important; 
+        }
+        .student-consumption-mode input.course-title-input, 
+        .student-consumption-mode textarea { 
+            pointer-events: none !important; 
+            border: none !important; 
+            background: transparent !important; 
+            resize: none !important; 
+            color: inherit !important; 
+        }
+        .student-consumption-mode .folder-dropzone { 
+            border: none !important; 
+            min-height: auto !important; 
+            padding: 0 !important; 
+            background: transparent !important; 
+        }
+        .student-consumption-mode .folder-dropzone .text-slate-400 { 
+            display: none !important; 
+        }
+        .student-consumption-mode [draggable="true"] { 
+            pointer-events: none !important; 
+        } 
+        .student-consumption-mode .fa-folder-open { 
+            color: #3b82f6 !important; 
+        } 
         
-        .student-consumption-mode input.course-title-input, .student-consumption-mode textarea { pointer-events: none !important; border: none !important; background: transparent !important; resize: none !important; color: inherit !important; }
-        .student-consumption-mode .folder-dropzone { border: none !important; min-height: auto !important; padding: 0 !important; background: transparent !important; }
-        .student-consumption-mode .folder-dropzone .text-slate-400 { display: none !important; }
-        .student-consumption-mode [draggable="true"] { pointer-events: none !important; } 
-        .student-consumption-mode .fa-folder-open { color: #3b82f6 !important; } 
+        /* Star Rating */
+        .star-rating i { 
+            cursor: pointer; 
+            transition: color 0.2s; 
+        }
+        .star-rating i:hover, 
+        .star-rating i.active { 
+            color: #fbbf24; 
+        }
     </style>
 </head>
-<!-- #endregion -->
 
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
 
-    <!-- #region DESKTOP SIDEBAR -->
+    <!-- ========================================== -->
+    <!-- DESKTOP SIDEBAR -->
+    <!-- ========================================== -->
     <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-xl">
-            LA
+        
+        <!-- Dynamic Logo Container -->
+        <div id="desktop-logo-container" class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-xl relative">
+            <span id="app-logo-text">LA</span>
+            <img id="app-logo-img" src="" class="hidden absolute inset-0 w-full h-full object-cover">
         </div>
         
         <div class="flex flex-col gap-8 text-slate-400 dark:text-slate-500">
-            <button onclick="window.showScreen('screen-dashboard')" class="text-brand-blue dark:text-blue-400 flex flex-col items-center gap-1 transition-colors"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
-            <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
-            
-            <!-- SECRET ADMIN NAV BUTTON -->
-            <button id="nav-admin-btn" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 hover:text-rose-500 text-rose-400 transition-colors drop-shadow-md">
-                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i><span class="text-[10px] font-bold">Admin</span>
+            <button onclick="window.showScreen('screen-dashboard')" class="text-brand-blue dark:text-blue-400 flex flex-col items-center gap-1 transition-colors">
+                <i class="fa-solid fa-house text-xl"></i>
+                <span class="text-[10px] font-bold">Home</span>
             </button>
-            
-            <button class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
+            <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors">
+                <i class="fa-solid fa-layer-group text-xl"></i>
+                <span class="text-[10px] font-bold">Enrollments</span>
+            </button>
+            <button id="nav-admin-btn" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 hover:text-rose-500 text-rose-400 transition-colors drop-shadow-md">
+                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                <span class="text-[10px] font-bold">Admin</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors">
+                <i class="fa-solid fa-user text-xl"></i>
+                <span class="text-[10px] font-bold">Profile</span>
+            </button>
         </div>
         
         <div class="w-10 h-10"></div>
     </nav>
-    <!-- #endregion -->
 
     <main class="max-w-4xl mx-auto w-full min-h-screen flex flex-col">
         
-        <!-- #region TOP HEADER -->
+        <!-- ========================================== -->
+        <!-- TOP HEADER -->
+        <!-- ========================================== -->
         <header class="px-4 py-3 md:px-6 md:pt-8 md:pb-4 flex items-center justify-between bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
             
             <div id="header-unauth" class="flex items-center gap-3">
-                <button onclick="window.openAuthModal('login')" class="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors px-2">Log In</button>
-                <button onclick="window.openAuthModal('signup')" class="text-sm font-bold bg-slate-900 dark:bg-brand-blue text-white px-5 py-2 rounded-xl shadow-md hover:scale-105 transition-transform">Sign Up</button>
+                <button onclick="window.openAuthModal('login')" class="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors px-2">
+                    Log In
+                </button>
+                <button onclick="window.openAuthModal('signup')" class="text-sm font-bold bg-slate-900 dark:bg-brand-blue text-white px-5 py-2 rounded-xl shadow-md hover:scale-105 transition-transform">
+                    Sign Up
+                </button>
             </div>
 
             <div id="header-auth" class="hidden items-center gap-3 md:gap-4">
                 <div class="cursor-pointer hover:scale-105 transition-transform w-9 h-9 md:w-12 md:h-12 rounded-full shadow-md overflow-hidden border-2 border-white dark:border-slate-800 bg-white" onclick="window.handleLogout()" title="Click to Logout">
-                    <img id="user-profile-pic" src="https://ui-avatars.com/api/?name=User&background=2563eb&color=fff" alt="Student Profile" class="w-full h-full object-cover">
+                    <img id="user-profile-pic" src="" alt="Student Profile" class="w-full h-full object-cover">
                 </div>
                 <div class="hidden md:block">
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Welcome back,</p>
@@ -121,114 +220,95 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <button onclick="window.toggleDarkMode()" class="w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue transition-colors duration-300 border border-slate-100 dark:border-slate-700">
+                <!-- Dark Mode Toggle -->
+                <button onclick="window.toggleDarkMode()" class="w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue transition-colors duration-300 border border-slate-100 dark:border-slate-700">
                     <i class="fa-solid fa-moon dark:hidden"></i>
                     <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
                 </button>
                 
+                <!-- Notification Bell -->
                 <div class="relative">
                     <button onclick="window.toggleNotifications()" class="w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue transition-colors duration-300 border border-slate-100 dark:border-slate-700 relative">
                         <i class="fa-regular fa-bell text-base md:text-lg"></i>
-                        <span class="absolute top-2 right-2 md:right-2.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+                        <span id="bell-notif-indicator" class="absolute top-2 right-2 md:right-2.5 w-2 h-2 bg-rose-500 rounded-full"></span>
                     </button>
                     
+                    <!-- Bell Notifications Panel Dropdown -->
                     <div id="notification-panel" class="hidden absolute top-full right-0 mt-3 w-72 md:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-4 z-50">
                         <h4 class="text-sm font-extrabold text-slate-900 dark:text-white mb-3 font-serif flex justify-between items-center">
-                            Notifications <span class="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-full">1 New</span>
+                            Announcements 
+                            <span id="bell-notif-count" class="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-full">0 New</span>
                         </h4>
-                        <div class="flex flex-col gap-3">
-                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                                <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed"><span class="font-bold text-brand-blue dark:text-blue-400">Portal Update:</span> The Premium NEET Mock Test Series is now LIVE.</p>
-                                <span class="text-[10px] text-slate-400 mt-2 block font-medium">Just now</span>
-                            </div>
+                        <div id="bell-notif-list" class="flex flex-col gap-3 max-h-64 overflow-y-auto hide-scrollbar">
+                            <div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
-        <!-- #endregion -->
 
         <div class="px-4 md:px-6 mt-2 md:mt-4 pb-10 relative">
 
-            <!-- #region SCREEN: MAIN DASHBOARD -->
+            <!-- ========================================== -->
+            <!-- SCREEN: MAIN DASHBOARD (STUDENT HOME) -->
+            <!-- ========================================== -->
             <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
 
-                <section class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
-                    <div class="absolute top-0 left-1/4 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-                    <div class="absolute -bottom-8 left-1/2 w-72 h-72 bg-rose-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-                    
+                <!-- Featured Event Banner -->
+                <section id="student-featured-event" class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center bg-cover bg-center">
+                    <div class="absolute inset-0 bg-slate-900/60 z-0"></div> <!-- Overlay for readability -->
                     <div class="relative z-10 max-w-xl">
-                        <span class="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-6 inline-block backdrop-blur-md border border-white/10">Featured Event / Update</span>
-                        <h3 class="text-3xl md:text-5xl font-extrabold font-serif mb-4 leading-tight text-white">Mastering Mains Answer Writing</h3>
-                        <p class="text-blue-100 text-sm md:text-lg mb-8 max-w-lg mx-auto">Join Biswajit Sir for an exclusive live strategy session designed to elevate your structure and scoring potential.</p>
-                        <button class="bg-white text-brand-blue text-sm md:text-base font-bold px-8 py-3 rounded-2xl hover:scale-105 transition-transform shadow-md">Register Now</button>
+                        <span class="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-6 inline-block backdrop-blur-md border border-white/10">
+                            Featured Event
+                        </span>
+                        <h3 id="student-event-title" class="text-3xl md:text-5xl font-extrabold font-serif mb-4 leading-tight text-white">
+                            Loading...
+                        </h3>
+                        <p id="student-event-desc" class="text-blue-50 text-sm md:text-lg mb-8 max-w-lg mx-auto">
+                            Please wait
+                        </p>
+                        <button id="student-event-btn" class="bg-white text-brand-blue text-sm md:text-base font-bold px-8 py-3 rounded-2xl hover:scale-105 transition-transform shadow-md">
+                            Loading
+                        </button>
                     </div>
                 </section>
 
+                <!-- Competitive Bundles -->
                 <section>
                     <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
                         <div>
                             <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Competitive Bundles</h3>
                             <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Your premium dedicated exam ecosystems</p>
                         </div>
-                        <button onclick="window.showScreen('screen-view-competitive')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
+                        <button onclick="window.showScreen('screen-view-competitive')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">
+                            View All
+                        </button>
                     </div>
-                    
                     <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
                         <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
-                            <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
+                            <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl">
+                                <i class="fa-solid fa-microscope"></i>
+                            </div>
                             <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">Master all 13 pillars with our clinical, high-scoring ecosystem.</p>
-                            <button onclick="window.initiateCheckout('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100 dark:border-emerald-800">Enroll Now</button>
+                            <button onclick="window.initiateCheckout('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100 dark:border-emerald-800">
+                                Enroll Now
+                            </button>
                         </div>
                         <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
-                            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 dark:text-blue-400 text-2xl"><i class="fa-solid fa-landmark"></i></div>
+                            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 dark:text-blue-400 text-2xl">
+                                <i class="fa-solid fa-landmark"></i>
+                            </div>
                             <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC General Studies</h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">Comprehensive coverage of GS Papers I, II, III, and IV.</p>
-                            <button onclick="window.initiateCheckout('UPSC General Studies')" class="mt-auto w-full bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100 dark:border-blue-800">Enroll Now</button>
-                        </div>
-                        <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
-                            <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
-                            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">The ultimate medical entrance preparation ecosystem.</p>
-                            <button onclick="window.initiateCheckout('NEET Undergraduate')" class="mt-auto w-full bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100 dark:border-rose-800">Enroll Now</button>
+                            <button onclick="window.initiateCheckout('UPSC General Studies')" class="mt-auto w-full bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100 dark:border-blue-800">
+                                Enroll Now
+                            </button>
                         </div>
                     </div>
                 </section>
 
-                <section>
-                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
-                        <div>
-                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Academics</h3>
-                            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">School & Foundation</p>
-                        </div>
-                        <button onclick="window.showScreen('screen-view-academics')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
-                    </div>
-                    
-                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-3 md:gap-4 pb-4">
-                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-lg md:text-xl"><i class="fa-solid fa-pencil"></i></div>
-                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class VI</h4>
-                        </div>
-                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-lg md:text-xl"><i class="fa-solid fa-book"></i></div>
-                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class VII</h4>
-                        </div>
-                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-lg md:text-xl"><i class="fa-solid fa-flask"></i></div>
-                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class VIII</h4>
-                        </div>
-                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-lg md:text-xl"><i class="fa-solid fa-atom"></i></div>
-                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class IX</h4>
-                        </div>
-                        <div class="snap-center shrink-0 w-32 md:w-36 bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer flex flex-col items-center text-center">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-lg md:text-xl"><i class="fa-solid fa-square-root-variable"></i></div>
-                            <h4 class="text-xs md:text-sm font-bold text-slate-900 dark:text-white">Class X</h4>
-                        </div>
-                    </div>
-                </section>
-
+                <!-- Dynamic Arena Section -->
                 <section class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
                     <div class="flex items-end justify-between mb-6">
                         <div>
@@ -238,157 +318,55 @@
                             <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Free Strict Evaluation Portal</p>
                         </div>
                     </div>
-
-                    <div class="mb-6">
-                        <div class="flex items-end justify-between mb-3">
-                            <h5 class="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">NEET UG Minor Tests</h5>
-                            <button onclick="window.showScreen('screen-view-arena-neet')" class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
-                        </div>
-                        <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2">
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span>
-                            </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span>
-                            </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 3</span>
-                            </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
-                                <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
-                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex items-end justify-between mb-3">
-                            <h5 class="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">UPSC CSE GS Tests</h5>
-                            <button onclick="window.showScreen('screen-view-arena-upsc')" class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
-                        </div>
-                        <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2">
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span>
-                            </button>
-                            <button class="shrink-0 w-20 h-16 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span>
-                            </button>
-                        </div>
+                    <!-- JS will inject dynamic categories and horizontal scroll lists here -->
+                    <div id="dynamic-arena-container" class="space-y-6">
+                        <div class="text-center text-slate-400 text-sm py-4">Loading Arenas...</div>
                     </div>
                 </section>
-            </div>
-            <!-- #endregion -->
 
-            <!-- #region SCREEN: VIEW COMPETITIVE BUNDLES -->
-            <div id="screen-view-competitive" class="app-screen hidden space-y-6">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <div>
-                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Competitive Bundles</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">All available courses</p>
+                <!-- Meet Our Educators Section -->
+                <section>
+                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
+                        <div>
+                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Meet Our Top Educators</h3>
+                            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Learn from the absolute best.</p>
+                        </div>
+                        <button class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">
+                            View All
+                        </button>
                     </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col">
-                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Master all 13 pillars with our clinical, high-scoring ecosystem.</p>
-                        <button onclick="window.initiateCheckout('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100 dark:border-emerald-800">Enroll Now</button>
+                    
+                    <!-- JS will inject dynamic educator cards here -->
+                    <div id="dynamic-educator-container" class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
+                        <div class="text-center text-slate-400 text-sm w-full py-4">Loading Educators...</div>
                     </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col">
-                        <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 dark:text-blue-400 text-2xl"><i class="fa-solid fa-landmark"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC General Studies</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Comprehensive coverage of GS Papers I, II, III, and IV.</p>
-                        <button onclick="window.initiateCheckout('UPSC General Studies')" class="mt-auto w-full bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100 dark:border-blue-800">Enroll Now</button>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col">
-                        <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">The ultimate medical entrance preparation ecosystem.</p>
-                        <button onclick="window.initiateCheckout('NEET Undergraduate')" class="mt-auto w-full bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100 dark:border-rose-800">Enroll Now</button>
-                    </div>
-                </div>
-            </div>
-            <!-- #endregion -->
+                </section>
 
-            <!-- #region SCREEN: VIEW ACADEMICS -->
-            <div id="screen-view-academics" class="app-screen hidden space-y-6">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <div>
-                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Academics</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">School & Foundation Classes</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-xl"><i class="fa-solid fa-pencil"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VI</h4>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-xl"><i class="fa-solid fa-book"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VII</h4>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-xl"><i class="fa-solid fa-flask"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VIII</h4>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-xl"><i class="fa-solid fa-atom"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class IX</h4>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
-                        <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-xl"><i class="fa-solid fa-square-root-variable"></i></div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class X</h4>
-                    </div>
-                </div>
             </div>
-            <!-- #endregion -->
-
-            <!-- #region SCREEN: VIEW ARENA NEET & UPSC -->
-            <div id="screen-view-arena-neet" class="app-screen hidden space-y-6">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <div>
-                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">NEET UG Arena</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">All available minor & major tests</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm"><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span></button>
-                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm"><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span></button>
-                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm"><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 3</span></button>
-                    <button class="h-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed">
-                        <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
-                    </button>
-                </div>
-            </div>
-            <div id="screen-view-arena-upsc" class="app-screen hidden space-y-6">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <div>
-                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">UPSC GS Arena</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">All available GS tests</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm"><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 1</span></button>
-                    <button class="h-20 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center transition-colors shadow-sm"><span class="text-sm font-bold text-slate-700 dark:text-slate-300">Test 2</span></button>
-                </div>
-            </div>
-            <!-- #endregion -->
 
             <!-- ========================================== -->
-            <!-- #region SCREEN: STUDENT ENROLLMENTS -->
+            <!-- SCREEN: COURSE VIEWER (STUDENT CONSUMPTION) -->
+            <!-- ========================================== -->
+            <div id="screen-course-view" class="app-screen hidden space-y-6">
+                <div class="flex items-center gap-4 mb-6">
+                    <button onclick="window.showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h3 id="course-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading...</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Lin Academy Premium</p>
+                    </div>
+                </div>
+                
+                <div class="student-consumption-mode">
+                    <input type="text" id="student-main-title" readonly class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white pointer-events-none px-0" />
+                    <input type="text" id="student-sub-title" readonly class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 pointer-events-none px-0" />
+                    <div id="course-render-canvas" class="space-y-4 transition-colors"></div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- ENROLLMENTS SCREEN -->
             <!-- ========================================== -->
             <div id="screen-enrollments" class="app-screen hidden space-y-6">
                 <div>
@@ -397,69 +375,33 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Tile 1 (Paid Example) -->
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 dark:border-blue-500/30 shadow-md flex flex-col relative overflow-hidden">
+                    <!-- Static demo enrollment -->
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 shadow-md flex flex-col relative overflow-hidden">
                         <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
-                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
-                        
-                        <button onclick="window.openCourseView('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2">
-                            Explore Course <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- Tile 2 (Paid Example) -->
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 dark:border-blue-500/30 shadow-md flex flex-col relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
-                        <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div>
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
-                        
-                        <button onclick="window.openCourseView('NEET Undergraduate')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md flex items-center justify-center gap-2">
-                            Explore Course <i class="fa-solid fa-arrow-right"></i>
+                        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 text-2xl">
+                            <i class="fa-solid fa-microscope"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">UPSC CSE Optional Zoology</h4>
+                        <button onclick="window.openCourseView('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md">
+                            Explore Course
                         </button>
                     </div>
                 </div>
             </div>
-            <!-- #endregion -->
 
             <!-- ========================================== -->
-            <!-- #region SCREEN: COURSE VIEWER (STUDENT CONSUMPTION) -->
-            <!-- ========================================== -->
-            <div id="screen-course-view" class="app-screen hidden space-y-6">
-                <!-- Back Header -->
-                <div class="flex items-center gap-4 mb-6">
-                    <button onclick="window.showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <div>
-                        <h3 id="course-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading Course...</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Lin Academy Premium</p>
-                    </div>
-                </div>
-
-                <!-- DYNAMIC CONTENT CONTAINER (With the Magic Shield) -->
-                <div class="student-consumption-mode">
-                    <input type="text" id="student-main-title" readonly class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white pointer-events-none px-0" />
-                    <input type="text" id="student-sub-title" readonly class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 pointer-events-none px-0" />
-                    
-                    <div id="course-render-canvas" class="space-y-4 transition-colors">
-                        <!-- Fetched Blocks will be injected here via Firebase -->
-                    </div>
-                </div>
-            </div>
-            <!-- #endregion -->
-
-            <!-- ========================================== -->
-            <!-- #region MS WORD STYLE ADMIN COMMAND CENTER -->
+            <!-- MS WORD STYLE ADMIN COMMAND CENTER -->
             <!-- ========================================== -->
             <div id="screen-admin" class="app-screen hidden space-y-6">
                 
                 <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 text-9xl opacity-5"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <div class="absolute -right-10 -top-10 text-9xl opacity-5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
                     <div class="relative z-10">
-                        <span class="bg-rose-500/20 text-rose-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block border border-rose-500/30">Educator Superpower</span>
+                        <span class="bg-rose-500/20 text-rose-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block border border-rose-500/30">
+                            Educator Superpower
+                        </span>
                         <h2 class="text-3xl md:text-4xl font-extrabold font-serif mb-2 text-white">Visual Command Center</h2>
                         <p class="text-slate-400 text-sm">Build courses exactly how students will see them. Drafts auto-save to cloud.</p>
                     </div>
@@ -467,81 +409,148 @@
 
                 <!-- ADMIN TABS -->
                 <div class="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto hide-scrollbar">
-                    <button onclick="window.switchAdminSubTab('course')" class="admin-tab-btn active text-brand-blue font-bold px-4 py-2 border-b-2 border-brand-blue whitespace-nowrap">Course Builder</button>
-                    <button onclick="window.switchAdminSubTab('homecms')" class="admin-tab-btn text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-laptop-code mr-1"></i> Homepage CMS</button>
+                    <button onclick="window.switchAdminSubTab('course')" class="admin-tab-btn active text-brand-blue font-bold px-4 py-2 border-b-2 border-brand-blue whitespace-nowrap">
+                        Course Builder
+                    </button>
+                    <button onclick="window.switchAdminSubTab('homecms')" class="admin-tab-btn text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap">
+                        <i class="fa-solid fa-laptop-code mr-1"></i> Homepage CMS
+                    </button>
                 </div>
 
                 <!-- ========================================== -->
-                <!-- 🔥 NEW: SUB TAB: HOMEPAGE CMS ENGINE 🔥 -->
+                <!-- HOMEPAGE CMS ENGINE -->
                 <!-- ========================================== -->
                 <div id="admin-subtab-homecms" class="admin-subtab hidden space-y-8">
                     
-                    <!-- CMS: Flash Notification Ticker -->
+                    <!-- CMS: Global App Logo -->
                     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-bullhorn text-rose-500 mr-2"></i>Flash Notification Ticker</h4>
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <input type="text" id="cms-ticker-text" placeholder="e.g., 🚨 UPSC CSE 2026 Notification Out!" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-brand-blue dark:text-white">
-                            <select id="cms-ticker-status" class="w-full md:w-48 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-brand-blue dark:text-white font-bold">
-                                <option value="active">🟢 Active</option>
-                                <option value="hidden">🔴 Hidden</option>
-                            </select>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-4">
+                            <i class="fa-solid fa-image text-brand-blue mr-2"></i>Global App Logo
+                        </h4>
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+                                <img id="cms-logo-preview" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i class="fa-solid fa-upload text-slate-400"></i>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <input type="file" id="cms-logo-upload" accept="image/*" class="hidden" onchange="window.previewImage(this, 'cms-logo-preview')">
+                                <button onclick="document.getElementById('cms-logo-upload').click()" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold px-3 py-1.5 rounded">
+                                    Upload/Replace Logo
+                                </button>
+                                <button onclick="window.clearImagePreview('cms-logo-preview', 'cms-logo-upload')" class="text-xs text-rose-500 hover:underline text-left">
+                                    Remove
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- CMS: Featured Event -->
-                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-star text-amber-500 mr-2"></i>Featured Event Controller</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT TITLE</label><input type="text" id="cms-event-title" placeholder="Mastering Mains Answer Writing" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
-                            <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON TEXT</label><input type="text" id="cms-event-btn-text" placeholder="Register Now" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
-                            <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT SUBTITLE / DESCRIPTION</label><textarea id="cms-event-desc" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></textarea></div>
-                            <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON REDIRECT LINK (URL)</label><input type="text" id="cms-event-link" placeholder="https://meet.google.com/..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
-                        </div>
-                    </div>
-
-                    <!-- CMS: Challenger Arena Manager -->
+                    <!-- CMS: Notification Bell Manager -->
                     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-bolt text-blue-500 mr-2"></i>Arena Test Manager</h4>
-                            <button onclick="window.cmsAddArenaTest()" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold">+ Add Test</button>
+                            <h4 class="font-bold text-slate-900 dark:text-white">
+                                <i class="fa-solid fa-bell text-amber-500 mr-2"></i>Notification Manager
+                            </h4>
+                            <button onclick="window.cmsAddNotification()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">
+                                + Add Notification
+                            </button>
                         </div>
+                        <div id="cms-notification-list" class="space-y-3" ondragover="window.allowDrop(event)" ondrop="window.dropSort(event)">
+                            <!-- Dynamic Notifications Go Here -->
+                            <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">
+                                Click "+ Add Notification" to create alerts. Drag to reorder priority.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CMS: Featured Event Controller -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-4">
+                            <i class="fa-solid fa-star text-indigo-500 mr-2"></i>Featured Event Controller
+                        </h4>
                         
-                        <div id="cms-arena-list" class="space-y-3">
-                            <!-- JS will inject dynamic test rows here -->
-                            <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Test" to create a new Mock Test button on the homepage.</div>
+                        <div class="mb-4">
+                            <label class="text-[10px] font-bold text-slate-400 mb-2 block">BANNER IMAGE (16:9 RECOMMENDED)</label>
+                            <div class="w-full h-40 md:h-48 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 relative cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors" onclick="document.getElementById('cms-event-img-upload').click()">
+                                <img id="cms-event-img-preview" class="absolute inset-0 w-full h-full object-cover hidden z-10">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
+                                <span class="text-xs text-slate-500 font-medium">Click to upload banner image</span>
+                            </div>
+                            <input type="file" id="cms-event-img-upload" accept="image/*" class="hidden" onchange="window.previewImage(this, 'cms-event-img-preview')">
+                            <div class="flex justify-end mt-2">
+                                <button onclick="window.clearImagePreview('cms-event-img-preview', 'cms-event-img-upload')" class="text-[10px] text-rose-500 hover:underline">
+                                    Remove Image
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT TITLE</label>
+                                <input type="text" id="cms-event-title" placeholder="Mastering Mains Answer Writing" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON TEXT</label>
+                                <input type="text" id="cms-event-btn-text" placeholder="Register Now" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT SUBTITLE</label>
+                                <textarea id="cms-event-desc" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON REDIRECT LINK (URL)</label>
+                                <input type="text" id="cms-event-link" placeholder="https://meet.google.com/..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CMS: Arena Category & Test Manager -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-slate-900 dark:text-white">
+                                <i class="fa-solid fa-bolt text-blue-500 mr-2"></i>Arena Test Manager
+                            </h4>
+                            <button onclick="window.cmsAddArenaCategory()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">
+                                + Add Category
+                            </button>
+                        </div>
+                        <div id="cms-arena-category-list" class="space-y-6">
+                            <!-- Dynamic Categories Go Here -->
+                            <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.
+                            </div>
                         </div>
                     </div>
 
                     <!-- CMS: Educator Profiles -->
                     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-chalkboard-user text-purple-500 mr-2"></i>Educator Profiles</h4>
-                            <button onclick="window.cmsAddEducator()" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg font-bold">+ Add Educator</button>
+                            <h4 class="font-bold text-slate-900 dark:text-white">
+                                <i class="fa-solid fa-chalkboard-user text-purple-500 mr-2"></i>Educator Profiles
+                            </h4>
+                            <button onclick="window.cmsAddEducator()" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">
+                                + Add Educator
+                            </button>
                         </div>
-                        
-                        <div id="cms-educator-list" class="space-y-3">
-                            <!-- JS will inject dynamic educator rows here -->
-                            <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Educator" to create a public profile.</div>
+                        <div id="cms-educator-list" class="space-y-4">
+                            <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">
+                                Click "+ Add Educator" to create a public profile.
+                            </div>
                         </div>
                     </div>
 
                     <!-- CMS Master Save Button -->
-                    <div class="flex justify-end pt-4">
-                        <button onclick="window.saveCMSData()" class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-3.5 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
-                            <i class="fa-solid fa-database"></i> Save All CMS Changes
+                    <div class="flex justify-end pt-4 pb-8 border-t border-slate-200 dark:border-slate-800">
+                        <button onclick="window.saveCMSData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-2 text-lg">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Publish Homepage
                         </button>
                     </div>
-
                 </div>
+
                 <!-- ========================================== -->
-
-
-                <!-- SUB TAB: COURSE BUILDER -->
+                <!-- COURSE BUILDER SUB TAB -->
+                <!-- ========================================== -->
                 <div id="admin-subtab-course" class="admin-subtab space-y-6">
-                    <!-- THE RIBBON (Tools) -->
                     <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
-                        
-                        <!-- Top Row: Course Select -->
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
                             <div class="flex-grow w-full md:w-auto flex items-center gap-3">
                                 <select id="admin-course-selector" onchange="window.loadDraftForAdmin(this.value)" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
@@ -549,39 +558,53 @@
                                     <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
                                     <option value="NEET Undergraduate">NEET Undergraduate</option>
                                 </select>
-                                <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
+                                <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden">
+                                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud
+                                </span>
                             </div>
                         </div>
                         
-                        <!-- Bottom Row: Insert Tools -->
                         <div id="admin-editor-toolbar" class="hidden flex flex-wrap gap-2 justify-center md:justify-start">
-                            <button onclick="window.addBlock('text')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-heading text-purple-400"></i> Text</button>
-                            <button onclick="window.addBlock('table')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-table text-cyan-400"></i> Table</button>
+                            <button onclick="window.addBlock('text')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-heading text-purple-400 mr-1"></i> Text
+                            </button>
+                            <button onclick="window.addBlock('table')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-table text-cyan-400 mr-1"></i> Table
+                            </button>
                             <div class="w-px bg-slate-700 mx-1 my-1"></div>
-                            <button onclick="window.addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-folder-plus text-amber-400"></i> Folder</button>
-                            <button onclick="window.addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-video text-red-400"></i> Live Meet</button>
-                            <button onclick="window.addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-play text-blue-400"></i> Video</button>
-                            <button onclick="window.addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-file-pdf text-rose-400"></i> PDF</button>
-                            <button onclick="window.openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700"><i class="fa-solid fa-flask text-emerald-400"></i> Mock Test</button>
+                            <button onclick="window.addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-folder-plus text-amber-400 mr-1"></i> Folder
+                            </button>
+                            <button onclick="window.addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-video text-red-400 mr-1"></i> Live
+                            </button>
+                            <button onclick="window.addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-play text-blue-400 mr-1"></i> Video
+                            </button>
+                            <button onclick="window.addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-file-pdf text-rose-400 mr-1"></i> PDF
+                            </button>
+                            <button onclick="window.openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">
+                                <i class="fa-solid fa-flask text-emerald-400 mr-1"></i> Mock Test
+                            </button>
                         </div>
                     </div>
 
-                    <!-- THE CANVAS (The Document) -->
                     <div id="admin-draft-canvas-wrapper" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
                         
-                        <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
-                        <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 focus:ring-0 px-0" />
+                        <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 px-0" />
                         
-                        <!-- Dropzone for Folders and Blocks -->
+                        <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 px-0" />
+                        
                         <div id="editor-canvas-dropzone" ondragover="window.allowDrop(event)" ondrop="window.drop(event)" onchange="window.autoSaveDraft()" class="flex-grow space-y-4 border-2 border-dashed border-brand-blue/30 bg-blue-50/30 dark:border-slate-700 dark:bg-slate-800/30 rounded-2xl p-4 transition-colors">
                             <div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium">
-                                <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.
+                                <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>
+                                Select a course, then use the ribbon above to insert folders and blocks here.
                             </div>
                         </div>
 
-                        <!-- Final Publish Button -->
                         <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                            <button onclick="window.publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                            <button onclick="window.publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> Publish to Enrollments
                             </button>
                         </div>
@@ -589,31 +612,34 @@
                 </div>
 
             </div>
-            <!-- #endregion -->
 
         </div>
     </main>
 
-    <!-- #region MOBILE BOTTOM NAV -->
+    <!-- ========================================== -->
+    <!-- MOBILE BOTTOM NAV -->
+    <!-- ========================================== -->
     <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full glass-panel border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
         <button onclick="window.showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95">
-            <i class="fa-solid fa-house text-xl mb-0.5"></i><span class="text-[10px] font-bold">Home</span>
+            <i class="fa-solid fa-house text-xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Home</span>
         </button>
         <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95">
-            <i class="fa-solid fa-layer-group text-xl mb-0.5"></i><span class="text-[10px] font-bold">Enrollments</span>
+            <i class="fa-solid fa-layer-group text-xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Enrollments</span>
         </button>
-        <!-- Mobile Secret Admin Nav -->
         <button id="mobile-nav-admin-btn" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 text-rose-500 hover:text-rose-600 transition-all active:scale-95">
-            <i class="fa-solid fa-wand-magic-sparkles text-xl mb-0.5"></i><span class="text-[10px] font-bold">Admin</span>
+            <i class="fa-solid fa-wand-magic-sparkles text-xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Admin</span>
         </button>
         <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95">
-            <i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span>
+            <i class="fa-solid fa-user text-xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Profile</span>
         </button>
     </nav>
-    <!-- #endregion -->
 
     <!-- ========================================== -->
-    <!-- #region MODALS (Auth, Test Creator) -->
+    <!-- MODALS -->
     <!-- ========================================== -->
 
     <!-- 1. AUTH MODAL -->
@@ -623,20 +649,38 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <div class="p-8">
-                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 mb-6 shadow-sm border border-blue-100 dark:border-blue-800/50"><i class="fa-solid fa-user-shield text-2xl"></i></div>
+                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 mb-6 shadow-sm border border-blue-100 dark:border-blue-800/50">
+                    <i class="fa-solid fa-user-shield text-2xl"></i>
+                </div>
                 <h3 id="auth-title" class="text-2xl font-extrabold text-slate-900 dark:text-white font-serif mb-1">Welcome Back</h3>
                 <p id="auth-subtitle" class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Enter your credentials to access your vault.</p>
+                
                 <button type="button" onclick="window.handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl transition-all shadow-sm mb-4">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> 
                     Continue with Google
                 </button>
-                <div class="relative flex items-center py-2 mb-4"><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div><span class="flex-shrink-0 mx-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">OR EMAIL</span><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div></div>
+                
+                <div class="relative flex items-center py-2 mb-4">
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                    <span class="flex-shrink-0 mx-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">OR EMAIL</span>
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                </div>
+                
                 <form id="auth-form" class="space-y-4" onsubmit="window.handleAuth(event)">
-                    <div><input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="student@gmail.com"></div>
-                    <div><input type="password" id="auth-password" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="••••••••"></div>
+                    <div>
+                        <input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="student@gmail.com">
+                    </div>
+                    <div>
+                        <input type="password" id="auth-password" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="••••••••">
+                    </div>
                     <button type="submit" id="auth-submit-btn" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all mt-2">Sign In</button>
                 </form>
-                <div class="mt-6 text-center"><button type="button" onclick="window.toggleAuthMode()" id="auth-toggle-btn" class="text-sm text-slate-500 hover:text-brand-blue font-semibold transition-colors">Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span></button></div>
+                
+                <div class="mt-6 text-center">
+                    <button type="button" onclick="window.toggleAuthMode()" id="auth-toggle-btn" class="text-sm text-slate-500 hover:text-brand-blue font-semibold transition-colors">
+                        Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -644,53 +688,112 @@
     <!-- 2. TEST CREATOR MODAL -->
     <div id="test-creator-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative hide-scrollbar">
-            <button onclick="window.closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
+            
+            <button onclick="window.closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
             <div class="p-6 md:p-8">
                 <div class="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                    <div><h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> Interactive Test Creator</h3><p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p></div>
-                    <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm"><span id="draft-counter">0</span> Drafted</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-flask text-emerald-500"></i> Interactive Test Creator
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p>
+                    </div>
+                    <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm">
+                        <span id="draft-counter">0</span> Drafted
+                    </div>
                 </div>
                 
                 <form id="exam-builder-form" class="space-y-6">
+                    <!-- Global Exam Settings -->
                     <div class="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative">
-                        <span class="absolute -top-2.5 left-4 bg-slate-100 dark:bg-slate-800 px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded shadow-sm">Global Exam Settings</span>
+                        <span class="absolute -top-2.5 left-4 bg-slate-100 dark:bg-slate-800 px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded shadow-sm">
+                            Global Exam Settings
+                        </span>
+                        
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                            <div class="col-span-2 md:col-span-4"><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Exam Title</label><input type="text" id="exam-setting-title" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Duration (Mins)</label><input type="number" id="exam-setting-time" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider mb-2">Correct (+)</label><input type="number" step="0.1" id="exam-setting-pos" class="w-full bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Incorrect (-)</label><input type="number" step="0.1" id="exam-setting-neg" class="w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Pass %</label><input type="number" id="exam-setting-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
+                            <div class="col-span-2 md:col-span-4">
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Exam Title</label>
+                                <input type="text" id="exam-setting-title" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Duration (Mins)</label>
+                                <input type="number" id="exam-setting-time" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider mb-2">Correct (+)</label>
+                                <input type="number" step="0.1" id="exam-setting-pos" class="w-full bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Incorrect (-)</label>
+                                <input type="number" step="0.1" id="exam-setting-neg" class="w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Pass %</label>
+                                <input type="number" id="exam-setting-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white">
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Question Input -->
                     <div class="space-y-4">
-                        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Question Text</label><textarea id="q-text" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label><input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label><input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label><input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label><input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Question Text</label>
+                            <textarea id="q-text" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea>
                         </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label>
+                                <input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label>
+                                <input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label>
+                                <input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label>
+                                <input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white">
+                            </div>
+                        </div>
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                             <div>
                                 <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Correct Answer</label>
-                                <select id="q-correct" class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 dark:text-emerald-300 font-bold"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
+                                <select id="q-correct" class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 dark:text-emerald-300 font-bold">
+                                    <option value="0">Option 1</option>
+                                    <option value="1">Option 2</option>
+                                    <option value="2">Option 3</option>
+                                    <option value="3">Option 4</option>
+                                </select>
                             </div>
-                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Explanation</label><textarea id="q-exp" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Explanation</label>
+                                <textarea id="q-exp" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea>
+                            </div>
                         </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <button type="button" onclick="window.addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all">+ Add Question to Draft</button>
-                        <button type="button" onclick="window.publishExamToFirebase()" class="px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center gap-2">Save & Drop to Canvas</button>
+                        <button type="button" onclick="window.addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all">
+                            + Add Question to Draft
+                        </button>
+                        <button type="button" onclick="window.publishExamToFirebase()" class="px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                            Save & Drop to Canvas
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- #endregion -->
 
-    <!-- IMPORT EXTERNAL JAVASCRIPT -->
+    <!-- EXTERNAL JS -->
     <script type="module" src="app.js"></script>
 
 </body>
