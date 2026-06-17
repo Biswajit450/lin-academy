@@ -27,7 +27,9 @@ window.laStorage = storage;
 // 1. SPA ROUTING & UI UTILITIES
 // ==========================================
 window.showScreen = function(screenId) {
-    document.querySelectorAll('.app-screen').forEach(screen => screen.classList.add('hidden'));
+    document.querySelectorAll('.app-screen').forEach(screen => {
+        screen.classList.add('hidden');
+    });
     
     // Hide Editor specific elements if not on admin screen
     if(screenId !== 'screen-admin') {
@@ -41,6 +43,55 @@ window.showScreen = function(screenId) {
         targetScreen.classList.remove('hidden');
     }
     window.scrollTo(0, 0);
+}
+
+// BUG FIX: Dynamic "View All" Functionality
+window.showGenericViewAll = function(title, type) {
+    document.getElementById('generic-view-title').innerText = title;
+    const grid = document.getElementById('generic-view-grid');
+    grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-10">Loading...</div>';
+    
+    window.showScreen('screen-generic-view');
+
+    getDoc(doc(db, "cms", "homepage")).then(snap => {
+        if(snap.exists()) {
+            const data = snap.data();
+            grid.innerHTML = '';
+            
+            if(type === 'educators' && data.educators) {
+                data.educators.forEach(edu => {
+                    const photo = edu.photoUrl || `https://ui-avatars.com/api/?name=${edu.name}&background=2563eb&color=fff`;
+                    grid.innerHTML += `
+                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer">
+                            <img src="${photo}" class="w-20 h-20 rounded-full mb-4 object-cover border-4 border-slate-50 dark:border-slate-800 shadow-sm">
+                            <h4 class="font-bold text-slate-900 dark:text-white">${edu.name}</h4>
+                            <p class="text-[10px] text-brand-blue uppercase font-bold tracking-wider mt-1">${edu.expertise}</p>
+                        </div>`;
+                });
+            } else if(type.startsWith('arena_')) {
+                const catName = type.split('_')[1];
+                const cat = data.arenaCategories.find(c => c.name === catName);
+                if(cat && cat.tests) {
+                    cat.tests.forEach(test => {
+                        if(test.status === 'locked') {
+                            grid.innerHTML += `
+                                <button class="h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed shadow-sm">
+                                    <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
+                                    <div class="text-[10px] font-bold text-slate-500 mt-1 truncate w-full px-2">${test.name}</div>
+                                </button>`;
+                        } else {
+                            grid.innerHTML += `
+                                <button onclick="window.consumeContent('test', '${test.vaultId}')" class="h-24 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col items-center justify-center shadow-sm hover:-translate-y-1 transition-transform">
+                                    <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-play mr-1"></i> Live</span>
+                                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300 mt-1.5 truncate w-full px-2">${test.name}</div>
+                                </button>`;
+                        }
+                    });
+                }
+            }
+        }
+    });
 }
 
 window.toggleDarkMode = function() { 
@@ -65,7 +116,6 @@ window.previewImage = function(input, previewId) {
             const img = document.getElementById(previewId);
             img.src = e.target.result;
             img.classList.remove('hidden');
-            // Hide the placeholder icons/text
             const parent = img.parentElement;
             const icon = parent.querySelector('i');
             const span = parent.querySelector('span');
@@ -81,7 +131,6 @@ window.clearImagePreview = function(previewId, inputId) {
     const img = document.getElementById(previewId);
     img.src = '';
     img.classList.add('hidden');
-    // Show the placeholder icons/text again
     const parent = img.parentElement;
     const icon = parent.querySelector('i');
     const span = parent.querySelector('span');
@@ -89,14 +138,19 @@ window.clearImagePreview = function(previewId, inputId) {
     if(span) span.style.display = '';
 }
 
-// Utility to upload file to Firebase Storage
+// BUG FIX: Robust Error handling for Firebase Storage upload
 async function uploadFileToStorage(file, folderPath) {
     if (!file) return null;
-    const filename = Date.now() + '_' + file.name;
-    const storageRef = ref(storage, folderPath + '/' + filename);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    try {
+        const filename = Date.now() + '_' + file.name;
+        const storageRef = ref(storage, folderPath + '/' + filename);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+    } catch(err) {
+        console.error("Storage Upload Error:", err);
+        alert(`Failed to upload image. Error: ${err.message}`);
+        return null;
+    }
 }
 
 // ==========================================
@@ -231,18 +285,25 @@ window.switchAdminSubTab = function(tabId) {
 // CMS Builders (Notifications, Categories, Educators)
 // ------------------------------------------
 
+// BUG FIX: Notification Manager Wiping Bug Resolved via createElement
 window.cmsAddNotification = function(text = '') {
     const list = document.getElementById('cms-notification-list');
-    if(list.querySelector('.text-slate-400')) list.innerHTML = ''; 
+    const placeholder = list.querySelector('.text-slate-400');
+    if(placeholder) placeholder.remove(); 
     
     const id = 'notif-' + Date.now();
-    const row = `
-        <div id="${id}" class="cms-notif-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 cursor-move" draggable="true" ondragstart="window.drag(event)">
-            <i class="fa-solid fa-grip-vertical text-slate-400 px-2 cursor-grab"></i>
-            <input type="text" class="notif-text w-full bg-transparent border-none outline-none text-sm text-slate-800 dark:text-white" value="${text}" placeholder="Enter announcement text...">
-            <button onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
-        </div>`;
-    list.insertAdjacentHTML('beforeend', row);
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "cms-notif-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 cursor-move";
+    div.draggable = true;
+    div.ondragstart = window.drag;
+    
+    div.innerHTML = `
+        <i class="fa-solid fa-grip-vertical text-slate-400 px-2 cursor-grab"></i>
+        <input type="text" class="notif-text w-full bg-transparent border-none outline-none text-sm text-slate-800 dark:text-white" value="${text}" placeholder="Enter announcement text...">
+        <button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+    `;
+    list.appendChild(div);
 }
 
 // Drag logic specifically for reordering notifications
@@ -262,32 +323,33 @@ window.dropSort = function(ev) {
 
 window.cmsAddArenaCategory = function(catData = null) {
     const list = document.getElementById('cms-arena-category-list');
-    if(list.querySelector('.text-slate-400.text-center')) list.innerHTML = '';
+    const placeholder = list.querySelector('.text-slate-400.text-center');
+    if(placeholder) placeholder.remove();
     
     const catId = 'cat-' + Date.now() + Math.floor(Math.random()*1000);
     const catName = catData ? catData.name : '';
     
-    const row = `
-        <div id="${catId}" class="cms-arena-cat-item bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
-                <input type="text" class="cat-name w-1/2 bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white text-lg placeholder-slate-400" placeholder="Category Name (e.g., UPSC GS Tests)" value="${catName}">
-                <div class="flex gap-3 items-center">
-                    <button onclick="window.cmsAddArenaTestToCat('${catId}')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold">+ Add Test</button>
-                    <button onclick="document.getElementById('${catId}').remove()" class="text-xs text-rose-500 hover:underline font-bold">Delete Category</button>
-                </div>
+    const div = document.createElement('div');
+    div.id = catId;
+    div.className = "cms-arena-cat-item bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm";
+    div.innerHTML = `
+        <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
+            <input type="text" class="cat-name w-1/2 bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white text-lg placeholder-slate-400" placeholder="Category Name (e.g., UPSC GS Tests)" value="${catName}">
+            <div class="flex gap-3 items-center">
+                <button type="button" onclick="window.cmsAddArenaTestToCat('${catId}')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold">+ Add Test</button>
+                <button type="button" onclick="document.getElementById('${catId}').remove()" class="text-xs text-rose-500 hover:underline font-bold">Delete Category</button>
             </div>
-            <div class="cat-tests-list space-y-3 pl-4 border-l-2 border-slate-200 dark:border-slate-800">
-                <!-- Tests will spawn here -->
-            </div>
-        </div>`;
-    list.insertAdjacentHTML('beforeend', row);
+        </div>
+        <div class="cat-tests-list space-y-3 pl-4 border-l-2 border-slate-200 dark:border-slate-800">
+            </div>`;
+    list.appendChild(div);
     
-    // If we are loading existing data, spawn its children tests
     if(catData && catData.tests) {
         catData.tests.forEach(test => window.cmsAddArenaTestToCat(catId, test));
     }
 }
 
+// BUG FIX: Added "Create New in Vault" button directly linked to Test Modal
 window.cmsAddArenaTestToCat = function(catId, testData = null) {
     const testList = document.getElementById(catId).querySelector('.cat-tests-list');
     const testId = 'test-' + Date.now() + Math.floor(Math.random()*1000);
@@ -296,31 +358,36 @@ window.cmsAddArenaTestToCat = function(catId, testData = null) {
     const vaultId = testData ? testData.vaultId : '';
     const status = testData ? testData.status : 'live';
 
-    const row = `
-        <div id="${testId}" class="cms-arena-test-item flex flex-col md:flex-row gap-3 items-end bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-            <div class="w-full md:w-2/5">
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">TEST NAME</label>
-                <input type="text" class="test-name w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${name}" placeholder="e.g., Minor Test 1">
-            </div>
-            <div class="w-full md:w-2/5">
+    const div = document.createElement('div');
+    div.id = testId;
+    div.className = "cms-arena-test-item flex flex-col md:flex-row gap-3 items-end bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-800";
+    div.innerHTML = `
+        <div class="w-full md:w-2/5">
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">TEST NAME</label>
+            <input type="text" class="test-name w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${name}" placeholder="e.g., Minor Test 1">
+        </div>
+        <div class="w-full md:w-2/5">
+            <div class="flex justify-between items-center">
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">VAULT ID</label>
-                <input type="text" class="test-vault w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${vaultId}" placeholder="Firebase ID">
+                <button type="button" onclick="window.openTestModal()" class="text-emerald-500 hover:underline font-bold text-[10px]"><i class="fa-solid fa-flask"></i> Create New</button>
             </div>
-            <div class="w-full md:w-1/5">
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">STATUS</label>
-                <select class="test-status w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-bold">
-                    <option value="live" ${status==='live'?'selected':''}>🟢 Live</option>
-                    <option value="locked" ${status==='locked'?'selected':''}>🔒 Locked</option>
-                </select>
-            </div>
-            <button onclick="document.getElementById('${testId}').remove()" class="text-slate-400 hover:text-rose-500 p-2 mb-0.5"><i class="fa-solid fa-trash"></i></button>
-        </div>`;
-    testList.insertAdjacentHTML('beforeend', row);
+            <input type="text" class="test-vault w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${vaultId}" placeholder="Firebase ID">
+        </div>
+        <div class="w-full md:w-1/5">
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">STATUS</label>
+            <select class="test-status w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-bold">
+                <option value="live" ${status==='live'?'selected':''}>🟢 Live</option>
+                <option value="locked" ${status==='locked'?'selected':''}>🔒 Locked</option>
+            </select>
+        </div>
+        <button type="button" onclick="document.getElementById('${testId}').remove()" class="text-slate-400 hover:text-rose-500 p-2 mb-0.5"><i class="fa-solid fa-trash"></i></button>`;
+    testList.appendChild(div);
 }
 
 window.cmsAddEducator = function(eduData = null) {
     const list = document.getElementById('cms-educator-list');
-    if(list.querySelector('.text-slate-400.text-center')) list.innerHTML = '';
+    const placeholder = list.querySelector('.text-slate-400.text-center');
+    if(placeholder) placeholder.remove();
     
     const id = 'edu-' + Date.now();
     const name = eduData ? eduData.name : '';
@@ -333,35 +400,36 @@ window.cmsAddEducator = function(eduData = null) {
         : `<img id="preview-${id}" class="absolute inset-0 w-full h-full object-cover hidden">`;
     let iconDisplay = photoUrl ? 'style="display:none;"' : '';
 
-    const row = `
-        <div id="${id}" class="cms-edu-item bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-6 items-start shadow-sm">
-            <div class="flex flex-col items-center gap-2">
-                <div class="shrink-0 w-24 h-24 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden relative bg-white dark:bg-slate-900 cursor-pointer hover:border-brand-blue transition-colors" onclick="document.getElementById('upload-${id}').click()">
-                    ${photoPreviewHtml}
-                    <i class="fa-solid fa-camera text-slate-300 text-2xl" ${iconDisplay}></i>
-                </div>
-                <input type="file" id="upload-${id}" class="edu-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
-                <input type="hidden" class="edu-existing-photo" value="${photoUrl}">
-                <button onclick="window.clearImagePreview('preview-${id}', 'upload-${id}'); document.getElementById('${id}').querySelector('.edu-existing-photo').value='';" class="text-[10px] text-rose-500 hover:underline">Remove Photo</button>
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "cms-edu-item bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-6 items-start shadow-sm";
+    div.innerHTML = `
+        <div class="flex flex-col items-center gap-2">
+            <div class="shrink-0 w-24 h-24 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden relative bg-white dark:bg-slate-900 cursor-pointer hover:border-brand-blue transition-colors" onclick="document.getElementById('upload-${id}').click()">
+                ${photoPreviewHtml}
+                <i class="fa-solid fa-camera text-slate-300 text-2xl" ${iconDisplay}></i>
             </div>
-            
-            <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 block mb-1">EDUCATOR NAME</label>
-                    <input type="text" class="edu-name w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${name}" placeholder="e.g. Dr. Biswajit">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 block mb-1">EXPERTISE</label>
-                    <input type="text" class="edu-exp w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${exp}" placeholder="e.g. Zoology & Anatomy">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="text-[10px] font-bold text-slate-400 block mb-1">QUALIFICATIONS</label>
-                    <input type="text" class="edu-qual w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${qual}" placeholder="e.g. MBBS, AIIMS Delhi">
-                </div>
+            <input type="file" id="upload-${id}" class="edu-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
+            <input type="hidden" class="edu-existing-photo" value="${photoUrl}">
+            <button type="button" onclick="window.clearImagePreview('preview-${id}', 'upload-${id}'); document.getElementById('${id}').querySelector('.edu-existing-photo').value='';" class="text-[10px] text-rose-500 hover:underline">Remove Photo</button>
+        </div>
+        
+        <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">EDUCATOR NAME</label>
+                <input type="text" class="edu-name w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${name}" placeholder="e.g. Dr. Biswajit">
             </div>
-            <button onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors pt-2 md:pt-8"><i class="fa-solid fa-trash text-lg"></i></button>
-        </div>`;
-    list.insertAdjacentHTML('beforeend', row);
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">EXPERTISE</label>
+                <input type="text" class="edu-exp w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${exp}" placeholder="e.g. Zoology & Anatomy">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">QUALIFICATIONS</label>
+                <input type="text" class="edu-qual w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${qual}" placeholder="e.g. MBBS, AIIMS Delhi">
+            </div>
+        </div>
+        <button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors pt-2 md:pt-8"><i class="fa-solid fa-trash text-lg"></i></button>`;
+    list.appendChild(div);
 }
 
 // ------------------------------------------
@@ -379,9 +447,10 @@ window.saveCMSData = async function() {
         let globalLogoUrl = document.getElementById('cms-logo-preview').src;
         const logoFileInput = document.getElementById('cms-logo-upload').files[0];
         if(logoFileInput) {
-            globalLogoUrl = await uploadFileToStorage(logoFileInput, 'cms_images/logo');
+            const upUrl = await uploadFileToStorage(logoFileInput, 'cms_images/logo');
+            if(upUrl) globalLogoUrl = upUrl;
         } else if (!globalLogoUrl || globalLogoUrl.includes('index.html')) {
-            globalLogoUrl = ''; // Means no image is set
+            globalLogoUrl = '';
         }
 
         // 2. Gather Notifications
@@ -395,7 +464,8 @@ window.saveCMSData = async function() {
         let eventBannerUrl = document.getElementById('cms-event-img-preview').src;
         const eventFileInput = document.getElementById('cms-event-img-upload').files[0];
         if(eventFileInput) {
-            eventBannerUrl = await uploadFileToStorage(eventFileInput, 'cms_images/events');
+            const bUrl = await uploadFileToStorage(eventFileInput, 'cms_images/events');
+            if(bUrl) eventBannerUrl = bUrl;
         } else if (!eventBannerUrl || eventBannerUrl.includes('index.html')) {
             eventBannerUrl = '';
         }
@@ -412,7 +482,7 @@ window.saveCMSData = async function() {
         const arenaCategories = [];
         document.querySelectorAll('.cms-arena-cat-item').forEach(catItem => {
             const catName = catItem.querySelector('.cat-name').value.trim();
-            if(!catName) return; // Skip empty categories
+            if(!catName) return; 
             
             const tests = [];
             catItem.querySelectorAll('.cms-arena-test-item').forEach(testItem => {
@@ -432,9 +502,9 @@ window.saveCMSData = async function() {
             let photoUrl = item.querySelector('.edu-existing-photo').value;
             const fileInput = item.querySelector('.edu-upload').files[0];
             
-            // Upload new photo if selected
             if (fileInput) {
-                photoUrl = await uploadFileToStorage(fileInput, 'cms_images/educators');
+                const pUrl = await uploadFileToStorage(fileInput, 'cms_images/educators');
+                if(pUrl) photoUrl = pUrl;
             }
             
             educators.push({ 
@@ -458,7 +528,7 @@ window.saveCMSData = async function() {
         await setDoc(doc(db, "cms", "homepage"), finalCmsData);
         alert("Success! 🚀 Your Homepage CMS is officially published and live for all students.");
         
-        window.renderHomepage(); // Instantly refresh UI
+        window.renderHomepage(); 
 
     } catch(e) { 
         console.error("CMS Save Error", e); 
@@ -589,15 +659,24 @@ window.renderHomepage = async function() {
             // 4. Render Dynamic Arena Categories
             if(data.arenaCategories) {
                 const arenaContainer = document.getElementById('dynamic-arena-container');
-                arenaContainer.innerHTML = ''; // clear old
+                arenaContainer.innerHTML = ''; 
                 
                 data.arenaCategories.forEach(cat => {
                     let testsHtml = '';
                     cat.tests.forEach(test => {
                         if(test.status === 'locked') {
-                            testsHtml += `<button class="shrink-0 w-24 h-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed shadow-sm"><i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i><span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span><div class="text-[9px] font-bold text-slate-500 truncate w-full px-2 mt-1">${test.name}</div></button>`;
+                            testsHtml += `
+                                <button class="shrink-0 w-24 h-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed shadow-sm">
+                                    <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
+                                    <div class="text-[9px] font-bold text-slate-500 truncate w-full px-2 mt-1">${test.name}</div>
+                                </button>`;
                         } else {
-                            testsHtml += `<button onclick="window.consumeContent('test', '${test.vaultId}')" class="shrink-0 w-28 h-20 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col items-center justify-center transition-all hover:-translate-y-1 shadow-sm"><span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-play mr-1"></i> Live</span><div class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate w-full px-2 mt-1.5">${test.name}</div></button>`;
+                            testsHtml += `
+                                <button onclick="window.consumeContent('test', '${test.vaultId}')" class="shrink-0 w-28 h-20 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col items-center justify-center transition-all hover:-translate-y-1 shadow-sm">
+                                    <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-play mr-1"></i> Live</span>
+                                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate w-full px-2 mt-1.5">${test.name}</div>
+                                </button>`;
                         }
                     });
 
@@ -605,7 +684,7 @@ window.renderHomepage = async function() {
                         <div class="mb-6">
                             <div class="flex items-end justify-between mb-3">
                                 <h5 class="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">${cat.name}</h5>
-                                <button class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
+                                <button onclick="window.showGenericViewAll('${cat.name}', 'arena_${cat.name}')" class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
                             </div>
                             <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2 pt-1">
                                 ${testsHtml || '<div class="text-xs text-slate-400">Tests coming soon...</div>'}
@@ -621,8 +700,7 @@ window.renderHomepage = async function() {
                 eduContainer.innerHTML = '';
                 
                 data.educators.forEach(edu => {
-                    const fallbackImg = `https://ui-avatars.com/api/?name=${edu.name}&background=2563eb&color=fff`;
-                    const photo = edu.photoUrl || fallbackImg;
+                    const photo = edu.photoUrl || `https://ui-avatars.com/api/?name=${edu.name}&background=2563eb&color=fff`;
                     
                     const eduHtml = `
                         <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all flex flex-col items-center text-center">
@@ -633,7 +711,6 @@ window.renderHomepage = async function() {
                             <p class="text-xs text-brand-blue dark:text-blue-400 font-bold uppercase tracking-wider mb-2">${edu.expertise}</p>
                             <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-4 h-6">${edu.qualifications}</p>
                             
-                            <!-- Static 5 Star Rating for now -->
                             <div class="flex gap-1 text-amber-400 text-sm mb-2">
                                 <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
                             </div>
@@ -641,6 +718,12 @@ window.renderHomepage = async function() {
                         </div>`;
                     eduContainer.insertAdjacentHTML('beforeend', eduHtml);
                 });
+                
+                // Map the Educator View All button
+                const eduViewAllBtn = document.getElementById('view-all-edu-btn');
+                if(eduViewAllBtn) {
+                    eduViewAllBtn.onclick = () => window.showGenericViewAll('Our Top Educators', 'educators');
+                }
             }
         }
     } catch(e) { console.error("Error rendering homepage", e); }
@@ -1013,29 +1096,33 @@ window.publishExamToFirebase = async function() {
         const blockId = 'test-' + Date.now(); 
         const dropzone = document.getElementById('editor-canvas-dropzone');
         
-        const testHtml = `
-            <div id="${blockId}" class="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
-                <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 text-xl border border-emerald-200 dark:border-emerald-700">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                </div>
-                <div class="flex-grow w-full">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
-                        <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+        if(dropzone) {
+            const testHtml = `
+                <div id="${blockId}" class="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
+                    <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 text-xl border border-emerald-200 dark:border-emerald-700">
+                        <i class="fa-solid fa-clipboard-list"></i>
                     </div>
-                    <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
-                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">Vault ID: ${docRef.id} • ${window.draftQuestions.length} Questions</div>
-                    <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${docRef.id}')">📝 Start Mock Test</button>
-                </div>
-            </div>`;
-            
-        dropzone.insertAdjacentHTML('beforeend', testHtml); 
-        window.autoSaveDraft();
+                    <div class="flex-grow w-full">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
+                            <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
+                        <div class="text-[10px] text-slate-500 font-medium mt-0.5">Vault ID: ${docRef.id} • ${window.draftQuestions.length} Questions</div>
+                        <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${docRef.id}')">📝 Start Mock Test</button>
+                    </div>
+                </div>`;
+                
+            dropzone.insertAdjacentHTML('beforeend', testHtml); 
+            window.autoSaveDraft();
+        }
         
         window.draftQuestions = []; 
         document.getElementById('draft-counter').innerText = "0"; 
         document.getElementById('exam-builder-form').reset(); 
         window.closeTestModal();
+        
+        alert(`Test Saved! Your Vault ID is: ${docRef.id}\nYou can copy this ID and use it in the Arena Test Manager!`);
         
     } catch (e) { 
         console.error(e); 

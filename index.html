@@ -1,8 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- ========================================== -->
-<!-- HEAD & CONFIGURATION -->
-<!-- ========================================== -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -77,9 +74,6 @@
 
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
 
-    <!-- ========================================== -->
-    <!-- DESKTOP SIDEBAR -->
-    <!-- ========================================== -->
     <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
         <div id="desktop-logo-container" class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-xl relative">
             <span id="app-logo-text">LA</span>
@@ -97,9 +91,6 @@
 
     <main class="max-w-4xl mx-auto w-full min-h-screen flex flex-col">
         
-        <!-- ========================================== -->
-        <!-- TOP HEADER -->
-        <!-- ========================================== -->
         <header class="px-4 py-3 md:px-6 md:pt-8 md:pb-4 flex items-center justify-between bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
             <div id="header-unauth" class="flex items-center gap-3">
                 <button onclick="window.openAuthModal('login')" class="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors px-2">Log In</button>
@@ -141,12 +132,8 @@
 
         <div class="px-4 md:px-6 mt-2 md:mt-4 pb-10 relative">
 
-            <!-- ========================================== -->
-            <!-- SCREEN: MAIN DASHBOARD -->
-            <!-- ========================================== -->
             <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
 
-                <!-- Dynamic Featured Event Banner -->
                 <section id="student-featured-event" class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center bg-cover bg-center">
                     <div class="absolute inset-0 bg-slate-900/60 z-0"></div>
                     <div class="relative z-10 max-w-xl">
@@ -157,7 +144,6 @@
                     </div>
                 </section>
 
-                <!-- 100% Restored Static Competitive Bundles -->
                 <section>
                     <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
                         <div>
@@ -188,7 +174,6 @@
                     </div>
                 </section>
 
-                <!-- 100% Restored Static Academics Section -->
                 <section>
                     <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
                         <div>
@@ -221,7 +206,6 @@
                     </div>
                 </section>
 
-                <!-- Dynamic Arena Section -->
                 <section class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
                     <div class="flex items-end justify-between mb-6">
                         <div>
@@ -236,14 +220,13 @@
                     </div>
                 </section>
 
-                <!-- Dynamic Meet Our Educators Section -->
                 <section>
                     <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
                         <div>
                             <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Meet Our Top Educators</h3>
                             <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Learn from the absolute best.</p>
                         </div>
-                        <button class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
+                        <button id="view-all-edu-btn" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                     </div>
                     <div id="dynamic-educator-container" class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
                         <div class="text-center text-slate-400 text-sm w-full py-4">Loading Educators...</div>
@@ -252,9 +235,14 @@
 
             </div>
 
-            <!-- ========================================== -->
-            <!-- SCREEN: COURSE VIEWER (STUDENT CONSUMPTION) -->
-            <!-- ========================================== -->
+            <div id="screen-generic-view" class="app-screen hidden space-y-6">
+                <div class="flex items-center gap-4 mb-6">
+                    <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div><h3 id="generic-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">View All</h3></div>
+                </div>
+                <div id="generic-view-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </div>
+
             <div id="screen-course-view" class="app-screen hidden space-y-6">
                 <div class="flex items-center gap-4 mb-6">
                     <button onclick="window.showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
@@ -273,12 +261,8 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- ENROLLMENTS SCREEN -->
-            <!-- ========================================== -->
             <div id="screen-enrollments" class="app-screen hidden space-y-8">
                 
-                <!-- Competitive Bundles Enrollments -->
                 <div>
                     <div>
                         <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">My Enrollments</h3>
@@ -286,7 +270,6 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- UPSC Tile -->
                         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 shadow-md flex flex-col relative overflow-hidden">
                             <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
                             <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 text-2xl">
@@ -298,8 +281,19 @@
                                 Explore Course
                             </button>
                         </div>
+
+                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 shadow-md flex flex-col relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
+                            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 text-2xl">
+                                <i class="fa-solid fa-landmark"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">UPSC General Studies</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6">Complete ecosystem access.</p>
+                            <button onclick="window.openCourseView('UPSC General Studies')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-md">
+                                Explore Course
+                            </button>
+                        </div>
                         
-                        <!-- NEET Tile (RESTORED) -->
                         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-brand-blue/30 shadow-md flex flex-col relative overflow-hidden">
                             <div class="absolute top-0 right-0 bg-brand-blue text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Active</div>
                             <div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 text-2xl">
@@ -314,7 +308,6 @@
                     </div>
                 </div>
 
-                <!-- Academics Enrollments (ADDED AS REQUESTED) -->
                 <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
                     <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif mb-4">My Academics</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -348,9 +341,6 @@
 
             </div>
 
-            <!-- ========================================== -->
-            <!-- MS WORD STYLE ADMIN COMMAND CENTER -->
-            <!-- ========================================== -->
             <div id="screen-admin" class="app-screen hidden space-y-6">
                 
                 <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
@@ -367,7 +357,6 @@
                     <button onclick="window.switchAdminSubTab('homecms')" class="admin-tab-btn text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-laptop-code mr-1"></i> Homepage CMS</button>
                 </div>
 
-                <!-- HOMEPAGE CMS ENGINE -->
                 <div id="admin-subtab-homecms" class="admin-subtab hidden space-y-8">
                     
                     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
@@ -442,7 +431,6 @@
                     </div>
                 </div>
 
-                <!-- COURSE BUILDER SUB TAB -->
                 <div id="admin-subtab-course" class="admin-subtab space-y-6">
                     <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
@@ -450,7 +438,13 @@
                                 <select id="admin-course-selector" onchange="window.loadDraftForAdmin(this.value)" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
                                     <option value="" disabled selected>-- Select Course to Edit --</option>
                                     <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
+                                    <option value="UPSC General Studies">UPSC General Studies</option>
                                     <option value="NEET Undergraduate">NEET Undergraduate</option>
+                                    <option value="Class VI">Class VI</option>
+                                    <option value="Class VII">Class VII</option>
+                                    <option value="Class VIII">Class VIII</option>
+                                    <option value="Class IX">Class IX</option>
+                                    <option value="Class X">Class X</option>
                                 </select>
                                 <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
                             </div>
@@ -466,26 +460,21 @@
                             <button onclick="window.openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-flask text-emerald-400 mr-1"></i> Mock Test</button>
                         </div>
                     </div>
-
                     <div id="admin-draft-canvas-wrapper" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
-                        <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 px-0" />
-                        <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 px-0" />
+                        <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white px-0" />
+                        <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 px-0" />
                         <div id="editor-canvas-dropzone" ondragover="window.allowDrop(event)" ondrop="window.drop(event)" onchange="window.autoSaveDraft()" class="flex-grow space-y-4 border-2 border-dashed border-brand-blue/30 bg-blue-50/30 dark:border-slate-700 dark:bg-slate-800/30 rounded-2xl p-4 transition-colors">
-                            <div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium">
-                                <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.
-                            </div>
+                            <div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium"><i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.</div>
                         </div>
                         <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
                             <button onclick="window.publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Publish to Enrollments</button>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 
-    <!-- MOBILE BOTTOM NAV -->
     <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full glass-panel border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
         <button onclick="window.showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95"><i class="fa-solid fa-house text-xl mb-0.5"></i><span class="text-[10px] font-bold">Home</span></button>
         <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-layer-group text-xl mb-0.5"></i><span class="text-[10px] font-bold">Enrollments</span></button>
@@ -493,8 +482,6 @@
         <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span></button>
     </nav>
 
-    <!-- MODALS -->
-    <!-- 1. AUTH MODAL -->
     <div id="auth-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transform transition-all relative">
             <button onclick="window.closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"><i class="fa-solid fa-xmark"></i></button>
@@ -502,9 +489,7 @@
                 <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 mb-6 shadow-sm border border-blue-100 dark:border-blue-800/50"><i class="fa-solid fa-user-shield text-2xl"></i></div>
                 <h3 id="auth-title" class="text-2xl font-extrabold text-slate-900 dark:text-white font-serif mb-1">Welcome Back</h3>
                 <p id="auth-subtitle" class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Enter your credentials to access your vault.</p>
-                <button type="button" onclick="window.handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl transition-all shadow-sm mb-4">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google
-                </button>
+                <button type="button" onclick="window.handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl transition-all shadow-sm mb-4"><svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google</button>
                 <div class="relative flex items-center py-2 mb-4"><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div><span class="flex-shrink-0 mx-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">OR EMAIL</span><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div></div>
                 <form id="auth-form" class="space-y-4" onsubmit="window.handleAuth(event)">
                     <div><input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="student@gmail.com"></div>
@@ -516,7 +501,6 @@
         </div>
     </div>
 
-    <!-- 2. TEST CREATOR MODAL -->
     <div id="test-creator-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative hide-scrollbar">
             <button onclick="window.closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
@@ -541,13 +525,13 @@
                     <div class="space-y-4">
                         <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Current Question Text</label><textarea id="q-text" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label><input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label><input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label><input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label><input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label><input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label><input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label><input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label><input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Correct Answer</label><select id="q-correct" class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 dark:text-emerald-300 font-bold"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select></div>
+                            <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Correct Answer</label><select id="q-correct" class="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 font-bold"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select></div>
                             <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Explanation</label><textarea id="q-exp" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></textarea></div>
                         </div>
                     </div>
@@ -561,8 +545,6 @@
         </div>
     </div>
 
-    <!-- EXTERNAL JS -->
     <script type="module" src="app.js"></script>
-
 </body>
 </html>
