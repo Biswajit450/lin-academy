@@ -187,13 +187,29 @@ window.drag = function(ev) {
 
 window.allowDrop = function(ev) { 
     ev.preventDefault(); 
+    ev.stopPropagation(); // BUG FIX: Main canvas ko event churane se rokna
 }
 
 window.drop = function(ev) { 
     ev.preventDefault(); 
+    ev.stopPropagation(); // BUG FIX: Main canvas ko drop churane se rokna
+    
     if(window.draggedElement) { 
         window.draggedElement.classList.remove('opacity-50'); 
-        let dropTarget = ev.target.closest('.folder-dropzone') || document.getElementById('editor-canvas-dropzone'); 
+        
+        // 1. Pehle check karo ki kya folder ke andar drop kiya hai
+        let dropTarget = ev.target.closest('.folder-dropzone'); 
+        
+        // 2. Agar folder ki boundary par drop hua hai, toh zabardasti folder dropzone dhundo
+        if(!dropTarget && ev.target.closest('[id^="folder-"]')) {
+            dropTarget = ev.target.closest('[id^="folder-"]').querySelector('.folder-dropzone');
+        }
+        
+        // 3. Agar folder nahi hai, toh main canvas par drop kardo
+        if(!dropTarget) {
+            dropTarget = document.getElementById('editor-canvas-dropzone'); 
+        }
+        
         if(window.draggedElement !== dropTarget && !window.draggedElement.contains(dropTarget)) { 
             const innerText = dropTarget.querySelector('.pointer-events-none'); 
             if(innerText) innerText.style.display = 'none'; 
