@@ -25,5 +25,5 @@ window.laAuth = auth;
 window.laDb = db;
 window.laStorage = storage;
 
-// The Magic Export: Taaki baaki 4 files in connections ka use kar sakein
+// The Magic Export: Taaki baaki files in connections ka use kar sakein
 export { auth, db, storage, googleProvider };
