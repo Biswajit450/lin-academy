@@ -85,7 +85,7 @@
             <button onclick="window.showScreen('screen-dashboard')" class="text-brand-blue dark:text-blue-400 flex flex-col items-center gap-1 transition-colors"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
             <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
             <button id="nav-admin-btn" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 hover:text-rose-500 text-rose-400 transition-colors drop-shadow-md"><i class="fa-solid fa-wand-magic-sparkles text-xl"></i><span class="text-[10px] font-bold">Admin</span></button>
-            <button class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
+            <button onclick="window.showScreen('screen-profile')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
         </div>
         <div class="w-10 h-10"></div>
     </nav>
@@ -491,14 +491,82 @@
                     </div>
                 </div>
             </div>
-        </div>
+            
+            <div id="screen-profile" class="app-screen hidden space-y-6">
+                
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                    <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                        <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-brand-blue/20 overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800">
+                            <img id="profile-page-pic" src="" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow text-center md:text-left space-y-2">
+                            <h2 id="profile-page-name" class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading...</h2>
+                            <p id="profile-page-email" class="text-sm text-slate-500 dark:text-slate-400 font-medium">Please login</p>
+                            <div class="flex items-center justify-center md:justify-start gap-3 mt-4">
+                                <span class="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full"><i class="fa-solid fa-fire mr-1"></i> 3 Day Streak</span>
+                                <span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full"><i class="fa-solid fa-medal mr-1"></i> Pro Learner</span>
+                            </div>
+                        </div>
+                        <button onclick="window.handleLogout()" class="mt-4 md:mt-0 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800 px-5 py-2.5 rounded-xl font-bold transition-colors text-sm shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-chart-pie text-brand-blue mr-2"></i>My Progress Tracker</h3>
+                        <div class="space-y-4" id="profile-progress-list">
+                            <p class="text-xs text-slate-400">Loading progress...</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-user-gear text-purple-500 mr-2"></i>Settings & Details</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Phone Number</label>
+                                <input type="tel" id="profile-phone" placeholder="+91 98765 43210" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none dark:text-white">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">City / State</label>
+                                <input type="text" id="profile-city" placeholder="e.g., New Delhi" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none dark:text-white">
+                            </div>
+                            <button onclick="window.saveProfileInfo()" class="w-full bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600 text-sm font-bold py-2.5 rounded-lg transition-colors shadow-sm">Save Details</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-circle-info text-amber-500 mr-2"></i>Support & Legal</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <button onclick="window.open('https://wa.me/91XXXXXXXXXX', '_blank')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
+                            <i class="fa-brands fa-whatsapp text-2xl text-emerald-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">WhatsApp Help</span>
+                        </button>
+                        <button onclick="alert('Privacy Policy: Your data is secure with Lin Academy.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
+                            <i class="fa-solid fa-user-shield text-2xl text-blue-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">Privacy Policy</span>
+                        </button>
+                        <button onclick="alert('Terms & Conditions applied.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
+                            <i class="fa-solid fa-file-contract text-2xl text-slate-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">T&C</span>
+                        </button>
+                        <button onclick="alert('7 Days Refund Policy applies as per terms.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
+                            <i class="fa-solid fa-money-bill-transfer text-2xl text-rose-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">Refund Policy</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-center pb-4 pt-2">
+                    <button onclick="alert('This will permanently delete your account and remove all your enrollments. Please contact support via WhatsApp to initiate this request.')" class="text-xs text-slate-400 hover:text-rose-500 font-bold transition-colors underline">Delete My Account</button>
+                </div>
+            </div>
+            </div>
     </main>
 
     <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full glass-panel border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
         <button onclick="window.showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95"><i class="fa-solid fa-house text-xl mb-0.5"></i><span class="text-[10px] font-bold">Home</span></button>
         <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-layer-group text-xl mb-0.5"></i><span class="text-[10px] font-bold">Enrollments</span></button>
         <button id="mobile-nav-admin-btn" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 text-rose-500 hover:text-rose-600 transition-all active:scale-95"><i class="fa-solid fa-wand-magic-sparkles text-xl mb-0.5"></i><span class="text-[10px] font-bold">Admin</span></button>
-        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span></button>
+        <button onclick="window.showScreen('screen-profile')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span></button>
     </nav>
 
     <div id="auth-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity">
