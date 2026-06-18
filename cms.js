@@ -1,0 +1,552 @@
+// cms.js
+
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+import { db, storage } from "./firebase-config.js";
+
+// Image Preview & Clear Utilities for CMS
+window.previewImage = function(input, previewId) {
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById(previewId);
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            const parent = img.parentElement;
+            const icon = parent.querySelector('i');
+            const span = parent.querySelector('span');
+            if(icon) icon.style.display = 'none';
+            if(span) span.style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+window.clearImagePreview = function(previewId, inputId) {
+    document.getElementById(inputId).value = '';
+    const img = document.getElementById(previewId);
+    img.src = '';
+    img.classList.add('hidden');
+    const parent = img.parentElement;
+    const icon = parent.querySelector('i');
+    const span = parent.querySelector('span');
+    if(icon) icon.style.display = '';
+    if(span) span.style.display = '';
+}
+
+// BUG FIX: Base64 Fallback logic to protect from Firebase Security Rule errors
+async function uploadFileToStorage(file, folderPath, fallbackPreviewId) {
+    if (!file) return null;
+    try {
+        const filename = Date.now() + '_' + file.name;
+        const storageRef = ref(storage, folderPath + '/' + filename);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+    } catch(err) {
+        console.warn("Storage upload failed (probably security rules). Executing Smart Base64 Fallback.", err.message);
+        if (fallbackPreviewId) {
+            const imgEl = document.getElementById(fallbackPreviewId);
+            if (imgEl && imgEl.src) return imgEl.src;
+        }
+        return null;
+    }
+}
+
+// ==========================================
+// ADMIN CMS ENGINE (PRO LEVEL)
+// ==========================================
+window.switchAdminSubTab = function(tabId) {
+    document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'text-brand-blue', 'border-brand-blue');
+        btn.classList.add('text-slate-500', 'border-transparent');
+    });
+    
+    document.getElementById('admin-subtab-' + tabId).classList.remove('hidden');
+    event.currentTarget.classList.remove('text-slate-500', 'border-transparent');
+    event.currentTarget.classList.add('active', 'text-brand-blue', 'border-brand-blue');
+    
+    if(tabId === 'homecms') { 
+        window.loadCMSDataIntoAdmin(); 
+    }
+}
+
+window.cmsAddNotification = function(text = '') {
+    const list = document.getElementById('cms-notification-list');
+    const placeholder = list.querySelector('.text-slate-400');
+    if(placeholder) placeholder.remove(); 
+    
+    const id = 'notif-' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "cms-notif-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 cursor-move";
+    div.draggable = true;
+    div.ondragstart = window.drag; // Requires window.drag from course-builder/app.js
+    
+    div.innerHTML = `
+        <i class="fa-solid fa-grip-vertical text-slate-400 px-2 cursor-grab"></i>
+        <input type="text" class="notif-text w-full bg-transparent border-none outline-none text-sm text-slate-800 dark:text-white" value="${text}" placeholder="Enter announcement text...">
+        <button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+    `;
+    list.appendChild(div);
+}
+
+window.dropSort = function(ev) {
+    ev.preventDefault();
+    if(window.draggedElement && window.draggedElement.classList.contains('cms-notif-item')) {
+        const dropTarget = ev.target.closest('.cms-notif-item');
+        const list = document.getElementById('cms-notification-list');
+        
+        if(dropTarget && window.draggedElement !== dropTarget) {
+            dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        } else if (!dropTarget && ev.target.id === 'cms-notification-list') {
+            list.appendChild(window.draggedElement);
+        }
+    }
+}
+
+window.cmsAddArenaCategory = function(catData = null) {
+    const list = document.getElementById('cms-arena-category-list');
+    const placeholder = list.querySelector('.text-slate-400.text-center');
+    if(placeholder) placeholder.remove();
+    
+    const catId = 'cat-' + Date.now() + Math.floor(Math.random()*1000);
+    const catName = catData ? catData.name : '';
+    
+    const div = document.createElement('div');
+    div.id = catId;
+    div.className = "cms-arena-cat-item bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm";
+    div.innerHTML = `
+        <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
+            <input type="text" class="cat-name w-1/2 bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white text-lg placeholder-slate-400" placeholder="Category Name (e.g., UPSC GS Tests)" value="${catName}">
+            <div class="flex gap-3 items-center">
+                <button type="button" onclick="window.cmsAddArenaTestToCat('${catId}')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold">+ Add Test</button>
+                <button type="button" onclick="document.getElementById('${catId}').remove()" class="text-xs text-rose-500 hover:underline font-bold">Delete Category</button>
+            </div>
+        </div>
+        <div class="cat-tests-list space-y-3 pl-4 border-l-2 border-slate-200 dark:border-slate-800">
+        </div>`;
+    list.appendChild(div);
+    
+    if(catData && catData.tests) {
+        catData.tests.forEach(test => window.cmsAddArenaTestToCat(catId, test));
+    }
+}
+
+window.cmsAddArenaTestToCat = function(catId, testData = null) {
+    const testList = document.getElementById(catId).querySelector('.cat-tests-list');
+    const testId = 'test-' + Date.now() + Math.floor(Math.random()*1000);
+    
+    const name = testData ? testData.name : '';
+    const vaultId = testData ? testData.vaultId : '';
+    const status = testData ? testData.status : 'live';
+
+    const div = document.createElement('div');
+    div.id = testId;
+    div.className = "cms-arena-test-item flex flex-col md:flex-row gap-3 items-end bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-800";
+    div.innerHTML = `
+        <div class="w-full md:w-2/5">
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">TEST NAME</label>
+            <input type="text" class="test-name w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${name}" placeholder="e.g., Minor Test 1">
+        </div>
+        <div class="w-full md:w-2/5">
+            <div class="flex justify-between items-center">
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">VAULT ID</label>
+                <button type="button" onclick="window.openTestModal()" class="text-emerald-500 hover:underline font-bold text-[10px]"><i class="fa-solid fa-flask"></i> Create New</button>
+            </div>
+            <input type="text" class="test-vault w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${vaultId}" placeholder="Firebase ID">
+        </div>
+        <div class="w-full md:w-1/5">
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">STATUS</label>
+            <select class="test-status w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-bold">
+                <option value="live" ${status==='live'?'selected':''}>🟢 Live</option>
+                <option value="locked" ${status==='locked'?'selected':''}>🔒 Locked</option>
+            </select>
+        </div>
+        <button type="button" onclick="document.getElementById('${testId}').remove()" class="text-slate-400 hover:text-rose-500 p-2 mb-0.5"><i class="fa-solid fa-trash"></i></button>`;
+    testList.appendChild(div);
+}
+
+window.cmsAddEducator = function(eduData = null) {
+    const list = document.getElementById('cms-educator-list');
+    const placeholder = list.querySelector('.text-slate-400.text-center');
+    if(placeholder) placeholder.remove();
+    
+    const id = 'edu-' + Date.now();
+    const name = eduData ? eduData.name : '';
+    const exp = eduData ? eduData.expertise : '';
+    const qual = eduData ? eduData.qualifications : '';
+    const photoUrl = eduData ? eduData.photoUrl : '';
+    
+    let photoPreviewHtml = photoUrl 
+        ? `<img id="preview-${id}" src="${photoUrl}" class="absolute inset-0 w-full h-full object-cover">` 
+        : `<img id="preview-${id}" class="absolute inset-0 w-full h-full object-cover hidden">`;
+    let iconDisplay = photoUrl ? 'style="display:none;"' : '';
+
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "cms-edu-item bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-6 items-start shadow-sm";
+    div.innerHTML = `
+        <div class="flex flex-col items-center gap-2">
+            <div class="shrink-0 w-24 h-24 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden relative bg-white dark:bg-slate-900 cursor-pointer hover:border-brand-blue transition-colors" onclick="document.getElementById('upload-${id}').click()">
+                ${photoPreviewHtml}
+                <i class="fa-solid fa-camera text-slate-300 text-2xl" ${iconDisplay}></i>
+            </div>
+            <input type="file" id="upload-${id}" class="edu-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
+            <input type="hidden" class="edu-existing-photo" value="${photoUrl}">
+            <button type="button" onclick="window.clearImagePreview('preview-${id}', 'upload-${id}'); document.getElementById('${id}').querySelector('.edu-existing-photo').value='';" class="text-[10px] text-rose-500 hover:underline">Remove Photo</button>
+        </div>
+        
+        <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">EDUCATOR NAME</label>
+                <input type="text" class="edu-name w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${name}" placeholder="e.g. Dr. Biswajit">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">EXPERTISE</label>
+                <input type="text" class="edu-exp w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${exp}" placeholder="e.g. Zoology & Anatomy">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">QUALIFICATIONS</label>
+                <input type="text" class="edu-qual w-full p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${qual}" placeholder="e.g. MBBS, AIIMS Delhi">
+            </div>
+        </div>
+        <button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors pt-2 md:pt-8"><i class="fa-solid fa-trash text-lg"></i></button>`;
+    list.appendChild(div);
+}
+
+window.saveCMSData = async function() {
+    const btn = event.currentTarget; 
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing to Cloud...'; 
+    btn.disabled = true;
+
+    try {
+        let globalLogoUrl = document.getElementById('cms-logo-preview').src;
+        const logoFileInput = document.getElementById('cms-logo-upload').files[0];
+        if(logoFileInput) {
+            const upUrl = await uploadFileToStorage(logoFileInput, 'cms_images/logo', 'cms-logo-preview');
+            if(upUrl) globalLogoUrl = upUrl;
+        } else if (!globalLogoUrl || globalLogoUrl.includes('index.html')) {
+            globalLogoUrl = ''; 
+        }
+
+        const notifications = [];
+        document.querySelectorAll('.cms-notif-item').forEach(item => {
+            const text = item.querySelector('.notif-text').value.trim();
+            if(text) notifications.push(text);
+        });
+
+        let eventBannerUrl = document.getElementById('cms-event-img-preview').src;
+        const eventFileInput = document.getElementById('cms-event-img-upload').files[0];
+        if(eventFileInput) {
+            const bUrl = await uploadFileToStorage(eventFileInput, 'cms_images/events', 'cms-event-img-preview');
+            if(bUrl) eventBannerUrl = bUrl;
+        } else if (!eventBannerUrl || eventBannerUrl.includes('index.html')) {
+            eventBannerUrl = '';
+        }
+
+        const eventData = {
+            bannerUrl: eventBannerUrl,
+            title: document.getElementById('cms-event-title').value, 
+            btnText: document.getElementById('cms-event-btn-text').value,
+            desc: document.getElementById('cms-event-desc').value, 
+            link: document.getElementById('cms-event-link').value
+        };
+
+        const arenaCategories = [];
+        document.querySelectorAll('.cms-arena-cat-item').forEach(catItem => {
+            const catName = catItem.querySelector('.cat-name').value.trim();
+            if(!catName) return; 
+            
+            const tests = [];
+            catItem.querySelectorAll('.cms-arena-test-item').forEach(testItem => {
+                tests.push({
+                    name: testItem.querySelector('.test-name').value, 
+                    vaultId: testItem.querySelector('.test-vault').value,
+                    status: testItem.querySelector('.test-status').value
+                });
+            });
+            arenaCategories.push({ name: catName, tests: tests });
+        });
+
+        const educators = [];
+        const eduNodes = document.querySelectorAll('.cms-edu-item');
+        for (let item of eduNodes) {
+            let photoUrl = item.querySelector('.edu-existing-photo').value;
+            const fileInput = item.querySelector('.edu-upload').files[0];
+            
+            if (fileInput) {
+                const pUrl = await uploadFileToStorage(fileInput, 'cms_images/educators', item.querySelector('img').id);
+                if(pUrl) photoUrl = pUrl;
+            }
+            
+            educators.push({ 
+                name: item.querySelector('.edu-name').value, 
+                expertise: item.querySelector('.edu-exp').value,
+                qualifications: item.querySelector('.edu-qual').value,
+                photoUrl: photoUrl
+            });
+        }
+
+        const finalCmsData = {
+            appLogo: globalLogoUrl,
+            notifications: notifications,
+            event: eventData, 
+            arenaCategories: arenaCategories, 
+            educators: educators, 
+            updatedAt: new Date().toISOString()
+        };
+
+        await setDoc(doc(db, "cms", "homepage"), finalCmsData);
+        alert("Success! 🚀 Your Homepage CMS is officially published and live for all students.");
+        
+        window.renderHomepage(); 
+
+    } catch(e) { 
+        console.error("CMS Save Error", e); 
+        alert("Failed to save CMS data. Check console for details."); 
+    } finally { 
+        btn.innerHTML = originalHtml; 
+        btn.disabled = false; 
+    }
+}
+
+window.loadCMSDataIntoAdmin = async function() {
+    try {
+        const snap = await getDoc(doc(db, "cms", "homepage"));
+        if(snap.exists()) {
+            const data = snap.data();
+            
+            if(data.appLogo) {
+                const logoImg = document.getElementById('cms-logo-preview');
+                logoImg.src = data.appLogo;
+                logoImg.classList.remove('hidden');
+                document.getElementById('cms-logo-upload').parentElement.querySelector('i').style.display = 'none';
+            }
+
+            document.getElementById('cms-notification-list').innerHTML = '';
+            if(data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(text => window.cmsAddNotification(text));
+            } else {
+                document.getElementById('cms-notification-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Notification" to create alerts. Drag to reorder priority.</div>';
+            }
+
+            if(data.event) { 
+                document.getElementById('cms-event-title').value = data.event.title || ''; 
+                document.getElementById('cms-event-btn-text').value = data.event.btnText || ''; 
+                document.getElementById('cms-event-desc').value = data.event.desc || ''; 
+                document.getElementById('cms-event-link').value = data.event.link || ''; 
+                
+                if(data.event.bannerUrl) {
+                    const bannerImg = document.getElementById('cms-event-img-preview');
+                    bannerImg.src = data.event.bannerUrl;
+                    bannerImg.classList.remove('hidden');
+                    bannerImg.parentElement.querySelector('i').style.display = 'none';
+                    bannerImg.parentElement.querySelector('span').style.display = 'none';
+                }
+            }
+            
+            document.getElementById('cms-arena-category-list').innerHTML = '';
+            if(data.arenaCategories && data.arenaCategories.length > 0) { 
+                data.arenaCategories.forEach(cat => window.cmsAddArenaCategory(cat)); 
+            } else { 
+                document.getElementById('cms-arena-category-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.</div>'; 
+            }
+
+            document.getElementById('cms-educator-list').innerHTML = '';
+            if(data.educators && data.educators.length > 0) { 
+                data.educators.forEach(edu => window.cmsAddEducator(edu)); 
+            } else {
+                document.getElementById('cms-educator-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Educator" to create a public profile.</div>';
+            }
+        }
+    } catch(e) { 
+        console.error("CMS Load Error", e); 
+    }
+}
+
+// ==========================================
+// RENDER CMS DATA ON STUDENT HOMEPAGE
+// ==========================================
+
+window.renderHomepage = async function() {
+    try {
+        const snap = await getDoc(doc(db, "cms", "homepage"));
+        if(snap.exists()) {
+            const data = snap.data();
+            
+            if(data.appLogo) {
+                const desktopLogoImg = document.getElementById('app-logo-img');
+                const desktopLogoText = document.getElementById('app-logo-text');
+                if(desktopLogoImg) {
+                    desktopLogoImg.src = data.appLogo;
+                    desktopLogoImg.classList.remove('hidden');
+                    if(desktopLogoText) desktopLogoText.classList.add('hidden');
+                }
+                
+                const mobileLogoImg = document.getElementById('mobile-logo-img');
+                const mobileLogoText = document.getElementById('mobile-logo-text');
+                if(mobileLogoImg) {
+                    mobileLogoImg.src = data.appLogo;
+                    mobileLogoImg.classList.remove('hidden');
+                    if(mobileLogoText) mobileLogoText.classList.add('hidden');
+                }
+            }
+
+            const notifList = document.getElementById('bell-notif-list');
+            const notifCount = document.getElementById('bell-notif-count');
+            const notifIndicator = document.getElementById('bell-notif-indicator');
+            
+            if(data.notifications && data.notifications.length > 0) {
+                notifList.innerHTML = '';
+                notifCount.innerText = `${data.notifications.length} New`;
+                notifIndicator.classList.remove('hidden');
+                
+                data.notifications.forEach(text => {
+                    notifList.innerHTML += `
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                            <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i> ${text}</p>
+                        </div>`;
+                });
+            } else {
+                notifList.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
+                notifCount.innerText = '0 New';
+                notifIndicator.classList.add('hidden');
+            }
+
+            if(data.event) {
+                const eventSection = document.getElementById('student-featured-event');
+                document.getElementById('student-event-title').innerText = data.event.title || 'Welcome';
+                document.getElementById('student-event-desc').innerText = data.event.desc || 'Explore our premium courses.';
+                
+                const btn = document.getElementById('student-event-btn');
+                btn.innerText = data.event.btnText || 'Explore Now';
+                btn.onclick = () => window.open(data.event.link, '_blank');
+                
+                if(data.event.bannerUrl) {
+                    eventSection.style.backgroundImage = `url('${data.event.bannerUrl}')`;
+                }
+            }
+
+            if(data.arenaCategories) {
+                const arenaContainer = document.getElementById('dynamic-arena-container');
+                arenaContainer.innerHTML = ''; 
+                
+                data.arenaCategories.forEach(cat => {
+                    let testsHtml = '';
+                    cat.tests.forEach(test => {
+                        if(test.status === 'locked') {
+                            testsHtml += `
+                                <button class="shrink-0 w-24 h-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed shadow-sm">
+                                    <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
+                                    <div class="text-[9px] font-bold text-slate-500 truncate w-full px-2 mt-1">${test.name}</div>
+                                </button>`;
+                        } else {
+                            testsHtml += `
+                                <button onclick="window.consumeContent('test', '${test.vaultId}')" class="shrink-0 w-28 h-20 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col items-center justify-center transition-all hover:-translate-y-1 shadow-sm">
+                                    <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-play mr-1"></i> Live</span>
+                                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate w-full px-2 mt-1.5">${test.name}</div>
+                                </button>`;
+                        }
+                    });
+
+                    const catHtml = `
+                        <div class="mb-6">
+                            <div class="flex items-end justify-between mb-3">
+                                <h5 class="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">${cat.name}</h5>
+                                <button onclick="window.showGenericViewAll('${cat.name}', 'arena_${cat.name}')" class="text-brand-blue dark:text-blue-400 text-[10px] md:text-xs font-bold hover:underline shrink-0">View All</button>
+                            </div>
+                            <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2 pt-1">
+                                ${testsHtml || '<div class="text-xs text-slate-400">Tests coming soon...</div>'}
+                            </div>
+                        </div>`;
+                    arenaContainer.insertAdjacentHTML('beforeend', catHtml);
+                });
+            }
+
+            if(data.educators) {
+                const eduContainer = document.getElementById('dynamic-educator-container');
+                eduContainer.innerHTML = '';
+                
+                data.educators.forEach(edu => {
+                    const photo = edu.photoUrl || `https://ui-avatars.com/api/?name=${edu.name}&background=2563eb&color=fff`;
+                    
+                    const eduHtml = `
+                        <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md hover:-translate-y-1 transition-all flex flex-col items-center text-center">
+                            <div class="w-20 h-20 rounded-full border-4 border-slate-50 dark:border-slate-800 shadow-sm overflow-hidden mb-4">
+                                <img src="${photo}" class="w-full h-full object-cover" alt="${edu.name}">
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-1">${edu.name}</h4>
+                            <p class="text-xs text-brand-blue dark:text-blue-400 font-bold uppercase tracking-wider mb-2">${edu.expertise}</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-4 h-6">${edu.qualifications}</p>
+                            
+                            <div class="flex gap-1 text-amber-400 text-sm mb-2">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                            </div>
+                            <span class="text-[9px] text-slate-400 font-bold">4.8 / 5 (Student Ratings)</span>
+                        </div>`;
+                    eduContainer.insertAdjacentHTML('beforeend', eduHtml);
+                });
+                
+                const eduViewAllBtn = document.getElementById('view-all-edu-btn');
+                if(eduViewAllBtn) {
+                    eduViewAllBtn.onclick = () => window.showGenericViewAll('Our Top Educators', 'educators');
+                }
+            }
+        }
+    } catch(e) { console.error("Error rendering homepage", e); }
+}
+
+window.showGenericViewAll = function(title, type) {
+    document.getElementById('generic-view-title').innerText = title;
+    const grid = document.getElementById('generic-view-grid');
+    grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-10">Loading...</div>';
+    
+    window.showScreen('screen-generic-view');
+
+    getDoc(doc(db, "cms", "homepage")).then(snap => {
+        if(snap.exists()) {
+            const data = snap.data();
+            grid.innerHTML = '';
+            
+            if(type === 'educators' && data.educators) {
+                data.educators.forEach(edu => {
+                    const photo = edu.photoUrl || `https://ui-avatars.com/api/?name=${edu.name}&background=2563eb&color=fff`;
+                    grid.innerHTML += `
+                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer">
+                            <img src="${photo}" class="w-20 h-20 rounded-full mb-4 object-cover border-4 border-slate-50 dark:border-slate-800 shadow-sm">
+                            <h4 class="font-bold text-slate-900 dark:text-white">${edu.name}</h4>
+                            <p class="text-[10px] text-brand-blue uppercase font-bold tracking-wider mt-1">${edu.expertise}</p>
+                        </div>`;
+                });
+            } else if(type.startsWith('arena_')) {
+                const catName = type.split('_')[1];
+                const cat = data.arenaCategories.find(c => c.name === catName);
+                if(cat && cat.tests) {
+                    cat.tests.forEach(test => {
+                        if(test.status === 'locked') {
+                            grid.innerHTML += `
+                                <button class="h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center opacity-50 cursor-not-allowed shadow-sm">
+                                    <i class="fa-solid fa-lock text-slate-400 dark:text-slate-600 mb-1"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">Locked</span>
+                                    <div class="text-[10px] font-bold text-slate-500 mt-1 truncate w-full px-2">${test.name}</div>
+                                </button>`;
+                        } else {
+                            grid.innerHTML += `
+                                <button onclick="window.consumeContent('test', '${test.vaultId}')" class="h-24 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col items-center justify-center shadow-sm hover:-translate-y-1 transition-transform">
+                                    <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-play mr-1"></i> Live</span>
+                                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300 mt-1.5 truncate w-full px-2">${test.name}</div>
+                                </button>`;
+                        }
+                    });
+                }
+            }
+        }
+    });
+}
+
+// Initial Call
+window.renderHomepage();
