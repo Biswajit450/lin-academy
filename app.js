@@ -7,6 +7,7 @@ import { auth, db } from "./firebase-config.js";
 import "./auth.js";
 import "./cms.js";
 import "./course-builder.js";
+import "./profile.js"; // Profile screen ko zinda rakhne ke liye naya import
 
 // ==========================================
 // SPA ROUTING & UI UTILITIES
@@ -53,8 +54,8 @@ window.renderEnrollments = function(unlockedCourses = [], role = 'student') {
     
     tiles.forEach(tile => {
         const courseName = tile.getAttribute('data-course');
-        // Admin aur Educator ko sab dikhega test karne ke liye
-        if (role === 'admin' || role === 'educator') {
+        // Asli Magic: Superadmin, Admin aur Educator ko sab dikhega test karne ke liye
+        if (role === 'superadmin' || role === 'admin' || role === 'educator') {
             tile.style.display = 'flex'; 
         } else {
             // Student ko sirf uske kharide hue courses dikhenge
