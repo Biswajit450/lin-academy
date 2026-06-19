@@ -85,21 +85,47 @@ onAuthStateChanged(auth, async (user) => {
                     unlocked_courses: [], 
                     joinedAt: new Date().toISOString() 
                 }); 
+                window.currentUserRole = "student";
                 if(window.renderEnrollments) window.renderEnrollments([], "student");
             } else {
                 const userData = userSnap.data();
-                if (userData.role === "admin" || userData.role === "educator") {
-                    document.getElementById('nav-admin-btn').classList.remove('hidden'); 
-                    document.getElementById('nav-admin-btn').classList.add('flex');
-                    document.getElementById('mobile-nav-admin-btn').classList.remove('hidden'); 
-                    document.getElementById('mobile-nav-admin-btn').classList.add('flex');
+                const role = userData.role || "student";
+                window.currentUserRole = role; // Global variable set for UI lockdown
+                
+                // SUPER ADMIN & ADMIN LOGIC
+                if (role === "admin" || role === "educator" || role === "superadmin") {
+                    const navBtn = document.getElementById('nav-admin-btn');
+                    const mobileNavBtn = document.getElementById('mobile-nav-admin-btn');
+                    
+                    navBtn.classList.remove('hidden'); 
+                    navBtn.classList.add('flex');
+                    mobileNavBtn.classList.remove('hidden'); 
+                    mobileNavBtn.classList.add('flex');
+                    
+                    const navSpan = navBtn.querySelector('span');
+                    const mobileNavSpan = mobileNavBtn.querySelector('span');
+                    
+                    // The CMS Tab Button
+                    const cmsTabBtn = document.querySelector('button[onclick="window.switchAdminSubTab(\'homecms\')"]');
+
+                    if (role === "superadmin") {
+                        if (navSpan) navSpan.innerText = "Super Admin";
+                        if (mobileNavSpan) mobileNavSpan.innerText = "Super Admin";
+                        if (cmsTabBtn) cmsTabBtn.classList.remove('hidden'); // Unlock CMS
+                    } else {
+                        if (navSpan) navSpan.innerText = "Admin";
+                        if (mobileNavSpan) mobileNavSpan.innerText = "Admin";
+                        if (cmsTabBtn) cmsTabBtn.classList.add('hidden'); // Lock CMS for regular admins
+                    }
                 }
-                if(window.renderEnrollments) window.renderEnrollments(userData.unlocked_courses || [], userData.role || 'student');
+                
+                if(window.renderEnrollments) window.renderEnrollments(userData.unlocked_courses || [], role);
             }
         } catch (error) { 
             console.error(error); 
         }
     } else {
+        window.currentUserRole = null;
         document.getElementById('header-unauth').classList.remove('hidden'); 
         document.getElementById('header-auth').classList.add('hidden'); 
         document.getElementById('header-auth').classList.remove('flex');
