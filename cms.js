@@ -500,12 +500,13 @@ window.renderHomepage = async function() {
     } catch(e) { console.error("Error rendering homepage", e); }
 }
 
-window.showGenericViewAll = function(title, type) {
+// 🐛 BUG FIX: Await the screen to be generated before modifying DOM
+window.showGenericViewAll = async function(title, type) {
+    await window.showScreen('screen-generic-view'); // <--- CRITICAL FIX
+
     document.getElementById('generic-view-title').innerText = title;
     const grid = document.getElementById('generic-view-grid');
     grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-10">Loading...</div>';
-    
-    window.showScreen('screen-generic-view');
 
     getDoc(doc(db, "cms", "homepage")).then(snap => {
         if(snap.exists()) {
