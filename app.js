@@ -31,21 +31,19 @@ window.showScreen = async function(screenId) {
                 container.appendChild(tempDiv.firstElementChild);
                 console.log(`[Router] Successfully loaded: ${pageName}.html`);
 
-                // --- 🚨 STRICT ADMIN TABS WAKE-UP LOGIC 🚨 ---
-                // Kamra banne ke baad check karo ki kiske paas kitni power hai!
+                // --- 🚨 FIXED STRICT ADMIN TABS WAKE-UP LOGIC 🚨 ---
                 if (pageName === 'admin') {
                     const role = String(window.currentUserRole).toLowerCase().trim();
-                    const cmsTabBtn = document.querySelector('button[onclick="window.switchAdminSubTab(\\'homecms\\')"]');
+                    // 🐛 FIX: Quote clash removed using *= operator
+                    const cmsTabBtn = document.querySelector('button[onclick*="homecms"]');
                     const settingsTabBtn = document.getElementById('admin-tab-settings');
                     const deployerTabBtn = document.getElementById('admin-tab-deployer');
 
                     if (role === 'superadmin') {
-                        // Super Admin: Sab kuch dekho
                         if (cmsTabBtn) cmsTabBtn.classList.remove('hidden');
                         if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
                         if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
                     } else {
-                        // Normal Admin/Educator: Sirf Course Builder dekho, baaki sab HIDE
                         if (cmsTabBtn) cmsTabBtn.classList.add('hidden');
                         if (settingsTabBtn) settingsTabBtn.classList.add('hidden');
                         if (deployerTabBtn) deployerTabBtn.classList.add('hidden');
