@@ -30,6 +30,17 @@ window.showScreen = async function(screenId) {
                 tempDiv.innerHTML = htmlContent;
                 container.appendChild(tempDiv.firstElementChild);
                 console.log(`[Router] Successfully loaded: ${pageName}.html`);
+
+                // --- 🚨 NEW FIX: SECURITY GUARD WAKE-UP 🚨 ---
+                // Kamra banne ke baad check karo ki agar banda Super Admin hai, toh chhupe hue tabs dikha do!
+                if (pageName === 'admin' && window.currentUserRole === 'superadmin') {
+                    const settingsTabBtn = document.getElementById('admin-tab-settings');
+                    const deployerTabBtn = document.getElementById('admin-tab-deployer');
+                    if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
+                    if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
+                }
+                // ----------------------------------------------
+                
             } else {
                 console.error("Page not found:", pageName);
                 alert(`Page "${pageName}" is under construction or missing!`);
