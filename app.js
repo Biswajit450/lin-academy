@@ -29,8 +29,7 @@ window.showScreen = function(screenId) {
 
     if(screenId === 'screen-enrollments') {
         if(window.renderEnrollments) {
-            const fallbackRole = auth.currentUser ? window.currentUserRole : 'student';
-            window.renderEnrollments(window.currentUnlockedCourses || [], fallbackRole);
+            window.renderEnrollments(window.currentUnlockedCourses || [], window.currentUserRole);
         }
     }
     
@@ -70,15 +69,21 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE (100% BUG FREE FIX)
+// VAULT VISIBILITY ENGINE (NUCLEAR OPTION)
 // ==========================================
 window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
     try {
-        let role = passedRole || window.currentUserRole || 'student';
-        if (typeof role !== 'string') role = String(role);
-        role = role.toLowerCase().trim(); 
+        // 1. DUAL-CHECK SYSTEM (Variable + UI Fallback)
+        let sysRole = String(passedRole || window.currentUserRole || 'student').toLowerCase().trim();
+        
+        let uiRole = '';
+        const roleBadge = document.getElementById('profile-role-text');
+        if (roleBadge && roleBadge.innerText) {
+            uiRole = roleBadge.innerText.toLowerCase();
+        }
 
-        const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
+        // Agar background variable OR profile page ka badge, dono mein se koi bhi Admin hai, toh God Mode ON!
+        const isGodMode = sysRole.includes('admin') || sysRole.includes('educator') || uiRole.includes('admin');
         
         let coursesList = [];
         if (Array.isArray(unlockedCourses) && unlockedCourses.length > 0) {
@@ -89,39 +94,37 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
 
         const tiles = document.querySelectorAll('.enrollment-tile');
 
-        // Course Tiles show/hide logic
+        // 2. ULTIMATE OVERRIDE
         tiles.forEach(tile => {
             const courseName = tile.getAttribute('data-course');
             const isUnlocked = coursesList.includes(courseName);
             
             if (isGodMode || isUnlocked) {
                 tile.classList.remove('hidden');
-                tile.setAttribute('style', 'display: flex !important;'); 
+                tile.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important;'; 
             } else {
                 tile.classList.add('hidden');
-                tile.setAttribute('style', 'display: none !important;');
+                tile.style.cssText = 'display: none !important;';
             }
         });
 
-        // HAMESHA PARENT CONTAINERS KO DIKHAO (Yehi wo bug tha jo sab gayab kar raha tha)
+        // 3. FORCE PARENT VISIBILITY
         const compGrid = document.getElementById('enrollments-grid-competitive');
         if(compGrid && compGrid.parentElement) {
             compGrid.parentElement.classList.remove('hidden');
-            compGrid.parentElement.setAttribute('style', 'display: block !important;');
+            compGrid.parentElement.style.cssText = 'display: block !important; visibility: visible !important;';
         }
         
         const acadGrid = document.getElementById('enrollments-grid-academics');
         if(acadGrid && acadGrid.parentElement) {
             acadGrid.parentElement.classList.remove('hidden');
-            acadGrid.parentElement.setAttribute('style', 'display: block !important;');
+            acadGrid.parentElement.style.cssText = 'display: block !important; visibility: visible !important;';
         }
 
     } catch(err) {
-        console.error("Critical rendering error:", err);
-        // Aakhiri sahara: Agar kuch bhi toot jaye, toh sab dikha do
+        console.error("Rendering error:", err);
         document.querySelectorAll('.enrollment-tile').forEach(t => {
-            t.classList.remove('hidden');
-            t.setAttribute('style', 'display: flex !important;');
+            t.style.cssText = 'display: flex !important;';
         });
     }
 }
