@@ -3,7 +3,6 @@
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
-// Master Imports: Yahan hum baaki saari files ko zinda kar rahe hain!
 import "./auth.js";
 import "./cms.js";
 import "./course-builder.js";
@@ -17,7 +16,6 @@ window.showScreen = function(screenId) {
         screen.classList.add('hidden');
     });
     
-    // Hide Editor specific elements if not on admin screen
     if(screenId !== 'screen-admin') {
         const courseSelector = document.getElementById('admin-course-selector');
         if(courseSelector) courseSelector.value = "";
@@ -37,16 +35,13 @@ window.showScreen = function(screenId) {
 }
 
 window.switchAdminSubTab = function(tabId) {
-    // Hide all admin subtabs
     document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
     
-    // Reset all admin tab buttons
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'text-brand-blue', 'border-brand-blue');
         btn.classList.add('text-slate-500', 'border-transparent');
     });
     
-    // Show target tab and activate button
     const targetTab = document.getElementById(`admin-subtab-${tabId}`);
     if(targetTab) targetTab.classList.remove('hidden');
     
@@ -68,42 +63,41 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE (BULLETPROOF UPDATE)
+// VAULT VISIBILITY ENGINE (BULLETPROOF FIX)
 // ==========================================
 window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
-    // Robust check: Normalize role to lowercase and remove any accidental spaces
     let currentRole = passedRole || window.currentUserRole || 'student';
-    currentRole = String(currentRole).toLowerCase().replace(/\s/g, ''); 
+    currentRole = String(currentRole).toLowerCase().trim(); 
 
     const tiles = document.querySelectorAll('.enrollment-tile');
+    let hasComp = false;
+    let hasAcad = false;
     
     tiles.forEach(tile => {
         const courseName = tile.getAttribute('data-course');
+        const isUnlocked = Array.isArray(unlockedCourses) && unlockedCourses.includes(courseName);
         
-        // Asli Magic: God mode check (Admin aur Superadmin ko sab dikhega)
-        if (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'educator') {
+        // God mode check: Show ALL for admins/educators/superadmin
+        if (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'educator' || isUnlocked) {
             tile.style.display = 'flex'; 
+            
+            // Check which parent container to keep visible
+            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-competitive') hasComp = true;
+            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-academics') hasAcad = true;
         } else {
-            // Student ko sirf uske kharide hue courses dikhenge
-            if (unlockedCourses && Array.isArray(unlockedCourses) && unlockedCourses.includes(courseName)) {
-                tile.style.display = 'flex';
-            } else {
-                tile.style.display = 'none';
-            }
+            tile.style.display = 'none';
         }
     });
 
-    // Clean UI: Agar kisi category me ek bhi course nahi hai, toh uska heading hide kar do
+    // Only hide the parent sections if NO courses are visible
     const compGrid = document.getElementById('enrollments-grid-competitive');
     const acadGrid = document.getElementById('enrollments-grid-academics');
     
     if(compGrid && compGrid.parentElement) {
-        const visibleComp = Array.from(compGrid.children).filter(el => el.style.display !== 'none');
-        compGrid.parentElement.style.display = visibleComp.length > 0 ? 'block' : 'none';
+        compGrid.parentElement.style.display = hasComp ? 'block' : 'none';
     }
     if(acadGrid && acadGrid.parentElement) {
-        const visibleAcad = Array.from(acadGrid.children).filter(el => el.style.display !== 'none');
-        acadGrid.parentElement.style.display = visibleAcad.length > 0 ? 'block' : 'none';
+        acadGrid.parentElement.style.display = hasAcad ? 'block' : 'none';
     }
 }
 
@@ -113,7 +107,6 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
 window.initiateCheckout = async function(courseName) { 
     alert(`Razorpay Gateway Initiated for: ${courseName}\n\nOnce payment is successful, our Webhook will automatically tell Firebase to unlock this for the student!`); 
     
-    // Developer Test Auto-Unlock Logic
     if (auth.currentUser) {
         if(confirm(`[DEV TESTING]: Do you want to instantly unlock "${courseName}" and add it to your Enrollments Vault?`)) {
             try {
@@ -238,7 +231,6 @@ window.openPolicyPage = async function(pageId, pageTitle) {
     try {
         const snap = await getDoc(doc(db, "settings", `policy_${pageId}`));
         if(snap.exists() && snap.data().content) {
-            // Replace newlines with breaks so normal typing looks good as HTML
             contentDiv.innerHTML = snap.data().content.replace(/\n/g, '<br>');
         } else {
             contentDiv.innerHTML = "This document is currently being updated. Please check back soon.";
@@ -259,7 +251,6 @@ window.searchUserForRole = async function() {
     if(!emailToSearch) return alert("Please enter a valid student email to search.");
     
     try {
-        // Find user by email in Firestore
         const q = query(collection(db, "users"), where("email", "==", emailToSearch));
         const querySnapshot = await getDocs(q);
         
@@ -275,7 +266,10 @@ window.searchUserForRole = async function() {
             
             document.getElementById('role-user-name').innerText = userData.name || "Unknown Name";
             document.getElementById('role-user-email').innerText = userData.email;
-            document.getElementById('role-user-select').value = userData.role || 'student';
+            
+            // Safe checking for UI dropdown value
+            const userRoleVal = String(userData.role || userData.Role || userData.ROLE || 'student').toLowerCase().trim();
+            document.getElementById('role-user-select').value = userRoleVal;
             
             document.getElementById('role-edit-panel').classList.remove('hidden');
         });
@@ -293,6 +287,7 @@ window.updateUserRole = async function() {
     const newRole = document.getElementById('role-user-select').value;
     
     try {
+        // We explicitly update the lowercase 'role' key to enforce standardization going forward
         await updateDoc(doc(db, "users", window.currentEditingUserId), {
             role: newRole
         });

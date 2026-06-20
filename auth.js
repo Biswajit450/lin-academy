@@ -89,8 +89,14 @@ onAuthStateChanged(auth, async (user) => {
                 if(window.renderEnrollments) window.renderEnrollments([], "student");
             } else {
                 const userData = userSnap.data();
-                const role = userData.role || "student";
-                window.currentUserRole = role; // Global variable set for UI lockdown
+                
+                // BULLETPROOF ENGINE: Handles 'Role', 'ROLE', and 'role' issues
+                const rawRole = userData.role || userData.Role || userData.ROLE || "student";
+                const role = String(rawRole).toLowerCase().trim();
+                window.currentUserRole = role; 
+                
+                // Bulletproof Course List Check
+                const unlocked = userData.unlocked_courses || userData.Unlocked_Courses || userData.Unlocked_courses || [];
                 
                 // UI Elements for Role Toggling
                 const navBtn = document.getElementById('nav-admin-btn');
@@ -156,7 +162,7 @@ onAuthStateChanged(auth, async (user) => {
                     if (adminBadge) adminBadge.classList.add('hidden');
                 }
                 
-                if(window.renderEnrollments) window.renderEnrollments(userData.unlocked_courses || [], role);
+                if(window.renderEnrollments) window.renderEnrollments(unlocked, role);
             }
         } catch (error) { 
             console.error(error); 
