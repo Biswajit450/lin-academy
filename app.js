@@ -31,13 +31,25 @@ window.showScreen = async function(screenId) {
                 container.appendChild(tempDiv.firstElementChild);
                 console.log(`[Router] Successfully loaded: ${pageName}.html`);
 
-                // --- 🚨 NEW FIX: SECURITY GUARD WAKE-UP 🚨 ---
-                // Kamra banne ke baad check karo ki agar banda Super Admin hai, toh chhupe hue tabs dikha do!
-                if (pageName === 'admin' && window.currentUserRole === 'superadmin') {
+                // --- 🚨 STRICT ADMIN TABS WAKE-UP LOGIC 🚨 ---
+                // Kamra banne ke baad check karo ki kiske paas kitni power hai!
+                if (pageName === 'admin') {
+                    const role = String(window.currentUserRole).toLowerCase().trim();
+                    const cmsTabBtn = document.querySelector('button[onclick="window.switchAdminSubTab(\\'homecms\\')"]');
                     const settingsTabBtn = document.getElementById('admin-tab-settings');
                     const deployerTabBtn = document.getElementById('admin-tab-deployer');
-                    if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
-                    if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
+
+                    if (role === 'superadmin') {
+                        // Super Admin: Sab kuch dekho
+                        if (cmsTabBtn) cmsTabBtn.classList.remove('hidden');
+                        if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
+                        if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
+                    } else {
+                        // Normal Admin/Educator: Sirf Course Builder dekho, baaki sab HIDE
+                        if (cmsTabBtn) cmsTabBtn.classList.add('hidden');
+                        if (settingsTabBtn) settingsTabBtn.classList.add('hidden');
+                        if (deployerTabBtn) deployerTabBtn.classList.add('hidden');
+                    }
                 }
                 // ----------------------------------------------
                 
