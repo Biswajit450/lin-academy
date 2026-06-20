@@ -27,10 +27,12 @@ window.showScreen = function(screenId) {
         if(canvasWrapper) canvasWrapper.classList.add('hidden');
     }
 
-    // SELF HEALING ENGINE: Double-Tap Force Render!
+    // SELF HEALING ENGINE: Double-Tap Force Render
     if(screenId === 'screen-enrollments') {
         if(window.renderEnrollments) {
-            window.renderEnrollments(window.currentUnlockedCourses || [], window.currentUserRole);
+            // Hum yahan direct auth se bhi role uthane ki koshish karenge as fallback
+            const fallbackRole = auth.currentUser ? window.currentUserRole : 'student';
+            window.renderEnrollments(window.currentUnlockedCourses || [], fallbackRole);
         }
     }
     
@@ -70,40 +72,78 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE (BULLETPROOF EDITION)
+// VAULT VISIBILITY ENGINE (TITANIUM EDITION)
 // ==========================================
 window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
-    const currentRole = String(passedRole || window.currentUserRole || 'student').toLowerCase().trim(); 
-    const coursesList = (Array.isArray(unlockedCourses) && unlockedCourses.length > 0) ? unlockedCourses : (window.currentUnlockedCourses || []);
-    
-    const isGodMode = (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'educator');
-    const tiles = document.querySelectorAll('.enrollment-tile');
-    
-    let compCount = 0;
-    let acadCount = 0;
+    try {
+        // Bulletproof Role Parsing
+        let role = passedRole || window.currentUserRole || 'student';
+        if (typeof role !== 'string') role = String(role);
+        role = role.toLowerCase().trim().replace(/[^a-z]/g, ''); 
 
-    tiles.forEach(tile => {
-        const courseName = tile.getAttribute('data-course');
-        const isUnlocked = coursesList.includes(courseName);
+        // Agar role mein 'admin' ya 'educator' word shamil hai toh God Mode ON
+        const isGodMode = role.includes('admin') || role.includes('educator');
         
-        // Asli Check: God mode active hai toh seedha dikhao!
-        if (isGodMode || isUnlocked) {
-            tile.style.display = 'flex'; 
-            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-competitive') compCount++;
-            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-academics') acadCount++;
-        } else {
-            tile.style.display = 'none';
+        // Bulletproof Courses Parsing
+        let coursesList = [];
+        if (Array.isArray(unlockedCourses) && unlockedCourses.length > 0) {
+            coursesList = unlockedCourses;
+        } else if (Array.isArray(window.currentUnlockedCourses)) {
+            coursesList = window.currentUnlockedCourses;
         }
-    });
 
-    const compGrid = document.getElementById('enrollments-grid-competitive');
-    const acadGrid = document.getElementById('enrollments-grid-academics');
-    
-    if(compGrid && compGrid.parentElement) {
-        compGrid.parentElement.style.display = (compCount > 0) ? 'block' : 'none';
-    }
-    if(acadGrid && acadGrid.parentElement) {
-        acadGrid.parentElement.style.display = (acadCount > 0) ? 'block' : 'none';
+        const tiles = document.querySelectorAll('.enrollment-tile');
+        let compCount = 0;
+        let acadCount = 0;
+
+        tiles.forEach(tile => {
+            const courseName = tile.getAttribute('data-course');
+            const isUnlocked = coursesList.includes(courseName);
+            
+            // ULTIMATE OVERRIDE: CSS classes ko force strip karenge
+            if (isGodMode || isUnlocked) {
+                tile.classList.remove('hidden');
+                tile.setAttribute('style', 'display: flex !important;'); 
+                
+                const parent = tile.parentElement;
+                if(parent && parent.id === 'enrollments-grid-competitive') compCount++;
+                if(parent && parent.id === 'enrollments-grid-academics') acadCount++;
+            } else {
+                tile.classList.add('hidden');
+                tile.setAttribute('style', 'display: none !important;');
+            }
+        });
+
+        const compGrid = document.getElementById('enrollments-grid-competitive');
+        const acadGrid = document.getElementById('enrollments-grid-academics');
+        
+        // Ensure parent containers are forcefully shown for God Mode
+        if(compGrid && compGrid.parentElement) {
+            if (isGodMode || compCount > 0) {
+                compGrid.parentElement.classList.remove('hidden');
+                compGrid.parentElement.setAttribute('style', 'display: block !important;');
+            } else {
+                compGrid.parentElement.classList.add('hidden');
+                compGrid.parentElement.setAttribute('style', 'display: none !important;');
+            }
+        }
+        
+        if(acadGrid && acadGrid.parentElement) {
+            if (isGodMode || acadCount > 0) {
+                acadGrid.parentElement.classList.remove('hidden');
+                acadGrid.parentElement.setAttribute('style', 'display: block !important;');
+            } else {
+                acadGrid.parentElement.classList.add('hidden');
+                acadGrid.parentElement.setAttribute('style', 'display: none !important;');
+            }
+        }
+    } catch(err) {
+        console.error("Critical rendering error:", err);
+        // Failsafe: Agar kabhi script crack hui toh kam se kam UI blank na ho
+        document.querySelectorAll('.enrollment-tile').forEach(t => {
+            t.classList.remove('hidden');
+            t.setAttribute('style', 'display: flex !important;');
+        });
     }
 }
 
@@ -146,7 +186,7 @@ let policyTimeout = null;
 window.currentEditingUserId = null;
 
 window.saveContactSettings = async function() {
-    if(window.currentUserRole !== 'superadmin') return alert("Access Denied: Super Admin Only.");
+    if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
     const wa = document.getElementById('setting-whatsapp').value;
     const email = document.getElementById('setting-email').value;
     
@@ -213,7 +253,7 @@ window.autoSavePolicyDraft = function() {
 }
 
 window.publishPolicy = async function() {
-    if(window.currentUserRole !== 'superadmin') return alert("Access Denied: Super Admin Only.");
+    if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
     const pageId = document.getElementById('setting-policy-selector').value;
     const content = document.getElementById('setting-policy-content').value;
     
@@ -251,7 +291,7 @@ window.openPolicyPage = async function(pageId, pageTitle) {
 // SUPER ADMIN USER ROLE MANAGER
 // ==========================================
 window.searchUserForRole = async function() {
-    if(window.currentUserRole !== 'superadmin') return alert("Access Denied: Super Admin Only.");
+    if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
     
     const emailToSearch = document.getElementById('role-search-email').value.trim();
     if(!emailToSearch) return alert("Please enter a valid student email to search.");
@@ -286,7 +326,7 @@ window.searchUserForRole = async function() {
 }
 
 window.updateUserRole = async function() {
-    if(window.currentUserRole !== 'superadmin') return alert("Access Denied: Super Admin Only.");
+    if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
     if(!window.currentEditingUserId) return alert("Please search for a user first.");
     
     const newRole = document.getElementById('role-user-select').value;
