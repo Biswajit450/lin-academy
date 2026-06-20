@@ -26,6 +26,13 @@ window.showScreen = function(screenId) {
         const canvasWrapper = document.getElementById('admin-draft-canvas-wrapper');
         if(canvasWrapper) canvasWrapper.classList.add('hidden');
     }
+
+    // SELF HEALING ENGINE: Double-Tap Force Render!
+    if(screenId === 'screen-enrollments') {
+        if(window.renderEnrollments) {
+            window.renderEnrollments(window.currentUnlockedCourses || [], window.currentUserRole);
+        }
+    }
     
     const targetScreen = document.getElementById(screenId);
     if(targetScreen) {
@@ -63,41 +70,40 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE (BULLETPROOF FIX)
+// VAULT VISIBILITY ENGINE (BULLETPROOF EDITION)
 // ==========================================
 window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
-    let currentRole = passedRole || window.currentUserRole || 'student';
-    currentRole = String(currentRole).toLowerCase().trim(); 
-
-    const tiles = document.querySelectorAll('.enrollment-tile');
-    let hasComp = false;
-    let hasAcad = false;
+    const currentRole = String(passedRole || window.currentUserRole || 'student').toLowerCase().trim(); 
+    const coursesList = (Array.isArray(unlockedCourses) && unlockedCourses.length > 0) ? unlockedCourses : (window.currentUnlockedCourses || []);
     
+    const isGodMode = (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'educator');
+    const tiles = document.querySelectorAll('.enrollment-tile');
+    
+    let compCount = 0;
+    let acadCount = 0;
+
     tiles.forEach(tile => {
         const courseName = tile.getAttribute('data-course');
-        const isUnlocked = Array.isArray(unlockedCourses) && unlockedCourses.includes(courseName);
+        const isUnlocked = coursesList.includes(courseName);
         
-        // God mode check: Show ALL for admins/educators/superadmin
-        if (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'educator' || isUnlocked) {
+        // Asli Check: God mode active hai toh seedha dikhao!
+        if (isGodMode || isUnlocked) {
             tile.style.display = 'flex'; 
-            
-            // Check which parent container to keep visible
-            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-competitive') hasComp = true;
-            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-academics') hasAcad = true;
+            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-competitive') compCount++;
+            if(tile.parentElement && tile.parentElement.id === 'enrollments-grid-academics') acadCount++;
         } else {
             tile.style.display = 'none';
         }
     });
 
-    // Only hide the parent sections if NO courses are visible
     const compGrid = document.getElementById('enrollments-grid-competitive');
     const acadGrid = document.getElementById('enrollments-grid-academics');
     
     if(compGrid && compGrid.parentElement) {
-        compGrid.parentElement.style.display = hasComp ? 'block' : 'none';
+        compGrid.parentElement.style.display = (compCount > 0) ? 'block' : 'none';
     }
     if(acadGrid && acadGrid.parentElement) {
-        acadGrid.parentElement.style.display = hasAcad ? 'block' : 'none';
+        acadGrid.parentElement.style.display = (acadCount > 0) ? 'block' : 'none';
     }
 }
 
@@ -177,7 +183,7 @@ window.loadPolicyDraft = async function(pageId) {
         if(snap.exists() && snap.data().content) {
             textarea.value = snap.data().content;
         } else {
-            textarea.value = ""; // Empty draft
+            textarea.value = ""; 
         }
     } catch(e) {
         console.error(e);
@@ -267,7 +273,6 @@ window.searchUserForRole = async function() {
             document.getElementById('role-user-name').innerText = userData.name || "Unknown Name";
             document.getElementById('role-user-email').innerText = userData.email;
             
-            // Safe checking for UI dropdown value
             const userRoleVal = String(userData.role || userData.Role || userData.ROLE || 'student').toLowerCase().trim();
             document.getElementById('role-user-select').value = userRoleVal;
             
@@ -287,7 +292,6 @@ window.updateUserRole = async function() {
     const newRole = document.getElementById('role-user-select').value;
     
     try {
-        // We explicitly update the lowercase 'role' key to enforce standardization going forward
         await updateDoc(doc(db, "users", window.currentEditingUserId), {
             role: newRole
         });

@@ -86,43 +86,37 @@ onAuthStateChanged(auth, async (user) => {
                     joinedAt: new Date().toISOString() 
                 }); 
                 window.currentUserRole = "student";
+                window.currentUnlockedCourses = [];
                 if(window.renderEnrollments) window.renderEnrollments([], "student");
             } else {
                 const userData = userSnap.data();
                 
-                // BULLETPROOF ENGINE: Handles 'Role', 'ROLE', and 'role' issues
+                // BULLETPROOF ROLE & COURSE VARIABLES
                 const rawRole = userData.role || userData.Role || userData.ROLE || "student";
                 const role = String(rawRole).toLowerCase().trim();
-                window.currentUserRole = role; 
-                
-                // Bulletproof Course List Check
                 const unlocked = userData.unlocked_courses || userData.Unlocked_Courses || userData.Unlocked_courses || [];
                 
-                // UI Elements for Role Toggling
+                window.currentUserRole = role; 
+                window.currentUnlockedCourses = unlocked; 
+                
                 const navBtn = document.getElementById('nav-admin-btn');
                 const mobileNavBtn = document.getElementById('mobile-nav-admin-btn');
                 const navSpan = navBtn ? navBtn.querySelector('span') : null;
                 const mobileNavSpan = mobileNavBtn ? mobileNavBtn.querySelector('span') : null;
                 
-                // Admin Tabs
                 const cmsTabBtn = document.querySelector('button[onclick="window.switchAdminSubTab(\'homecms\')"]');
                 const settingsTabBtn = document.getElementById('admin-tab-settings');
                 const deployerTabBtn = document.getElementById('admin-tab-deployer');
                 
-                // Profile Elements
                 const studentBadges = document.getElementById('profile-student-badges');
                 const adminBadge = document.getElementById('profile-admin-badge');
                 const roleText = document.getElementById('profile-role-text');
                 const progressSection = document.getElementById('profile-progress-section');
                 
-                // SUPER ADMIN & ADMIN LOGIC
                 if (role === "admin" || role === "educator" || role === "superadmin") {
-                    
-                    // Show Admin Nav Buttons
                     if (navBtn) { navBtn.classList.remove('hidden'); navBtn.classList.add('flex'); }
                     if (mobileNavBtn) { mobileNavBtn.classList.remove('hidden'); mobileNavBtn.classList.add('flex'); }
                     
-                    // Hide Student Profile Elements & Show Admin Badge
                     if (studentBadges) studentBadges.classList.add('hidden');
                     if (progressSection) progressSection.classList.add('hidden');
                     if (adminBadge) {
@@ -135,7 +129,6 @@ onAuthStateChanged(auth, async (user) => {
                         if (mobileNavSpan) mobileNavSpan.innerText = "Super Admin";
                         if (roleText) roleText.innerText = "Super Admin";
                         
-                        // Unlock All Master Tabs
                         if (cmsTabBtn) cmsTabBtn.classList.remove('hidden');
                         if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
                         if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
@@ -144,13 +137,11 @@ onAuthStateChanged(auth, async (user) => {
                         if (mobileNavSpan) mobileNavSpan.innerText = "Admin";
                         if (roleText) roleText.innerText = "Admin";
                         
-                        // Lock Superadmin Tabs for Regular Admins
                         if (cmsTabBtn) cmsTabBtn.classList.add('hidden');
                         if (settingsTabBtn) settingsTabBtn.classList.add('hidden');
                         if (deployerTabBtn) deployerTabBtn.classList.add('hidden');
                     }
                 } else {
-                    // Student Logic (Failsafe)
                     if (navBtn) navBtn.classList.add('hidden');
                     if (mobileNavBtn) mobileNavBtn.classList.add('hidden');
                     
@@ -162,6 +153,7 @@ onAuthStateChanged(auth, async (user) => {
                     if (adminBadge) adminBadge.classList.add('hidden');
                 }
                 
+                // Safely attempt first render
                 if(window.renderEnrollments) window.renderEnrollments(unlocked, role);
             }
         } catch (error) { 
@@ -169,6 +161,7 @@ onAuthStateChanged(auth, async (user) => {
         }
     } else {
         window.currentUserRole = null;
+        window.currentUnlockedCourses = [];
         document.getElementById('header-unauth').classList.remove('hidden'); 
         document.getElementById('header-auth').classList.add('hidden'); 
         document.getElementById('header-auth').classList.remove('flex');
