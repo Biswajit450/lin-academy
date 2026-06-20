@@ -17,24 +17,20 @@ window.showScreen = async function(screenId) {
     // 1. SMART FETCH: Agar screen HTML mein nahi hai, toh 'pages' folder se uthao!
     if (!document.getElementById(screenId)) {
         try {
-            // Jaise 'screen-admin' me se 'admin' nikalna
             const pageName = screenId.replace('screen-', '');
             
-            // Background mein file fetch karna
             const response = await fetch(`pages/${pageName}.html`);
             
             if (response.ok) {
                 const htmlContent = await response.text();
-                // Naya block banakar use main container mein chipkana
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = htmlContent;
                 container.appendChild(tempDiv.firstElementChild);
                 console.log(`[Router] Successfully loaded: ${pageName}.html`);
 
-                // --- 🚨 FIXED STRICT ADMIN TABS WAKE-UP LOGIC 🚨 ---
+                // --- 🚨 STRICT ADMIN TABS WAKE-UP LOGIC 🚨 ---
                 if (pageName === 'admin') {
                     const role = String(window.currentUserRole).toLowerCase().trim();
-                    // 🐛 FIX: Quote clash removed using *= operator
                     const cmsTabBtn = document.querySelector('button[onclick*="homecms"]');
                     const settingsTabBtn = document.getElementById('admin-tab-settings');
                     const deployerTabBtn = document.getElementById('admin-tab-deployer');
@@ -48,6 +44,11 @@ window.showScreen = async function(screenId) {
                         if (settingsTabBtn) settingsTabBtn.classList.add('hidden');
                         if (deployerTabBtn) deployerTabBtn.classList.add('hidden');
                     }
+                }
+                
+                // --- 🚨 NEW FIX: PROFILE DATA WAKE-UP LOGIC 🚨 ---
+                if (pageName === 'profile') {
+                    if (window.loadProfileData) window.loadProfileData();
                 }
                 // ----------------------------------------------
                 
@@ -80,11 +81,12 @@ window.showScreen = async function(screenId) {
         if(canvasWrapper) canvasWrapper.classList.add('hidden');
     }
 
-    // 4. Enrollments double-tap (Strict Security Engine)
+    // 4. Double Tap Updates
     if(screenId === 'screen-enrollments') {
-        if(window.renderEnrollments) {
-            window.renderEnrollments(window.currentUnlockedCourses || [], window.currentUserRole);
-        }
+        if(window.renderEnrollments) window.renderEnrollments(window.currentUnlockedCourses || [], window.currentUserRole);
+    }
+    if(screenId === 'screen-profile') {
+        if(window.loadProfileData) window.loadProfileData();
     }
     
     // 5. Target screen ko show karo

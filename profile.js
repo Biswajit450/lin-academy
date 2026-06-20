@@ -2,72 +2,69 @@
 
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Update Profile UI jab bhi user login/refresh kare
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        // Basic Info from Google
-        const nameEl = document.getElementById('profile-page-name');
-        const emailEl = document.getElementById('profile-page-email');
-        const picEl = document.getElementById('profile-page-pic');
-
-        if(nameEl) nameEl.innerText = user.displayName || 'Student';
-        if(emailEl) emailEl.innerText = user.email || '';
-        if(picEl) picEl.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'S'}&background=2563eb&color=fff`;
-
-        // Fetch Extra Info (Phone, City) from Firestore
-        try {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                const phoneInput = document.getElementById('profile-phone');
-                const cityInput = document.getElementById('profile-city');
-                
-                if(phoneInput && data.phone) phoneInput.value = data.phone;
-                if(cityInput && data.city) cityInput.value = data.city;
-                
-                // Render Progress for Unlocked Courses
-                renderProgress(data.unlocked_courses || []);
-            }
-        } catch (error) {
-            console.error("Error fetching user details", error);
-        }
-    }
-});
-
-window.saveProfileInfo = async function() {
+// Naya Function: Jab Profile kamra banega, tab yeh call hoga
+window.loadProfileData = async function() {
     const user = auth.currentUser;
-    if(!user) {
-        alert("Please login first!");
-        return;
+    if (!user) return; // Agar login nahi hai toh wapas jao
+
+    // 1. Basic Info (Name, Email, Photo) set karo
+    const nameEl = document.getElementById('profile-page-name');
+    const emailEl = document.getElementById('profile-page-email');
+    const picEl = document.getElementById('profile-page-pic');
+
+    if(nameEl) nameEl.innerText = user.displayName || user.email.split('@')[0];
+    if(emailEl) emailEl.innerText = user.email || '';
+    if(picEl) picEl.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'S'}&background=2563eb&color=fff`;
+
+    // 2. Role check karo aur zaroorat ke hisaab se UI chupao (Strict Mode)
+    const role = String(window.currentUserRole).toLowerCase().trim();
+    const studentBadges = document.getElementById('profile-student-badges');
+    const adminBadge = document.getElementById('profile-admin-badge');
+    const roleText = document.getElementById('profile-role-text');
+    const progressSection = document.getElementById('profile-progress-section');
+
+    if (role === "admin" || role === "educator" || role === "superadmin") {
+        if (studentBadges) studentBadges.classList.add('hidden');
+        if (progressSection) progressSection.classList.add('hidden'); // Progress bar gayab!
+        if (adminBadge) {
+            adminBadge.classList.remove('hidden');
+            adminBadge.classList.add('inline-flex');
+        }
+        if (roleText) {
+            roleText.innerText = role === "superadmin" ? "Super Admin" : "Admin";
+        }
+    } else {
+        if (studentBadges) {
+            studentBadges.classList.remove('hidden');
+            studentBadges.classList.add('flex');
+        }
+        if (progressSection) progressSection.classList.remove('hidden');
+        if (adminBadge) adminBadge.classList.add('hidden');
     }
 
-    const phone = document.getElementById('profile-phone').value;
-    const city = document.getElementById('profile-city').value;
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-    btn.disabled = true;
-
+    // 3. Extra Data (Phone, City, Courses) Database se laao
     try {
-        await setDoc(doc(db, "users", user.uid), {
-            phone: phone,
-            city: city
-        }, { merge: true }); // Merge true means existing data delete nahi hoga
-        
-        alert("Success! Your profile details have been updated.");
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            const phoneInput = document.getElementById('profile-phone');
+            const cityInput = document.getElementById('profile-city');
+            
+            if(phoneInput && data.phone) phoneInput.value = data.phone;
+            if(cityInput && data.city) cityInput.value = data.city;
+            
+            // Progress sirf student ko dikhega
+            if (role === "student" && window.renderProgress) {
+                window.renderProgress(data.unlocked_courses || []);
+            }
+        }
     } catch (error) {
-        console.error("Error saving profile", error);
-        alert("Failed to save details. Try again.");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        console.error("Error fetching user details", error);
     }
 }
 
-function renderProgress(courses) {
+window.renderProgress = function(courses) {
     const container = document.getElementById('profile-progress-list');
     if(!container) return;
 
@@ -78,9 +75,7 @@ function renderProgress(courses) {
 
     let html = '';
     courses.forEach(course => {
-        // UI ke liye dummy progress percentage (10% se 70% ke beech)
         const mockProgress = Math.floor(Math.random() * 60) + 10; 
-        
         html += `
         <div>
             <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-700 dark:text-slate-300">${course}</span><span class="text-brand-blue">${mockProgress}%</span></div>
@@ -88,4 +83,28 @@ function renderProgress(courses) {
         </div>`;
     });
     container.innerHTML = html;
+}
+
+window.saveProfileInfo = async function() {
+    const user = auth.currentUser;
+    if(!user) return alert("Please login first!");
+
+    const phone = document.getElementById('profile-phone').value;
+    const city = document.getElementById('profile-city').value;
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    try {
+        await setDoc(doc(db, "users", user.uid), { phone: phone, city: city }, { merge: true });
+        alert("Success! Your profile details have been updated.");
+    } catch (error) {
+        console.error("Error saving profile", error);
+        alert("Failed to save details. Try again.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
