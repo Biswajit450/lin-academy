@@ -1,0 +1,59 @@
+<div id="screen-enrollments" class="app-screen space-y-6 md:space-y-8">
+    <div class="flex items-end justify-between mb-2">
+        <div>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">My Vault</h3>
+            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Your unlocked premium ecosystems</p>
+        </div>
+    </div>
+
+    <div style="display: none;">
+        <h4 class="text-[10px] md:text-xs font-bold text-brand-blue uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">Competitive Exams</h4>
+        <div id="enrollments-grid-competitive" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-3xl p-5 border border-emerald-100 dark:border-emerald-900/30 shadow-md hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden" data-course="UPSC CSE Optional Zoology" onclick="window.openCourseView('UPSC CSE Optional Zoology')">
+                <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-full z-0"></div>
+                <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400 text-xl relative z-10"><i class="fa-solid fa-microscope"></i></div>
+                <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1 relative z-10">UPSC CSE Optional Zoology</h4>
+                <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mb-4 relative z-10 uppercase tracking-wider">Premium Ecosystem</p>
+                <button class="mt-auto w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors text-xs shadow-sm relative z-10">Enter Vault <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-3xl p-5 border border-blue-100 dark:border-blue-900/30 shadow-md hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden" data-course="UPSC General Studies" onclick="window.openCourseView('UPSC General Studies')">
+                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400 text-xl"><i class="fa-solid fa-landmark"></i></div>
+                <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1">UPSC General Studies</h4>
+                <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-4 uppercase tracking-wider">Premium Ecosystem</p>
+                <button class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors text-xs shadow-sm">Enter Vault <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-3xl p-5 border border-rose-100 dark:border-rose-900/30 shadow-md hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden" data-course="NEET Undergraduate" onclick="window.openCourseView('NEET Undergraduate')">
+                <div class="w-12 h-12 bg-rose-50 dark:bg-rose-900/30 rounded-xl flex items-center justify-center mb-4 text-rose-600 dark:text-rose-400 text-xl"><i class="fa-solid fa-stethoscope"></i></div>
+                <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1">NEET Undergraduate</h4>
+                <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mb-4 uppercase tracking-wider">Premium Ecosystem</p>
+                <button class="mt-auto w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-xl transition-colors text-xs shadow-sm">Enter Vault <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: none;">
+        <h4 class="text-[10px] md:text-xs font-bold text-amber-500 uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">Academics & Foundation</h4>
+        <div id="enrollments-grid-academics" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class VI" onclick="window.openCourseView('Class VI')">
+                <div class="w-10 h-10 mx-auto bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center mb-2 text-amber-500"><i class="fa-solid fa-pencil"></i></div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VI</h4>
+            </div>
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class VII" onclick="window.openCourseView('Class VII')">
+                <div class="w-10 h-10 mx-auto bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-center mb-2 text-orange-500"><i class="fa-solid fa-book"></i></div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VII</h4>
+            </div>
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class VIII" onclick="window.openCourseView('Class VIII')">
+                <div class="w-10 h-10 mx-auto bg-rose-50 dark:bg-rose-900/20 rounded-xl flex items-center justify-center mb-2 text-rose-500"><i class="fa-solid fa-flask"></i></div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VIII</h4>
+            </div>
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class IX" onclick="window.openCourseView('Class IX')">
+                <div class="w-10 h-10 mx-auto bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-xl flex items-center justify-center mb-2 text-fuchsia-500"><i class="fa-solid fa-atom"></i></div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class IX</h4>
+            </div>
+            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class X" onclick="window.openCourseView('Class X')">
+                <div class="w-10 h-10 mx-auto bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center mb-2 text-purple-500"><i class="fa-solid fa-square-root-variable"></i></div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class X</h4>
+            </div>
+        </div>
+    </div>
+</div>

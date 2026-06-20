@@ -1,0 +1,17 @@
+<div id="screen-course-view" class="app-screen space-y-6">
+    <div class="flex items-center gap-4 mb-6">
+        <button onclick="window.showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div>
+            <h3 id="course-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading...</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Lin Academy Premium</p>
+        </div>
+    </div>
+    
+    <div class="student-consumption-mode">
+        <input type="text" id="student-main-title" readonly class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white pointer-events-none px-0" />
+        <input type="text" id="student-sub-title" readonly class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 pointer-events-none px-0" />
+        <div id="course-render-canvas" class="space-y-4 transition-colors"></div>
+    </div>
+</div>

@@ -75,6 +75,7 @@
 
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
 
+    <!-- DESKTOP SIDEBAR -->
     <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
         <div id="desktop-logo-container" class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-xl relative">
             <span id="app-logo-text">LA</span>
@@ -92,6 +93,7 @@
 
     <main class="max-w-4xl mx-auto w-full min-h-screen flex flex-col">
         
+        <!-- HEADER -->
         <header class="px-4 py-3 md:px-6 md:pt-8 md:pb-4 flex items-center justify-between bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
             <div class="md:hidden flex items-center mr-3">
                 <div id="mobile-logo-container" class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-sm relative">
@@ -140,8 +142,10 @@
 
         <div class="px-4 md:px-6 mt-2 md:mt-4 pb-10 relative">
 
+            <!-- SMART ROUTER CONTAINER -->
             <div id="dynamic-screen-container">
                 
+                <!-- MAIN DASHBOARD MODULE (By default visible) -->
                 <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
                     <section id="student-featured-event" class="bg-gradient-to-br from-brand-blue via-indigo-600 to-rose-500 rounded-3xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center bg-cover bg-center">
                         <div class="absolute inset-0 bg-slate-900/60 z-0"></div>
@@ -235,67 +239,9 @@
                         <div id="dynamic-educator-container" class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4"><div class="text-center text-slate-400 text-sm w-full py-4">Loading Educators...</div></div>
                     </section>
                 </div>
+                <!-- ================= MAIN DASHBOARD MODULE END ================= -->
 
-                <div id="screen-enrollments" class="app-screen hidden space-y-6 md:space-y-8">
-                    <div class="flex items-end justify-between mb-2">
-                        <div>
-                            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">My Vault</h3>
-                            <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Your unlocked premium ecosystems</p>
-                        </div>
-                    </div>
-
-                    <div style="display: none;">
-                        <h4 class="text-[10px] md:text-xs font-bold text-brand-blue uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">Competitive Exams</h4>
-                        <div id="enrollments-grid-competitive" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-3xl p-5 border border-emerald-100 dark:border-emerald-900/30 shadow-md hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden" data-course="UPSC CSE Optional Zoology" onclick="window.openCourseView('UPSC CSE Optional Zoology')">
-                                <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-full z-0"></div>
-                                <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400 text-xl relative z-10"><i class="fa-solid fa-microscope"></i></div>
-                                <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1 relative z-10">UPSC CSE Optional Zoology</h4>
-                                <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mb-4 relative z-10 uppercase tracking-wider">Premium Ecosystem</p>
-                                <button class="mt-auto w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors text-xs shadow-sm relative z-10">Enter Vault <i class="fa-solid fa-arrow-right ml-1"></i></button>
-                            </div>
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-3xl p-5 border border-blue-100 dark:border-blue-900/30 shadow-md hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden" data-course="UPSC General Studies" onclick="window.openCourseView('UPSC General Studies')">
-                                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400 text-xl"><i class="fa-solid fa-landmark"></i></div>
-                                <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1">UPSC General Studies</h4>
-                                <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-4 uppercase tracking-wider">Premium Ecosystem</p>
-                                <button class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors text-xs shadow-sm">Enter Vault <i class="fa-solid fa-arrow-right ml-1"></i></button>
-                            </div>
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-3xl p-5 border border-rose-100 dark:border-rose-900/30 shadow-md hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden" data-course="NEET Undergraduate" onclick="window.openCourseView('NEET Undergraduate')">
-                                <div class="w-12 h-12 bg-rose-50 dark:bg-rose-900/30 rounded-xl flex items-center justify-center mb-4 text-rose-600 dark:text-rose-400 text-xl"><i class="fa-solid fa-stethoscope"></i></div>
-                                <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1">NEET Undergraduate</h4>
-                                <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mb-4 uppercase tracking-wider">Premium Ecosystem</p>
-                                <button class="mt-auto w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-xl transition-colors text-xs shadow-sm">Enter Vault <i class="fa-solid fa-arrow-right ml-1"></i></button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display: none;">
-                        <h4 class="text-[10px] md:text-xs font-bold text-amber-500 uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">Academics & Foundation</h4>
-                        <div id="enrollments-grid-academics" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class VI" onclick="window.openCourseView('Class VI')">
-                                <div class="w-10 h-10 mx-auto bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center mb-2 text-amber-500"><i class="fa-solid fa-pencil"></i></div>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VI</h4>
-                            </div>
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class VII" onclick="window.openCourseView('Class VII')">
-                                <div class="w-10 h-10 mx-auto bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-center mb-2 text-orange-500"><i class="fa-solid fa-book"></i></div>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VII</h4>
-                            </div>
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class VIII" onclick="window.openCourseView('Class VIII')">
-                                <div class="w-10 h-10 mx-auto bg-rose-50 dark:bg-rose-900/20 rounded-xl flex items-center justify-center mb-2 text-rose-500"><i class="fa-solid fa-flask"></i></div>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class VIII</h4>
-                            </div>
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class IX" onclick="window.openCourseView('Class IX')">
-                                <div class="w-10 h-10 mx-auto bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-xl flex items-center justify-center mb-2 text-fuchsia-500"><i class="fa-solid fa-atom"></i></div>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class IX</h4>
-                            </div>
-                            <div class="enrollment-tile hidden flex-col bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-brand-blue transition-colors cursor-pointer text-center" data-course="Class X" onclick="window.openCourseView('Class X')">
-                                <div class="w-10 h-10 mx-auto bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center mb-2 text-purple-500"><i class="fa-solid fa-square-root-variable"></i></div>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Class X</h4>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- ================= EXTRA VIEWS MODULES ================= -->
                 <div id="screen-generic-view" class="app-screen hidden space-y-6">
                     <div class="flex items-center gap-4 mb-6">
                         <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0"><i class="fa-solid fa-arrow-left"></i></button>
@@ -330,28 +276,11 @@
                     </div>
                 </div>
 
-                <div id="screen-course-view" class="app-screen hidden space-y-6">
-                    <div class="flex items-center gap-4 mb-6">
-                        <button onclick="window.showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0">
-                            <i class="fa-solid fa-arrow-left"></i>
-                        </button>
-                        <div>
-                            <h3 id="course-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading...</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Lin Academy Premium</p>
-                        </div>
-                    </div>
-                    
-                    <div class="student-consumption-mode">
-                        <input type="text" id="student-main-title" readonly class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white pointer-events-none px-0" />
-                        <input type="text" id="student-sub-title" readonly class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 pointer-events-none px-0" />
-                        <div id="course-render-canvas" class="space-y-4 transition-colors"></div>
-                    </div>
-                </div>
             </div>
-            
         </div>
     </main>
 
+    <!-- MOBILE SIDEBAR -->
     <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full glass-panel border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
         <button onclick="window.showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 text-brand-blue dark:text-blue-400 transition-transform active:scale-95"><i class="fa-solid fa-house text-xl mb-0.5"></i><span class="text-[10px] font-bold">Home</span></button>
         <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-layer-group text-xl mb-0.5"></i><span class="text-[10px] font-bold">Enrollments</span></button>
@@ -359,6 +288,7 @@
         <button onclick="window.showScreen('screen-profile')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all active:scale-95"><i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span></button>
     </nav>
 
+    <!-- AUTH MODAL -->
     <div id="auth-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transform transition-all relative">
             <button onclick="window.closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"><i class="fa-solid fa-xmark"></i></button>
@@ -378,6 +308,7 @@
         </div>
     </div>
 
+    <!-- TEST CREATOR MODAL -->
     <div id="test-creator-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative hide-scrollbar">
             <button onclick="window.closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
