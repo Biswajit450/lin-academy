@@ -68,19 +68,24 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE
+// VAULT VISIBILITY ENGINE (BULLETPROOF UPDATE)
 // ==========================================
-window.renderEnrollments = function(unlockedCourses = [], role = 'student') {
+window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
+    // Robust check: Normalize role to lowercase and remove any accidental spaces
+    let currentRole = passedRole || window.currentUserRole || 'student';
+    currentRole = String(currentRole).toLowerCase().replace(/\s/g, ''); 
+
     const tiles = document.querySelectorAll('.enrollment-tile');
     
     tiles.forEach(tile => {
         const courseName = tile.getAttribute('data-course');
-        // Asli Magic: Superadmin, Admin aur Educator ko sab dikhega test karne ke liye
-        if (role === 'superadmin' || role === 'admin' || role === 'educator') {
+        
+        // Asli Magic: God mode check (Admin aur Superadmin ko sab dikhega)
+        if (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'educator') {
             tile.style.display = 'flex'; 
         } else {
             // Student ko sirf uske kharide hue courses dikhenge
-            if (unlockedCourses.includes(courseName)) {
+            if (unlockedCourses && Array.isArray(unlockedCourses) && unlockedCourses.includes(courseName)) {
                 tile.style.display = 'flex';
             } else {
                 tile.style.display = 'none';
