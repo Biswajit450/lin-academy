@@ -69,21 +69,15 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE (NUCLEAR OPTION)
+// VAULT VISIBILITY ENGINE (STRICT SECURITY FIX)
 // ==========================================
 window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
     try {
-        // 1. DUAL-CHECK SYSTEM (Variable + UI Fallback)
-        let sysRole = String(passedRole || window.currentUserRole || 'student').toLowerCase().trim();
-        
-        let uiRole = '';
-        const roleBadge = document.getElementById('profile-role-text');
-        if (roleBadge && roleBadge.innerText) {
-            uiRole = roleBadge.innerText.toLowerCase();
-        }
+        let role = passedRole || window.currentUserRole || 'student';
+        role = String(role).toLowerCase().trim(); 
 
-        // Agar background variable OR profile page ka badge, dono mein se koi bhi Admin hai, toh God Mode ON!
-        const isGodMode = sysRole.includes('admin') || sysRole.includes('educator') || uiRole.includes('admin');
+        // Sirf in 3 roles ko God Mode milega
+        const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
         
         let coursesList = [];
         if (Array.isArray(unlockedCourses) && unlockedCourses.length > 0) {
@@ -93,38 +87,57 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
         }
 
         const tiles = document.querySelectorAll('.enrollment-tile');
+        let compCount = 0;
+        let acadCount = 0;
 
-        // 2. ULTIMATE OVERRIDE
         tiles.forEach(tile => {
             const courseName = tile.getAttribute('data-course');
             const isUnlocked = coursesList.includes(courseName);
             
+            // STRICT CHECK: Agar God Mode hai, YA course kharida hai, tabhi dikhao
             if (isGodMode || isUnlocked) {
                 tile.classList.remove('hidden');
-                tile.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important;'; 
+                tile.setAttribute('style', 'display: flex !important;'); 
+                
+                const parent = tile.parentElement;
+                if(parent && parent.id === 'enrollments-grid-competitive') compCount++;
+                if(parent && parent.id === 'enrollments-grid-academics') acadCount++;
             } else {
+                // Agar kharida nahi hai, toh chhupao! (Student view)
                 tile.classList.add('hidden');
-                tile.style.cssText = 'display: none !important;';
+                tile.setAttribute('style', 'display: none !important;');
             }
         });
 
-        // 3. FORCE PARENT VISIBILITY
+        // Dabbe (Containers) ko tabhi dikhao jab unke andar kam se kam 1 course visible ho
         const compGrid = document.getElementById('enrollments-grid-competitive');
         if(compGrid && compGrid.parentElement) {
-            compGrid.parentElement.classList.remove('hidden');
-            compGrid.parentElement.style.cssText = 'display: block !important; visibility: visible !important;';
+            if (compCount > 0) {
+                compGrid.parentElement.classList.remove('hidden');
+                compGrid.parentElement.setAttribute('style', 'display: block !important;');
+            } else {
+                compGrid.parentElement.classList.add('hidden');
+                compGrid.parentElement.setAttribute('style', 'display: none !important;');
+            }
         }
         
         const acadGrid = document.getElementById('enrollments-grid-academics');
         if(acadGrid && acadGrid.parentElement) {
-            acadGrid.parentElement.classList.remove('hidden');
-            acadGrid.parentElement.style.cssText = 'display: block !important; visibility: visible !important;';
+            if (acadCount > 0) {
+                acadGrid.parentElement.classList.remove('hidden');
+                acadGrid.parentElement.setAttribute('style', 'display: block !important;');
+            } else {
+                acadGrid.parentElement.classList.add('hidden');
+                acadGrid.parentElement.setAttribute('style', 'display: none !important;');
+            }
         }
 
     } catch(err) {
-        console.error("Rendering error:", err);
+        console.error("Strict rendering error:", err);
+        // SECURITY FIX: Ab agar error aata hai, toh courses sabke liye CHHUP jayenge (Fail-Closed)
         document.querySelectorAll('.enrollment-tile').forEach(t => {
-            t.style.cssText = 'display: flex !important;';
+            t.classList.add('hidden');
+            t.setAttribute('style', 'display: none !important;');
         });
     }
 }
