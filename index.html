@@ -374,6 +374,9 @@
                 <div class="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto hide-scrollbar">
                     <button onclick="window.switchAdminSubTab('course')" class="admin-tab-btn active text-brand-blue font-bold px-4 py-2 border-b-2 border-brand-blue whitespace-nowrap">Course Builder</button>
                     <button onclick="window.switchAdminSubTab('homecms')" class="admin-tab-btn text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-laptop-code mr-1"></i> Homepage CMS</button>
+                    <!-- Naye Admin Tabs -->
+                    <button id="admin-tab-settings" onclick="window.switchAdminSubTab('settings')" class="admin-tab-btn hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-gears mr-1"></i> App Settings & Users</button>
+                    <button id="admin-tab-deployer" onclick="window.switchAdminSubTab('deployer')" class="admin-tab-btn hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-rocket mr-1"></i> Course Deployer</button>
                 </div>
 
                 <div id="admin-subtab-homecms" class="admin-subtab hidden space-y-8">
@@ -490,6 +493,24 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Naya Subtab: App Settings & Users -->
+                <div id="admin-subtab-settings" class="admin-subtab hidden space-y-8">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm text-center py-12">
+                        <i class="fa-solid fa-gears text-4xl text-brand-blue mb-4 opacity-50"></i>
+                        <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-2">App Settings & User Management</h4>
+                        <p class="text-sm text-slate-500">Panel interface coming soon...</p>
+                    </div>
+                </div>
+
+                <!-- Naya Subtab: Course Deployer -->
+                <div id="admin-subtab-deployer" class="admin-subtab hidden space-y-8">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm text-center py-12">
+                        <i class="fa-solid fa-rocket text-4xl text-emerald-500 mb-4 opacity-50"></i>
+                        <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Master Course Deployer</h4>
+                        <p class="text-sm text-slate-500">Panel interface coming soon...</p>
+                    </div>
+                </div>
             </div>
             
             <div id="screen-profile" class="app-screen hidden space-y-6">
@@ -502,9 +523,14 @@
                         <div class="flex-grow text-center md:text-left space-y-2">
                             <h2 id="profile-page-name" class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Loading...</h2>
                             <p id="profile-page-email" class="text-sm text-slate-500 dark:text-slate-400 font-medium">Please login</p>
+                            
+                            <!-- Badges Section -->
                             <div class="flex items-center justify-center md:justify-start gap-3 mt-4">
-                                <span class="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full"><i class="fa-solid fa-fire mr-1"></i> 3 Day Streak</span>
-                                <span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full"><i class="fa-solid fa-medal mr-1"></i> Pro Learner</span>
+                                <div id="profile-student-badges" class="flex gap-3">
+                                    <span class="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full"><i class="fa-solid fa-fire mr-1"></i> 3 Day Streak</span>
+                                    <span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full"><i class="fa-solid fa-medal mr-1"></i> Pro Learner</span>
+                                </div>
+                                <span id="profile-admin-badge" class="hidden bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full border border-purple-200 dark:border-purple-800"><i class="fa-solid fa-shield-halved mr-1"></i> <span id="profile-role-text">Super Admin</span></span>
                             </div>
                         </div>
                         <button onclick="window.handleLogout()" class="mt-4 md:mt-0 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800 px-5 py-2.5 rounded-xl font-bold transition-colors text-sm shadow-sm flex items-center gap-2">
@@ -514,14 +540,15 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <!-- Progress Tracker (Hidden for Admins) -->
+                    <div id="profile-progress-section" class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
                         <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-chart-pie text-brand-blue mr-2"></i>My Progress Tracker</h3>
                         <div class="space-y-4" id="profile-progress-list">
                             <p class="text-xs text-slate-400">Loading progress...</p>
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm h-full">
                         <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-user-gear text-purple-500 mr-2"></i>Settings & Details</h3>
                         <div class="space-y-4">
                             <div>
@@ -539,18 +566,22 @@
 
                 <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-circle-info text-amber-500 mr-2"></i>Support & Legal</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                        <button onclick="window.open('https://wa.me/91XXXXXXXXXX', '_blank')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
-                            <i class="fa-brands fa-whatsapp text-2xl text-emerald-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">WhatsApp Help</span>
+                    <!-- Modified Grid for Support & Legal -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+                        <button onclick="window.open('mailto:support@linacademy.com', '_blank')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
+                            <i class="fa-solid fa-envelope text-2xl text-brand-blue"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">Help & Support</span>
                         </button>
                         <button onclick="alert('Privacy Policy: Your data is secure with Lin Academy.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
-                            <i class="fa-solid fa-user-shield text-2xl text-blue-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">Privacy Policy</span>
+                            <i class="fa-solid fa-user-shield text-2xl text-emerald-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">Privacy Policy</span>
                         </button>
                         <button onclick="alert('Terms & Conditions applied.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
                             <i class="fa-solid fa-file-contract text-2xl text-slate-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">T&C</span>
                         </button>
                         <button onclick="alert('7 Days Refund Policy applies as per terms.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
                             <i class="fa-solid fa-money-bill-transfer text-2xl text-rose-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">Refund Policy</span>
+                        </button>
+                        <button onclick="alert('About Us: Lin Academy is a premier educational platform.')" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors gap-2">
+                            <i class="fa-solid fa-building text-2xl text-purple-500"></i><span class="text-xs font-bold text-slate-600 dark:text-slate-300">About Us</span>
                         </button>
                     </div>
                 </div>

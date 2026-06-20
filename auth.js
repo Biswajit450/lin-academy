@@ -92,31 +92,68 @@ onAuthStateChanged(auth, async (user) => {
                 const role = userData.role || "student";
                 window.currentUserRole = role; // Global variable set for UI lockdown
                 
+                // UI Elements for Role Toggling
+                const navBtn = document.getElementById('nav-admin-btn');
+                const mobileNavBtn = document.getElementById('mobile-nav-admin-btn');
+                const navSpan = navBtn ? navBtn.querySelector('span') : null;
+                const mobileNavSpan = mobileNavBtn ? mobileNavBtn.querySelector('span') : null;
+                
+                // Admin Tabs
+                const cmsTabBtn = document.querySelector('button[onclick="window.switchAdminSubTab(\'homecms\')"]');
+                const settingsTabBtn = document.getElementById('admin-tab-settings');
+                const deployerTabBtn = document.getElementById('admin-tab-deployer');
+                
+                // Profile Elements
+                const studentBadges = document.getElementById('profile-student-badges');
+                const adminBadge = document.getElementById('profile-admin-badge');
+                const roleText = document.getElementById('profile-role-text');
+                const progressSection = document.getElementById('profile-progress-section');
+                
                 // SUPER ADMIN & ADMIN LOGIC
                 if (role === "admin" || role === "educator" || role === "superadmin") {
-                    const navBtn = document.getElementById('nav-admin-btn');
-                    const mobileNavBtn = document.getElementById('mobile-nav-admin-btn');
                     
-                    navBtn.classList.remove('hidden'); 
-                    navBtn.classList.add('flex');
-                    mobileNavBtn.classList.remove('hidden'); 
-                    mobileNavBtn.classList.add('flex');
+                    // Show Admin Nav Buttons
+                    if (navBtn) { navBtn.classList.remove('hidden'); navBtn.classList.add('flex'); }
+                    if (mobileNavBtn) { mobileNavBtn.classList.remove('hidden'); mobileNavBtn.classList.add('flex'); }
                     
-                    const navSpan = navBtn.querySelector('span');
-                    const mobileNavSpan = mobileNavBtn.querySelector('span');
-                    
-                    // The CMS Tab Button
-                    const cmsTabBtn = document.querySelector('button[onclick="window.switchAdminSubTab(\'homecms\')"]');
+                    // Hide Student Profile Elements & Show Admin Badge
+                    if (studentBadges) studentBadges.classList.add('hidden');
+                    if (progressSection) progressSection.classList.add('hidden');
+                    if (adminBadge) {
+                        adminBadge.classList.remove('hidden');
+                        adminBadge.classList.add('inline-flex');
+                    }
 
                     if (role === "superadmin") {
                         if (navSpan) navSpan.innerText = "Super Admin";
                         if (mobileNavSpan) mobileNavSpan.innerText = "Super Admin";
-                        if (cmsTabBtn) cmsTabBtn.classList.remove('hidden'); // Unlock CMS
+                        if (roleText) roleText.innerText = "Super Admin";
+                        
+                        // Unlock All Master Tabs
+                        if (cmsTabBtn) cmsTabBtn.classList.remove('hidden');
+                        if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
+                        if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
                     } else {
                         if (navSpan) navSpan.innerText = "Admin";
                         if (mobileNavSpan) mobileNavSpan.innerText = "Admin";
-                        if (cmsTabBtn) cmsTabBtn.classList.add('hidden'); // Lock CMS for regular admins
+                        if (roleText) roleText.innerText = "Admin";
+                        
+                        // Lock Superadmin Tabs for Regular Admins
+                        if (cmsTabBtn) cmsTabBtn.classList.add('hidden');
+                        if (settingsTabBtn) settingsTabBtn.classList.add('hidden');
+                        if (deployerTabBtn) deployerTabBtn.classList.add('hidden');
                     }
+                } else {
+                    // Student Logic (Failsafe)
+                    if (navBtn) navBtn.classList.add('hidden');
+                    if (mobileNavBtn) mobileNavBtn.classList.add('hidden');
+                    
+                    if (studentBadges) {
+                        studentBadges.classList.remove('hidden');
+                        studentBadges.classList.add('flex');
+                    }
+                    if (progressSection) progressSection.classList.remove('hidden');
+                    if (adminBadge) adminBadge.classList.add('hidden');
                 }
                 
                 if(window.renderEnrollments) window.renderEnrollments(userData.unlocked_courses || [], role);
