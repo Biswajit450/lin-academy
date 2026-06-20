@@ -9,13 +9,45 @@ import "./course-builder.js";
 import "./profile.js";
 
 // ==========================================
-// SPA ROUTING & UI UTILITIES
+// SPA ROUTING & SMART FETCH ENGINE (THE MAGIC ROUTER)
 // ==========================================
-window.showScreen = function(screenId) {
+window.showScreen = async function(screenId) {
+    const container = document.getElementById('dynamic-screen-container');
+
+    // 1. SMART FETCH: Agar screen HTML mein nahi hai, toh 'pages' folder se uthao!
+    if (!document.getElementById(screenId)) {
+        try {
+            // Jaise 'screen-admin' me se 'admin' nikalna
+            const pageName = screenId.replace('screen-', '');
+            
+            // Background mein file fetch karna
+            const response = await fetch(`pages/${pageName}.html`);
+            
+            if (response.ok) {
+                const htmlContent = await response.text();
+                // Naya block banakar use main container mein chipkana
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlContent;
+                container.appendChild(tempDiv.firstElementChild);
+                console.log(`[Router] Successfully loaded: ${pageName}.html`);
+            } else {
+                console.error("Page not found:", pageName);
+                alert(`Page "${pageName}" is under construction or missing!`);
+                return;
+            }
+        } catch (error) {
+            console.error("Error fetching page:", error);
+            alert("Error loading page. Please check your connection.");
+            return;
+        }
+    }
+
+    // 2. Saari screens ko hide karo
     document.querySelectorAll('.app-screen').forEach(screen => {
         screen.classList.add('hidden');
     });
     
+    // 3. Admin specific UI cleanup
     if(screenId !== 'screen-admin') {
         const courseSelector = document.getElementById('admin-course-selector');
         if(courseSelector) courseSelector.value = "";
@@ -27,12 +59,14 @@ window.showScreen = function(screenId) {
         if(canvasWrapper) canvasWrapper.classList.add('hidden');
     }
 
+    // 4. Enrollments double-tap (Strict Security Engine)
     if(screenId === 'screen-enrollments') {
         if(window.renderEnrollments) {
             window.renderEnrollments(window.currentUnlockedCourses || [], window.currentUserRole);
         }
     }
     
+    // 5. Target screen ko show karo
     const targetScreen = document.getElementById(screenId);
     if(targetScreen) {
         targetScreen.classList.remove('hidden');
@@ -40,6 +74,9 @@ window.showScreen = function(screenId) {
     window.scrollTo(0, 0);
 }
 
+// ==========================================
+// ADMIN SUB-TABS & UI UTILITIES
+// ==========================================
 window.switchAdminSubTab = function(tabId) {
     document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
     
@@ -76,7 +113,6 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
         let role = passedRole || window.currentUserRole || 'student';
         role = String(role).toLowerCase().trim(); 
 
-        // Sirf in 3 roles ko God Mode milega
         const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
         
         let coursesList = [];
@@ -94,7 +130,6 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
             const courseName = tile.getAttribute('data-course');
             const isUnlocked = coursesList.includes(courseName);
             
-            // STRICT CHECK: Agar God Mode hai, YA course kharida hai, tabhi dikhao
             if (isGodMode || isUnlocked) {
                 tile.classList.remove('hidden');
                 tile.setAttribute('style', 'display: flex !important;'); 
@@ -103,13 +138,11 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
                 if(parent && parent.id === 'enrollments-grid-competitive') compCount++;
                 if(parent && parent.id === 'enrollments-grid-academics') acadCount++;
             } else {
-                // Agar kharida nahi hai, toh chhupao! (Student view)
                 tile.classList.add('hidden');
                 tile.setAttribute('style', 'display: none !important;');
             }
         });
 
-        // Dabbe (Containers) ko tabhi dikhao jab unke andar kam se kam 1 course visible ho
         const compGrid = document.getElementById('enrollments-grid-competitive');
         if(compGrid && compGrid.parentElement) {
             if (compCount > 0) {
@@ -134,7 +167,6 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
 
     } catch(err) {
         console.error("Strict rendering error:", err);
-        // SECURITY FIX: Ab agar error aata hai, toh courses sabke liye CHHUP jayenge (Fail-Closed)
         document.querySelectorAll('.enrollment-tile').forEach(t => {
             t.classList.add('hidden');
             t.setAttribute('style', 'display: none !important;');

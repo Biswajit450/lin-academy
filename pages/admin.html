@@ -1,0 +1,210 @@
+<div id="screen-admin" class="app-screen space-y-6">
+    <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 text-9xl opacity-5"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div class="relative z-10">
+            <span class="bg-rose-500/20 text-rose-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block border border-rose-500/30">Educator Superpower</span>
+            <h2 class="text-3xl md:text-4xl font-extrabold font-serif mb-2 text-white">Visual Command Center</h2>
+            <p class="text-slate-400 text-sm">Build courses exactly how students will see them. Drafts auto-save to cloud.</p>
+        </div>
+    </div>
+
+    <div class="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto hide-scrollbar">
+        <button onclick="window.switchAdminSubTab('course')" class="admin-tab-btn active text-brand-blue font-bold px-4 py-2 border-b-2 border-brand-blue whitespace-nowrap">Course Builder</button>
+        <button onclick="window.switchAdminSubTab('homecms')" class="admin-tab-btn text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-laptop-code mr-1"></i> Homepage CMS</button>
+        <button id="admin-tab-settings" onclick="window.switchAdminSubTab('settings')" class="admin-tab-btn hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-gears mr-1"></i> App Settings & Users</button>
+        <button id="admin-tab-deployer" onclick="window.switchAdminSubTab('deployer')" class="admin-tab-btn hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-rocket mr-1"></i> Course Deployer</button>
+    </div>
+
+    <div id="admin-subtab-homecms" class="admin-subtab hidden space-y-8">
+        
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-image text-brand-blue mr-2"></i>Global App Logo</h4>
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+                    <img id="cms-logo-preview" class="absolute inset-0 w-full h-full object-cover hidden">
+                    <i class="fa-solid fa-upload text-slate-400"></i>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <input type="file" id="cms-logo-upload" accept="image/*" class="hidden" onchange="window.previewImage(this, 'cms-logo-preview')">
+                    <button onclick="document.getElementById('cms-logo-upload').click()" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold px-3 py-1.5 rounded">Upload/Replace Logo</button>
+                    <button onclick="window.clearImagePreview('cms-logo-preview', 'cms-logo-upload')" class="text-xs text-rose-500 hover:underline text-left">Remove</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-bell text-amber-500 mr-2"></i>Notification Manager</h4>
+                <button onclick="window.cmsAddNotification()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Notification</button>
+            </div>
+            <div id="cms-notification-list" class="space-y-3" ondragover="window.allowDrop(event)" ondrop="window.dropSort(event)">
+                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Notification" to create alerts. Drag to reorder priority.</div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-star text-indigo-500 mr-2"></i>Featured Event Controller</h4>
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-slate-400 mb-2 block">BANNER IMAGE (16:9 RECOMMENDED)</label>
+                <div class="w-full h-40 md:h-48 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 relative cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors" onclick="document.getElementById('cms-event-img-upload').click()">
+                    <img id="cms-event-img-preview" class="absolute inset-0 w-full h-full object-cover hidden z-10">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
+                    <span class="text-xs text-slate-500 font-medium">Click to upload banner image</span>
+                </div>
+                <input type="file" id="cms-event-img-upload" accept="image/*" class="hidden" onchange="window.previewImage(this, 'cms-event-img-preview')">
+                <div class="flex justify-end mt-2"><button onclick="window.clearImagePreview('cms-event-img-preview', 'cms-event-img-upload')" class="text-[10px] text-rose-500 hover:underline">Remove Image</button></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT TITLE</label><input type="text" id="cms-event-title" placeholder="Mastering Mains Answer Writing" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
+                <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON TEXT</label><input type="text" id="cms-event-btn-text" placeholder="Register Now" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
+                <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT SUBTITLE</label><textarea id="cms-event-desc" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></textarea></div>
+                <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON REDIRECT LINK (URL)</label><input type="text" id="cms-event-link" placeholder="https://meet.google.com/..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-bolt text-blue-500 mr-2"></i>Arena Test Manager</h4>
+                <button onclick="window.cmsAddArenaCategory()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Category</button>
+            </div>
+            <div id="cms-arena-category-list" class="space-y-6">
+                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.</div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-chalkboard-user text-purple-500 mr-2"></i>Educator Profiles</h4>
+                <button onclick="window.cmsAddEducator()" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Educator</button>
+            </div>
+            <div id="cms-educator-list" class="space-y-4">
+                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Educator" to create a public profile.</div>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-4 pb-8 border-t border-slate-200 dark:border-slate-800">
+            <button onclick="window.saveCMSData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-2 text-lg">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Publish Homepage
+            </button>
+        </div>
+    </div>
+
+    <div id="admin-subtab-course" class="admin-subtab space-y-6">
+        <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
+                <div class="flex-grow w-full md:w-auto flex items-center gap-3">
+                    <select id="admin-course-selector" onchange="window.loadDraftForAdmin(this.value)" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
+                        <option value="" disabled selected>-- Select Course to Edit --</option>
+                        <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
+                        <option value="UPSC General Studies">UPSC General Studies</option>
+                        <option value="NEET Undergraduate">NEET Undergraduate</option>
+                        <option value="Class VI">Class VI</option>
+                        <option value="Class VII">Class VII</option>
+                        <option value="Class VIII">Class VIII</option>
+                        <option value="Class IX">Class IX</option>
+                        <option value="Class X">Class X</option>
+                    </select>
+                    <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
+                </div>
+            </div>
+            <div id="admin-editor-toolbar" class="hidden flex flex-wrap gap-2 justify-center md:justify-start">
+                <button onclick="window.addBlock('text')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-heading text-purple-400 mr-1"></i> Text</button>
+                <button onclick="window.addBlock('table')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-table text-cyan-400 mr-1"></i> Table</button>
+                <div class="w-px bg-slate-700 mx-1 my-1"></div>
+                <button onclick="window.addDynamicFolder()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-folder-plus text-amber-400 mr-1"></i> Folder</button>
+                <button onclick="window.addBlock('live')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-video text-red-400 mr-1"></i> Live</button>
+                <button onclick="window.addBlock('video')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-play text-blue-400 mr-1"></i> Video</button>
+                <button onclick="window.addBlock('pdf')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-file-pdf text-rose-400 mr-1"></i> PDF</button>
+                <button onclick="window.openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-flask text-emerald-400 mr-1"></i> Mock Test</button>
+            </div>
+        </div>
+        <div id="admin-draft-canvas-wrapper" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
+            <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 px-0" />
+            <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 px-0" />
+            <div id="editor-canvas-dropzone" ondragover="window.allowDrop(event)" ondrop="window.drop(event)" onchange="window.autoSaveDraft()" class="flex-grow space-y-4 border-2 border-dashed border-brand-blue/30 bg-blue-50/30 dark:border-slate-700 dark:bg-slate-800/30 rounded-2xl p-4 transition-colors">
+                <div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium"><i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.</div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <button onclick="window.publishCourse()" class="bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Publish to Enrollments</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-subtab-settings" class="admin-subtab hidden space-y-8">
+        
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-headset text-brand-blue mr-2"></i>Global Support Contacts</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 mb-1 block">WHATSAPP SUPPORT NUMBER</label>
+                    <input type="text" id="setting-whatsapp" placeholder="e.g., +91 98765 43210" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 mb-1 block">SUPPORT EMAIL ID</label>
+                    <input type="email" id="setting-email" placeholder="support@linacademy.com" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white">
+                </div>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button onclick="window.saveContactSettings()" class="bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition-colors">Save Contacts</button>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-file-contract text-emerald-500 mr-2"></i>Policy & Pages Manager</h4>
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-slate-400 mb-1 block">SELECT PAGE TO EDIT</label>
+                <select id="setting-policy-selector" onchange="window.loadPolicyDraft(this.value)" class="w-full md:w-1/2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white font-bold">
+                    <option value="" disabled selected>-- Select Policy Page --</option>
+                    <option value="about_us">About Us</option>
+                    <option value="privacy_policy">Privacy Policy</option>
+                    <option value="terms_conditions">Terms & Conditions</option>
+                    <option value="refund_policy">Refund Policy</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-slate-400 mb-1 flex justify-between"><span>PAGE CONTENT (TEXT/HTML)</span> <span id="policy-save-status" class="text-emerald-500 hidden font-bold"><i class="fa-solid fa-check"></i> Draft Saved</span></label>
+                <textarea id="setting-policy-content" rows="8" placeholder="Select a page above and start typing..." oninput="window.autoSavePolicyDraft()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white font-mono whitespace-pre-wrap"></textarea>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="window.publishPolicy()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Publish Page</button>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+            <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-users-gear text-purple-500 mr-2"></i>User Role Management</h4>
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-grow w-full">
+                    <label class="text-[10px] font-bold text-slate-400 mb-1 block">SEARCH STUDENT BY EMAIL</label>
+                    <input type="email" id="role-search-email" placeholder="student@example.com" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white">
+                </div>
+                <button onclick="window.searchUserForRole()" class="w-full md:w-auto bg-brand-blue hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition-colors whitespace-nowrap"><i class="fa-solid fa-magnifying-glass mr-2"></i> Search User</button>
+            </div>
+            
+            <div id="role-edit-panel" class="hidden mt-6 p-4 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white" id="role-user-name">Student Name</p>
+                        <p class="text-xs text-slate-500" id="role-user-email">student@example.com</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <select id="role-user-select" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold outline-none dark:text-white">
+                            <option value="student">Student</option>
+                            <option value="admin">Admin</option>
+                            <option value="superadmin">Super Admin</option>
+                        </select>
+                        <button onclick="window.updateUserRole()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg shadow-sm transition-colors text-sm">Save Role</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="admin-subtab-deployer" class="admin-subtab hidden space-y-8">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm text-center py-12">
+            <i class="fa-solid fa-rocket text-4xl text-emerald-500 mb-4 opacity-50"></i>
+            <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Master Course Deployer</h4>
+            <p class="text-sm text-slate-500">Panel interface coming soon...</p>
+        </div>
+    </div>
+</div>
