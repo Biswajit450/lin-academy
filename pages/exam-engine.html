@@ -1,6 +1,10 @@
 <div id="screen-exam-engine" class="app-screen hidden fixed inset-0 z-[60] bg-slate-50 overflow-y-auto flex-col font-sans">
     
     <style>
+        /* 🚨 BUG FIX: Radio Button Selection Highlights 🚨 */
+        input[type="radio"]:checked + div { background-color: #eff6ff !important; border-color: #2563eb !important; }
+        input[type="radio"]:checked + div .radio-circle { border-color: #2563eb !important; background-color: #2563eb !important; }
+        
         /* Gamification Animations */
         @keyframes float {
             0%, 100% { transform: translateY(0); }
