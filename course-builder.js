@@ -1,6 +1,7 @@
 // course-builder.js
 
-import { doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// 🚨 ADDED query, where, getDocs for Smart Roster 🚨
+import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
 // ==========================================
@@ -221,6 +222,78 @@ document.addEventListener('dragend', function(e) {
 });
 
 // ==========================================
+// SMART ROSTER ENGINE (NEW FEATURE)
+// ==========================================
+window.fetchCourseRoster = async function(courseName) {
+    const rosterPanel = document.getElementById('admin-roster-panel');
+    const rosterCount = document.getElementById('roster-count');
+    const rosterEmails = document.getElementById('roster-emails');
+
+    if(!courseName) {
+        if(rosterPanel) rosterPanel.classList.add('hidden');
+        return;
+    }
+
+    // Show panel and set loading state
+    if(rosterPanel) rosterPanel.classList.remove('hidden');
+    if(rosterEmails) rosterEmails.value = "Fetching active student emails from secure vault...";
+    if(rosterCount) rosterCount.innerText = "0";
+
+    try {
+        // Query Firebase: Find all users where unlocked_courses contains the selected courseName
+        const q = query(collection(db, "users"), where("unlocked_courses", "array-contains", courseName));
+        const querySnapshot = await getDocs(q);
+        
+        let emails = [];
+        querySnapshot.forEach((docSnap) => {
+            const userData = docSnap.data();
+            if(userData.email) {
+                emails.push(userData.email);
+            }
+        });
+
+        if(emails.length > 0) {
+            if(rosterCount) rosterCount.innerText = emails.length;
+            if(rosterEmails) rosterEmails.value = emails.join(', '); // Comma separated for Google Calendar
+        } else {
+            if(rosterCount) rosterCount.innerText = "0";
+            if(rosterEmails) rosterEmails.value = "No active students found for this course yet.";
+        }
+    } catch(e) {
+        console.error("Error fetching roster:", e);
+        if(rosterEmails) rosterEmails.value = "Failed to fetch roster. Please check your connection.";
+    }
+}
+
+window.copyRosterEmails = function() {
+    const emailBox = document.getElementById('roster-emails');
+    if(!emailBox || !emailBox.value || emailBox.value.includes("Fetching") || emailBox.value.includes("No active")) {
+        alert("Nothing to copy yet!");
+        return;
+    }
+    
+    // Copy to clipboard API
+    navigator.clipboard.writeText(emailBox.value).then(() => {
+        const btn = event.currentTarget;
+        const originalHtml = btn.innerHTML;
+        
+        // Success feedback animation
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+        btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+        btn.classList.add('bg-slate-800', 'hover:bg-slate-700');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('bg-slate-800', 'hover:bg-slate-700');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert("Failed to copy to clipboard. You can manually select and copy the text.");
+    });
+}
+
+// ==========================================
 // CLOUD SAVE & PUBLISH (COURSE BUILDER)
 // ==========================================
 window.autoSaveDraft = async function() {
@@ -255,6 +328,9 @@ window.loadDraftForAdmin = async function(courseName) {
     document.getElementById('admin-editor-toolbar').classList.remove('hidden'); 
     document.getElementById('admin-draft-canvas-wrapper').classList.remove('hidden');
     
+    // 🚨 TRIGGER SMART ROSTER FETCH HERE 🚨
+    window.fetchCourseRoster(courseName);
+
     try { 
         const draftSnap = await getDoc(doc(db, "course_drafts", courseName)); 
         if(draftSnap.exists()) { 
