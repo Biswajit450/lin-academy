@@ -82,7 +82,7 @@ window.cmsAddNotification = function(text = '') {
     div.id = id;
     div.className = "cms-notif-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 cursor-move";
     div.draggable = true;
-    div.ondragstart = window.drag; // Requires window.drag from course-builder/app.js
+    div.ondragstart = window.drag; 
     
     div.innerHTML = `
         <i class="fa-solid fa-grip-vertical text-slate-400 px-2 cursor-grab"></i>
@@ -119,7 +119,7 @@ window.cmsAddArenaCategory = function(catData = null) {
     div.className = "cms-arena-cat-item bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm";
     div.innerHTML = `
         <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
-            <input type="text" class="cat-name w-1/2 bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white text-lg placeholder-slate-400" placeholder="Category Name (e.g., UPSC GS Tests)" value="${catName}">
+            <input type="text" class="cat-name w-1/2 bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white text-lg placeholder-slate-400" placeholder="Category Name (e.g., Weekly Mock Tests)" value="${catName}">
             <div class="flex gap-3 items-center">
                 <button type="button" onclick="window.cmsAddArenaTestToCat('${catId}')" class="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold">+ Add Test</button>
                 <button type="button" onclick="document.getElementById('${catId}').remove()" class="text-xs text-rose-500 hover:underline font-bold">Delete Category</button>
@@ -155,7 +155,7 @@ window.cmsAddArenaTestToCat = function(catId, testData = null) {
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">VAULT ID</label>
                 <button type="button" onclick="window.openTestModal()" class="text-emerald-500 hover:underline font-bold text-[10px]"><i class="fa-solid fa-flask"></i> Create New</button>
             </div>
-            <input type="text" class="test-vault w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${vaultId}" placeholder="Firebase ID">
+            <input type="text" class="test-vault w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none dark:text-white" value="${vaultId}" placeholder="Paste Vault ID Here">
         </div>
         <div class="w-full md:w-1/5">
             <label class="text-[10px] font-bold text-slate-400 block mb-1">STATUS</label>
@@ -255,21 +255,46 @@ window.saveCMSData = async function() {
             link: document.getElementById('cms-event-link').value
         };
 
+        // 🚨 STRICT VALIDATION GUARDS ADDED HERE 🚨
         const arenaCategories = [];
+        let validationFailed = false;
+
         document.querySelectorAll('.cms-arena-cat-item').forEach(catItem => {
             const catName = catItem.querySelector('.cat-name').value.trim();
-            if(!catName) return; 
-            
+            if(!catName) {
+                alert("⚠️ HOLD ON! One of your Arena Categories is missing a Name. Please give it a title (e.g., 'Weekly Tests') before publishing.");
+                validationFailed = true;
+                return;
+            }
+
             const tests = [];
             catItem.querySelectorAll('.cms-arena-test-item').forEach(testItem => {
+                const tName = testItem.querySelector('.test-name').value.trim();
+                const tVault = testItem.querySelector('.test-vault').value.trim();
+                
+                if(!tName || !tVault) {
+                    alert(`⚠️ HOLD ON! In category '${catName}', a test is missing its Name or Vault ID. Please fill them out.`);
+                    validationFailed = true;
+                    return;
+                }
+
                 tests.push({
-                    name: testItem.querySelector('.test-name').value, 
-                    vaultId: testItem.querySelector('.test-vault').value,
+                    name: tName, 
+                    vaultId: tVault,
                     status: testItem.querySelector('.test-status').value
                 });
             });
-            arenaCategories.push({ name: catName, tests: tests });
+            
+            if(!validationFailed) {
+                arenaCategories.push({ name: catName, tests: tests });
+            }
         });
+
+        if(validationFailed) {
+            btn.innerHTML = originalHtml; 
+            btn.disabled = false;
+            return; // 🛑 Stop saving if data is missing!
+        }
 
         const educators = [];
         const eduNodes = document.querySelectorAll('.cms-edu-item');
@@ -308,8 +333,10 @@ window.saveCMSData = async function() {
         console.error("CMS Save Error", e); 
         alert("Failed to save CMS data. Check console for details."); 
     } finally { 
-        btn.innerHTML = originalHtml; 
-        btn.disabled = false; 
+        if(!validationFailed) {
+            btn.innerHTML = originalHtml; 
+            btn.disabled = false; 
+        }
     }
 }
 
@@ -500,9 +527,8 @@ window.renderHomepage = async function() {
     } catch(e) { console.error("Error rendering homepage", e); }
 }
 
-// 🐛 BUG FIX: Await the screen to be generated before modifying DOM
 window.showGenericViewAll = async function(title, type) {
-    await window.showScreen('screen-generic-view'); // <--- CRITICAL FIX
+    await window.showScreen('screen-generic-view'); 
 
     document.getElementById('generic-view-title').innerText = title;
     const grid = document.getElementById('generic-view-grid');
