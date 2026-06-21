@@ -294,6 +294,7 @@ window.publishCourse = async function() {
     }
 }
 
+// 🐛 BUG FIX: Unfreezing buttons for students after fetching course contents
 window.openCourseView = async function(courseName) {
     await window.showScreen('screen-course-view'); 
     
@@ -309,7 +310,13 @@ window.openCourseView = async function(courseName) {
             const data = docSnap.data(); 
             document.getElementById('student-main-title').value = data.mainTitle || ''; 
             document.getElementById('student-sub-title').value = data.subTitle || ''; 
+            
+            // FIX: Inject HTML, then remove 'draggable' so buttons become clickable again!
             canvas.innerHTML = data.canvasHtml || ''; 
+            canvas.querySelectorAll('[draggable]').forEach(el => {
+                el.removeAttribute('draggable');
+                el.style.pointerEvents = 'auto'; 
+            });
         } else { 
             canvas.innerHTML = '<div class="text-center text-rose-500 py-10"><i class="fa-solid fa-triangle-exclamation text-2xl mb-3"></i><br>Course content is being updated. Please check back soon!</div>'; 
         } 
