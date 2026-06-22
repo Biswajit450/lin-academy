@@ -4,6 +4,9 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/f
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { db, storage } from "./firebase-config.js";
 
+// 🚨 THE SYNC LOCK GUARD 🚨
+window.cmsDataLoaded = false;
+
 // Image Preview & Clear Utilities for CMS
 window.previewImage = function(input, previewId) {
     const file = input.files[0];
@@ -217,6 +220,12 @@ window.cmsAddEducator = function(eduData = null) {
 }
 
 window.saveCMSData = async function() {
+    // 🚨 SYNC LOCK GUARD: Prevent saving if data isn't loaded yet!
+    if (!window.cmsDataLoaded) {
+        alert("⚠️ SYNC LOCK ACTIVE: Background data is still loading. Please wait a few seconds before publishing, or refresh the page!");
+        return;
+    }
+
     const btn = event.currentTarget; 
     const originalHtml = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing to Cloud...'; 
@@ -255,7 +264,6 @@ window.saveCMSData = async function() {
             link: document.getElementById('cms-event-link').value
         };
 
-        // 🚨 STRICT VALIDATION GUARDS ADDED HERE 🚨
         const arenaCategories = [];
         let validationFailed = false;
 
@@ -293,7 +301,7 @@ window.saveCMSData = async function() {
         if(validationFailed) {
             btn.innerHTML = originalHtml; 
             btn.disabled = false;
-            return; // 🛑 Stop saving if data is missing!
+            return; 
         }
 
         const educators = [];
@@ -324,7 +332,8 @@ window.saveCMSData = async function() {
             updatedAt: new Date().toISOString()
         };
 
-        await setDoc(doc(db, "cms", "homepage"), finalCmsData);
+        // Added { merge: true } for extra safety
+        await setDoc(doc(db, "cms", "homepage"), finalCmsData, { merge: true });
         alert("Success! 🚀 Your Homepage CMS is officially published and live for all students.");
         
         window.renderHomepage(); 
@@ -389,8 +398,13 @@ window.loadCMSDataIntoAdmin = async function() {
                 document.getElementById('cms-educator-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Educator" to create a public profile.</div>';
             }
         }
+        
+        // 🚨 UNLOCK THE GUARD: Data has fully loaded successfully!
+        window.cmsDataLoaded = true;
+        
     } catch(e) { 
         console.error("CMS Load Error", e); 
+        alert("Failed to sync background data. The Sync Guard is active to protect your files.");
     }
 }
 

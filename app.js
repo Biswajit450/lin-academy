@@ -36,6 +36,11 @@ window.showScreen = async function(screenId) {
                         if (cmsTabBtn) cmsTabBtn.classList.remove('hidden');
                         if (settingsTabBtn) settingsTabBtn.classList.remove('hidden');
                         if (deployerTabBtn) deployerTabBtn.classList.remove('hidden');
+                        
+                        // 🚨 BUG FIX: Auto-wake CMS data to prevent blind overwrites
+                        if(window.loadCMSDataIntoAdmin) {
+                            window.loadCMSDataIntoAdmin();
+                        }
                     } else {
                         if (cmsTabBtn) cmsTabBtn.classList.add('hidden');
                         if (settingsTabBtn) settingsTabBtn.classList.add('hidden');
