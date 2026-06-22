@@ -332,7 +332,6 @@ window.saveCMSData = async function() {
             updatedAt: new Date().toISOString()
         };
 
-        // Added { merge: true } for extra safety
         await setDoc(doc(db, "cms", "homepage"), finalCmsData, { merge: true });
         alert("Success! 🚀 Your Homepage CMS is officially published and live for all students.");
         
@@ -357,45 +356,66 @@ window.loadCMSDataIntoAdmin = async function() {
             
             if(data.appLogo) {
                 const logoImg = document.getElementById('cms-logo-preview');
-                logoImg.src = data.appLogo;
-                logoImg.classList.remove('hidden');
-                document.getElementById('cms-logo-upload').parentElement.querySelector('i').style.display = 'none';
+                if(logoImg) {
+                    logoImg.src = data.appLogo;
+                    logoImg.classList.remove('hidden');
+                    // 🐛 BUG FIX: Look in the preview's parent, not the input's parent!
+                    const icon = logoImg.parentElement.querySelector('i');
+                    if (icon) icon.style.display = 'none';
+                }
             }
 
-            document.getElementById('cms-notification-list').innerHTML = '';
-            if(data.notifications && data.notifications.length > 0) {
-                data.notifications.forEach(text => window.cmsAddNotification(text));
-            } else {
-                document.getElementById('cms-notification-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Notification" to create alerts. Drag to reorder priority.</div>';
+            const notifList = document.getElementById('cms-notification-list');
+            if(notifList) {
+                notifList.innerHTML = '';
+                if(data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(text => window.cmsAddNotification(text));
+                } else {
+                    notifList.innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Notification" to create alerts. Drag to reorder priority.</div>';
+                }
             }
 
             if(data.event) { 
-                document.getElementById('cms-event-title').value = data.event.title || ''; 
-                document.getElementById('cms-event-btn-text').value = data.event.btnText || ''; 
-                document.getElementById('cms-event-desc').value = data.event.desc || ''; 
-                document.getElementById('cms-event-link').value = data.event.link || ''; 
+                const titleEl = document.getElementById('cms-event-title');
+                if(titleEl) {
+                    titleEl.value = data.event.title || ''; 
+                    document.getElementById('cms-event-btn-text').value = data.event.btnText || ''; 
+                    document.getElementById('cms-event-desc').value = data.event.desc || ''; 
+                    document.getElementById('cms-event-link').value = data.event.link || ''; 
+                }
                 
                 if(data.event.bannerUrl) {
                     const bannerImg = document.getElementById('cms-event-img-preview');
-                    bannerImg.src = data.event.bannerUrl;
-                    bannerImg.classList.remove('hidden');
-                    bannerImg.parentElement.querySelector('i').style.display = 'none';
-                    bannerImg.parentElement.querySelector('span').style.display = 'none';
+                    if(bannerImg) {
+                        bannerImg.src = data.event.bannerUrl;
+                        bannerImg.classList.remove('hidden');
+                        
+                        const icon = bannerImg.parentElement.querySelector('i');
+                        if (icon) icon.style.display = 'none';
+                        const span = bannerImg.parentElement.querySelector('span');
+                        if (span) span.style.display = 'none';
+                    }
                 }
             }
             
-            document.getElementById('cms-arena-category-list').innerHTML = '';
-            if(data.arenaCategories && data.arenaCategories.length > 0) { 
-                data.arenaCategories.forEach(cat => window.cmsAddArenaCategory(cat)); 
-            } else { 
-                document.getElementById('cms-arena-category-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.</div>'; 
+            const catList = document.getElementById('cms-arena-category-list');
+            if(catList) {
+                catList.innerHTML = '';
+                if(data.arenaCategories && data.arenaCategories.length > 0) { 
+                    data.arenaCategories.forEach(cat => window.cmsAddArenaCategory(cat)); 
+                } else { 
+                    catList.innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.</div>'; 
+                }
             }
 
-            document.getElementById('cms-educator-list').innerHTML = '';
-            if(data.educators && data.educators.length > 0) { 
-                data.educators.forEach(edu => window.cmsAddEducator(edu)); 
-            } else {
-                document.getElementById('cms-educator-list').innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Educator" to create a public profile.</div>';
+            const eduList = document.getElementById('cms-educator-list');
+            if(eduList) {
+                eduList.innerHTML = '';
+                if(data.educators && data.educators.length > 0) { 
+                    data.educators.forEach(edu => window.cmsAddEducator(edu)); 
+                } else {
+                    eduList.innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Educator" to create a public profile.</div>';
+                }
             }
         }
         
