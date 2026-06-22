@@ -53,6 +53,19 @@ window.loadProfileData = async function() {
             
             if(phoneInput && data.phone) phoneInput.value = data.phone;
             if(cityInput && data.city) cityInput.value = data.city;
+
+            // 🚨 DYNAMIC BADGE LOGIC 🚨
+            const badgeEl = document.getElementById('profile-learner-badge');
+            if (badgeEl && role === "student") {
+                const courseCount = (data.unlocked_courses || []).length;
+                if (courseCount > 0) {
+                    badgeEl.innerHTML = '<i class="fa-solid fa-crown text-amber-500 mr-1"></i> Pro Learner';
+                    badgeEl.className = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-all';
+                } else {
+                    badgeEl.innerHTML = '<i class="fa-solid fa-seedling text-emerald-500 mr-1"></i> New Explorer';
+                    badgeEl.className = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-all';
+                }
+            }
             
             // Progress sirf student ko dikhega
             if (role === "student" && window.renderProgress) {
