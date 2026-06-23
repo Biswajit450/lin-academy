@@ -1,5 +1,6 @@
 // course-builder.js
 
+// 🚨 ADDED query, where, getDocs for Smart Roster 🚨
 import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
@@ -9,33 +10,6 @@ import { db } from "./firebase-config.js";
 window.clearCanvasPlaceholder = function() { 
     const placeholder = document.getElementById('canvas-placeholder'); 
     if (placeholder) placeholder.remove(); 
-}
-
-window.updateLiveTimeUI = function(element) {
-    const block = element.closest('[id^="block-"]');
-    if(!block) return;
-    
-    const inputs = block.querySelectorAll('input[type="datetime-local"]');
-    const startVal = inputs[0] ? inputs[0].value : '';
-    const endVal = inputs[1] ? inputs[1].value : '';
-    
-    let displayText = "Time not set yet";
-    
-    if(startVal) {
-        const startDate = new Date(startVal);
-        displayText = startDate.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-        
-        if(endVal) {
-            const endDate = new Date(endVal);
-            displayText += " to " + endDate.toLocaleTimeString('en-IN', { timeStyle: 'short' });
-        }
-    }
-    
-    const displaySpan = block.querySelector('.live-time-display');
-    if(displaySpan) {
-        displaySpan.innerText = displayText;
-    }
-    window.autoSaveDraft();
 }
 
 window.addBlock = function(type) {
@@ -86,20 +60,19 @@ window.addBlock = function(type) {
         if(type === 'live') { 
             icon = 'fa-video'; color = 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Meeting Link (Zoom, Meet, etc.)';
             actionBtnText = '🔴 Join Live Class'; actionColor = 'bg-red-500 hover:bg-red-600 text-white border border-red-600';
-            extraInputs = `
+            
+            // 🚨 BUG FIX: Time boxes moved OUTSIDE admin area so students can see them!
+            extraInputs = ``; 
+            studentVisibleHtml = `
                 <div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 block mb-1">START TIME</label>
-                        <input type="datetime-local" onchange="window.updateLiveTimeUI(this)" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
+                        <label class="text-[10px] font-bold text-slate-500 block mb-1">SCHEDULED START</label>
+                        <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none font-bold text-slate-700" onchange="window.autoSaveDraft()">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 block mb-1">END TIME</label>
-                        <input type="datetime-local" onchange="window.updateLiveTimeUI(this)" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
+                        <label class="text-[10px] font-bold text-slate-500 block mb-1">SCHEDULED END</label>
+                        <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none font-bold text-slate-700" onchange="window.autoSaveDraft()">
                     </div>
-                </div>`;
-            studentVisibleHtml = `
-                <div class="student-visible-time text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-lg inline-block mt-2 mb-2">
-                    📅 <span class="live-time-display">Time not set yet</span>
                 </div>`;
         }
         
@@ -159,6 +132,7 @@ window.addDynamicFolder = function() {
     setTimeout(window.autoSaveDraft, 200);
 }
 
+// Table logic
 window.addRow = function(btn) { 
     const table = btn.closest('div[id^="block-"]').querySelector('table'); 
     const cols = table.rows[0].cells.length; 
@@ -210,6 +184,7 @@ window.removeCol = function(btn) {
     } 
 }
 
+// Drag & Drop logic for Course Builder
 window.draggedElement = null;
 
 window.drag = function(ev) { 
@@ -413,7 +388,6 @@ window.openCourseView = async function(courseName) {
         
         if (docSnap.exists()) { 
             const data = docSnap.data(); 
-            // Fixed Title text rendering
             document.getElementById('student-main-title').innerText = data.mainTitle || ''; 
             document.getElementById('student-sub-title').innerText = data.subTitle || ''; 
             
@@ -431,8 +405,12 @@ window.openCourseView = async function(courseName) {
             });
             
             // 🔒 3. Lock all input boxes and textareas so student can't type
+            // BUG FIX: Added specific 'disabled=true' for Date/Time picker!
             canvas.querySelectorAll('input, textarea').forEach(el => {
                 el.readOnly = true;
+                if(el.type === 'datetime-local') {
+                    el.disabled = true;
+                }
                 el.classList.add('pointer-events-none');
             });
             
