@@ -15,6 +15,7 @@
         <button id="admin-tab-deployer" onclick="window.switchAdminSubTab('deployer')" class="admin-tab-btn hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-rocket mr-1"></i> Course Deployer</button>
     </div>
 
+    <!-- 🚀 TAB 1: HOMEPAGE CMS 🚀 -->
     <div id="admin-subtab-homecms" class="admin-subtab hidden space-y-8">
         
         <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
@@ -89,6 +90,7 @@
         </div>
     </div>
 
+    <!-- 🚀 TAB 2: COURSE BUILDER 🚀 -->
     <div id="admin-subtab-course" class="admin-subtab space-y-6">
         <div class="bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-800 sticky top-[72px] z-30">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-700 pb-4">
@@ -106,25 +108,13 @@
                     </select>
                     <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
                 </div>
-            </div>
-
-            <div id="admin-roster-panel" class="hidden bg-emerald-900/20 rounded-xl p-4 border border-emerald-800/50 shadow-inner mb-4 transition-all">
-                <div class="flex items-center justify-between mb-3 border-b border-emerald-800/50 pb-2">
-                    <div>
-                        <h3 class="text-xs font-bold text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-users"></i> Active Student Roster</h3>
-                    </div>
-                    <div class="text-right">
-                        <span class="bg-emerald-900 text-emerald-300 px-2 py-1 rounded text-[10px] font-bold border border-emerald-700">Total: <span id="roster-count">0</span></span>
-                    </div>
-                </div>
                 
-                <div class="relative">
-                    <textarea id="roster-emails" readonly class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-400 focus:outline-none resize-none h-16 shadow-inner" placeholder="Fetching active emails..."></textarea>
-                    <button onclick="window.copyRosterEmails()" class="absolute bottom-2 right-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded shadow-sm transition-colors text-[10px] font-bold">
-                        Copy List
-                    </button>
-                </div>
+                <!-- THE NEW VIEW ROSTER BUTTON -->
+                <button id="view-roster-btn" onclick="document.getElementById('roster-modal').classList.remove('hidden')" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-users"></i> View Students (<span id="roster-count-btn">0</span>)
+                </button>
             </div>
+            
             <div id="admin-editor-toolbar" class="hidden flex flex-wrap gap-2 justify-center md:justify-start">
                 <button onclick="window.addBlock('text')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-heading text-purple-400 mr-1"></i> Text</button>
                 <button onclick="window.addBlock('table')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-table text-cyan-400 mr-1"></i> Table</button>
@@ -136,6 +126,7 @@
                 <button onclick="window.openTestModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700"><i class="fa-solid fa-flask text-emerald-400 mr-1"></i> Mock Test</button>
             </div>
         </div>
+        
         <div id="admin-draft-canvas-wrapper" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[60vh] flex flex-col relative edit-mode">
             <input type="text" id="draft-main-title" onchange="window.autoSaveDraft()" placeholder="Course Title (e.g., Complete Physiology)" class="course-title-input text-3xl md:text-5xl font-extrabold font-serif bg-transparent border-none outline-none w-full mb-2 text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-700 px-0" />
             <input type="text" id="draft-sub-title" onchange="window.autoSaveDraft()" placeholder="Course Subtitle (e.g., Master the mechanisms of the human body...)" class="course-title-input text-sm md:text-lg font-medium bg-transparent border-none outline-none w-full mb-8 text-slate-500 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 px-0" />
@@ -148,8 +139,8 @@
         </div>
     </div>
 
+    <!-- 🚀 TAB 3: APP SETTINGS 🚀 -->
     <div id="admin-subtab-settings" class="admin-subtab hidden space-y-8">
-        
         <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
             <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-headset text-brand-blue mr-2"></i>Global Support Contacts</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -215,7 +206,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- 🚀 TAB 4: MASTER COURSE DEPLOYER 🚀 -->
@@ -246,7 +236,6 @@
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sub-Title / Tagline</label>
                                 <input type="text" id="deploy-subtitle" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="e.g., Master all 13 pillars..." oninput="window.updateLivePreview()">
                             </div>
-                            <!-- ✨ The Missing Ribbon Dropdown -->
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Badge / Ribbon (Optional)</label>
                                 <select id="deploy-badge" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white font-bold cursor-pointer" onchange="window.updateLivePreview()">
@@ -289,7 +278,6 @@
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon BG Color</label>
                                     <input type="color" id="deploy-box-bg" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#ecfdf5" oninput="window.updateLivePreview()">
                                 </div>
-                                <!-- ✨ Extra Borders Added -->
                                 <div>
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon Box Border</label>
                                     <input type="color" id="deploy-box-border" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#a7f3d0" oninput="window.updateLivePreview()">
@@ -298,7 +286,6 @@
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tile Border Color</label>
                                     <input type="color" id="deploy-tile-border" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#f1f5f9" oninput="window.updateLivePreview()">
                                 </div>
-                                <!-- Tile Size Selector -->
                                 <div>
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tile Size</label>
                                     <select id="deploy-tile-size" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-blue dark:text-white font-bold cursor-pointer" onchange="window.updateLivePreview()">
@@ -361,9 +348,21 @@
                         <i class="fa-solid fa-satellite-dish"></i> Deploy to App
                     </button>
                     <p class="text-[9px] text-center text-slate-400 font-bold uppercase mt-3">Syncs with DB, CMS, and Enrollment Engine.</p>
+                    
                 </div>
             </div>
 
         </div>
     </div>
+    
+    <!-- THE ROSTER MODAL -->
+    <div id="roster-modal" class="fixed inset-0 z-[90] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 relative">
+            <button onclick="document.getElementById('roster-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold text-emerald-600 mb-4"><i class="fa-solid fa-users"></i> Active Student Roster</h3>
+            <textarea id="roster-emails" readonly class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-600 dark:text-slate-400 h-32 mb-4" placeholder="Emails will appear here..."></textarea>
+            <button onclick="window.copyRosterEmails()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-sm">Copy All Emails</button>
+        </div>
+    </div>
+
 </div>
