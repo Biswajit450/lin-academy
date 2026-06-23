@@ -85,8 +85,12 @@ window.showScreen = async function(screenId) {
         if(window.loadProfileData) window.loadProfileData();
     }
     
+    // 🚀 NEW LOGIC: Refresh Admin Dropdown & UI every time Admin Screen is opened
     if(screenId === 'screen-admin') {
         if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown();
+        // Wake up CMS Data and Categories so they don't disappear on hard refresh
+        if(window.loadCMSDataIntoAdmin) window.loadCMSDataIntoAdmin();
+        if(window.loadDeployerCategories) window.loadDeployerCategories();
     }
     
     const targetScreen = document.getElementById(screenId);

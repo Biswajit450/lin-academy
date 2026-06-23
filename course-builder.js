@@ -32,7 +32,7 @@ window.addBlock = function(type) {
         blockHTML = `
         <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
             <div class="flex justify-between items-center mb-2">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-table text-cyan-400 mr-1"></i> Syllabus Table</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-table text-cyan-400"></i> <input type="text" value="Table" class="bg-transparent border-none outline-none font-bold text-slate-400 uppercase tracking-wider text-[10px] w-32"></span>
                 <div class="flex items-center gap-2">
                     <button onclick="window.addRow(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">+ Row</button>
                     <button onclick="window.removeRow(this)" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700">- Row</button>
@@ -55,7 +55,8 @@ window.addBlock = function(type) {
             </div>
         </div>`;
     } else if(type === 'live' || type === 'video' || type === 'pdf') {
-        let icon = ''; let color = ''; let placeholderText = ''; let typeName = ''; let extraInputs = ''; let actionBtnText = ''; let actionColor = '';
+        let icon = ''; let color = ''; let placeholderText = ''; let typeName = ''; let extraInputs = ''; let actionBtnText = ''; let actionColor = ''; let studentVisibleHtml = '';
+        
         if(type === 'live') { 
             icon = 'fa-video'; color = 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Meeting Link (Zoom, Meet, etc.)';
             actionBtnText = '🔴 Join Live Class'; actionColor = 'bg-red-500 hover:bg-red-600 text-white border border-red-600';
@@ -70,11 +71,17 @@ window.addBlock = function(type) {
                         <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
                     </div>
                 </div>`;
+            studentVisibleHtml = `
+                <div class="student-visible-time text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-lg inline-block mt-2 mb-2">
+                    📅 Live Session Scheduled (Time visible upon entry)
+                </div>`;
         }
+        
         if(type === 'video') { 
             icon = 'fa-play'; color = 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Video Link (Bunny.net, YouTube, etc.)'; 
             actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white border border-blue-700'; 
         }
+        
         if(type === 'pdf') { 
             icon = 'fa-file-pdf'; color = 'text-rose-500 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800'; typeName = 'PDF Handout'; placeholderText = 'Secure File URL (Firebase Storage etc.)'; 
             actionBtnText = '📄 View Document'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-600'; 
@@ -95,6 +102,7 @@ window.addBlock = function(type) {
                     <input type="text" placeholder="${placeholderText}" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono">
                     ${extraInputs}
                 </div>
+                ${studentVisibleHtml}
                 <button class="student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 ${actionColor} hidden w-full sm:w-auto text-center justify-center" onclick="window.consumeContent('${type}', this)">${actionBtnText}</button>
             </div>
         </div>`;
@@ -226,7 +234,7 @@ document.addEventListener('dragend', function(e) {
 // ==========================================
 window.fetchCourseRoster = async function(courseName) {
     const rosterPanel = document.getElementById('admin-roster-panel');
-    const rosterCount = document.getElementById('roster-count');
+    const rosterCount = document.getElementById('roster-count-btn');
     const rosterEmails = document.getElementById('roster-emails');
 
     if(!courseName) {
@@ -234,13 +242,11 @@ window.fetchCourseRoster = async function(courseName) {
         return;
     }
 
-    // Show panel and set loading state
     if(rosterPanel) rosterPanel.classList.remove('hidden');
     if(rosterEmails) rosterEmails.value = "Fetching active student emails from secure vault...";
     if(rosterCount) rosterCount.innerText = "0";
 
     try {
-        // Query Firebase: Find all users where unlocked_courses contains the selected courseName
         const q = query(collection(db, "users"), where("unlocked_courses", "array-contains", courseName));
         const querySnapshot = await getDocs(q);
         
@@ -254,7 +260,7 @@ window.fetchCourseRoster = async function(courseName) {
 
         if(emails.length > 0) {
             if(rosterCount) rosterCount.innerText = emails.length;
-            if(rosterEmails) rosterEmails.value = emails.join(', '); // Comma separated for Google Calendar
+            if(rosterEmails) rosterEmails.value = emails.join(', '); 
         } else {
             if(rosterCount) rosterCount.innerText = "0";
             if(rosterEmails) rosterEmails.value = "No active students found for this course yet.";
@@ -272,12 +278,10 @@ window.copyRosterEmails = function() {
         return;
     }
     
-    // Copy to clipboard API
     navigator.clipboard.writeText(emailBox.value).then(() => {
         const btn = event.currentTarget;
         const originalHtml = btn.innerHTML;
         
-        // Success feedback animation
         btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
         btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
         btn.classList.add('bg-slate-800', 'hover:bg-slate-700');
@@ -328,7 +332,6 @@ window.loadDraftForAdmin = async function(courseName) {
     document.getElementById('admin-editor-toolbar').classList.remove('hidden'); 
     document.getElementById('admin-draft-canvas-wrapper').classList.remove('hidden');
     
-    // 🚨 TRIGGER SMART ROSTER FETCH HERE 🚨
     window.fetchCourseRoster(courseName);
 
     try { 
@@ -387,7 +390,6 @@ window.openCourseView = async function(courseName) {
             document.getElementById('student-main-title').value = data.mainTitle || ''; 
             document.getElementById('student-sub-title').value = data.subTitle || ''; 
             
-            // FIX: Inject HTML, then remove 'draggable' so buttons become clickable again!
             canvas.innerHTML = data.canvasHtml || ''; 
             canvas.querySelectorAll('[draggable]').forEach(el => {
                 el.removeAttribute('draggable');
@@ -535,7 +537,6 @@ window.consumeContent = function(type, elementOrId) {
     const linkInput = block.querySelector('.link-input'); 
     let val = linkInput ? linkInput.value.trim() : '';
     
-    // Grab the actual title of the video/PDF
     const titleInput = block.querySelector('input[placeholder*="Title"]');
     const title = titleInput ? titleInput.value : 'Classroom Content';
     
@@ -544,16 +545,13 @@ window.consumeContent = function(type, elementOrId) {
         return; 
     }
     
-    // Live Classes (Zoom/Meet) open in a new tab because they cannot be iframed safely
     if(type === 'live') { 
         window.open(val, '_blank'); 
     } 
-    // Video and PDFs open in our Premium Built-in Player
     else if(type === 'video' || type === 'pdf') { 
         document.getElementById('content-player-modal').classList.remove('hidden');
         document.getElementById('player-title').innerText = title;
         
-        // Smart URL Parser (Just in case educator pastes a normal YouTube link instead of embed)
         if (type === 'video') {
             if (val.includes('youtube.com/watch?v=')) {
                 val = val.replace('watch?v=', 'embed/');
@@ -566,8 +564,7 @@ window.consumeContent = function(type, elementOrId) {
     }
 }
 
-// Global function to cleanly shut down the player
 window.closeContentPlayer = function() {
     document.getElementById('content-player-modal').classList.add('hidden');
-    document.getElementById('player-iframe').src = ''; // Cuts off audio/video instantly!
+    document.getElementById('player-iframe').src = ''; 
 }
