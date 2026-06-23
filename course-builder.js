@@ -1,6 +1,5 @@
 // course-builder.js
 
-// 🚨 ADDED query, where, getDocs for Smart Roster 🚨
 import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
@@ -10,6 +9,35 @@ import { db } from "./firebase-config.js";
 window.clearCanvasPlaceholder = function() { 
     const placeholder = document.getElementById('canvas-placeholder'); 
     if (placeholder) placeholder.remove(); 
+}
+
+// 🚀 BUG FIX: Auto-update Live Class Time for Students
+window.updateLiveTimeUI = function(element) {
+    const block = element.closest('[id^="block-"]');
+    if(!block) return;
+    
+    const inputs = block.querySelectorAll('input[type="datetime-local"]');
+    const startVal = inputs[0] ? inputs[0].value : '';
+    const endVal = inputs[1] ? inputs[1].value : '';
+    
+    let displayText = "Time not set yet";
+    
+    if(startVal) {
+        const startDate = new Date(startVal);
+        // Format to Indian Date/Time Style
+        displayText = startDate.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+        
+        if(endVal) {
+            const endDate = new Date(endVal);
+            displayText += " to " + endDate.toLocaleTimeString('en-IN', { timeStyle: 'short' });
+        }
+    }
+    
+    const displaySpan = block.querySelector('.live-time-display');
+    if(displaySpan) {
+        displaySpan.innerText = displayText;
+    }
+    window.autoSaveDraft();
 }
 
 window.addBlock = function(type) {
@@ -64,16 +92,16 @@ window.addBlock = function(type) {
                 <div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 block mb-1">START TIME</label>
-                        <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
+                        <input type="datetime-local" onchange="window.updateLiveTimeUI(this)" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
                     </div>
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 block mb-1">END TIME</label>
-                        <input type="datetime-local" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
+                        <input type="datetime-local" onchange="window.updateLiveTimeUI(this)" class="w-full text-xs p-1.5 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 dark:text-white outline-none">
                     </div>
                 </div>`;
             studentVisibleHtml = `
                 <div class="student-visible-time text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-lg inline-block mt-2 mb-2">
-                    📅 Live Session Scheduled (Time visible upon entry)
+                    📅 <span class="live-time-display">Time not set yet</span>
                 </div>`;
         }
         
@@ -230,19 +258,20 @@ document.addEventListener('dragend', function(e) {
 });
 
 // ==========================================
-// SMART ROSTER ENGINE (NEW FEATURE)
+// SMART ROSTER ENGINE
 // ==========================================
 window.fetchCourseRoster = async function(courseName) {
-    const rosterPanel = document.getElementById('admin-roster-panel');
+    // 🚨 BUG FIX: Targeting correct Button ID
+    const rosterBtn = document.getElementById('view-roster-btn');
     const rosterCount = document.getElementById('roster-count-btn');
     const rosterEmails = document.getElementById('roster-emails');
 
     if(!courseName) {
-        if(rosterPanel) rosterPanel.classList.add('hidden');
+        if(rosterBtn) rosterBtn.classList.add('hidden');
         return;
     }
 
-    if(rosterPanel) rosterPanel.classList.remove('hidden');
+    if(rosterBtn) rosterBtn.classList.remove('hidden');
     if(rosterEmails) rosterEmails.value = "Fetching active student emails from secure vault...";
     if(rosterCount) rosterCount.innerText = "0";
 
