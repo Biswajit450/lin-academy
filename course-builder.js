@@ -523,10 +523,9 @@ window.publishExamToFirebase = async function() {
 }
 
 // ==========================================
-// CONTENT CONSUMPTION ENGINE
+// CONTENT CONSUMPTION ENGINE (PREMIUM PLAYER)
 // ==========================================
 window.consumeContent = function(type, elementOrId) {
-    // 🚨 YAHAN HUMNE NAYA EXAM ENGINE ATTACH KIYA HAI 🚨
     if(type === 'test') { 
         window.initStudentExam(elementOrId);
         return; 
@@ -534,16 +533,41 @@ window.consumeContent = function(type, elementOrId) {
     
     const block = elementOrId.closest('[id^="block-"]'); 
     const linkInput = block.querySelector('.link-input'); 
-    const val = linkInput ? linkInput.value : '';
+    let val = linkInput ? linkInput.value.trim() : '';
+    
+    // Grab the actual title of the video/PDF
+    const titleInput = block.querySelector('input[placeholder*="Title"]');
+    const title = titleInput ? titleInput.value : 'Classroom Content';
     
     if(!val) { 
-        alert("Your educator hasn't provided a link for this resource yet."); 
+        alert("Your educator hasn't provided a secure link for this resource yet."); 
         return; 
     }
     
-    if(type === 'pdf' || type === 'live') { 
+    // Live Classes (Zoom/Meet) open in a new tab because they cannot be iframed safely
+    if(type === 'live') { 
         window.open(val, '_blank'); 
-    } else if(type === 'video') { 
-        alert(`Opening Video Player Modal for Bunny.net ID: ${val}`); 
+    } 
+    // Video and PDFs open in our Premium Built-in Player
+    else if(type === 'video' || type === 'pdf') { 
+        document.getElementById('content-player-modal').classList.remove('hidden');
+        document.getElementById('player-title').innerText = title;
+        
+        // Smart URL Parser (Just in case educator pastes a normal YouTube link instead of embed)
+        if (type === 'video') {
+            if (val.includes('youtube.com/watch?v=')) {
+                val = val.replace('watch?v=', 'embed/');
+            } else if (val.includes('youtu.be/')) {
+                val = val.replace('youtu.be/', 'www.youtube.com/embed/');
+            }
+        }
+        
+        document.getElementById('player-iframe').src = val;
     }
+}
+
+// Global function to cleanly shut down the player
+window.closeContentPlayer = function() {
+    document.getElementById('content-player-modal').classList.add('hidden');
+    document.getElementById('player-iframe').src = ''; // Cuts off audio/video instantly!
 }

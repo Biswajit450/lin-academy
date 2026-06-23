@@ -289,5 +289,23 @@
     </div>
 
     <script type="module" src="app.js"></script>
+<div id="content-player-modal" class="fixed inset-0 z-[80] hidden flex items-center justify-center bg-slate-900/95 backdrop-blur-md p-0 sm:p-6 transition-opacity">
+        <div class="bg-black w-full h-full sm:h-auto sm:max-w-5xl sm:aspect-video sm:rounded-3xl shadow-2xl relative overflow-hidden flex flex-col border border-slate-800">
+            
+            <div class="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/90 to-transparent z-20 flex justify-between items-start pointer-events-none">
+                <h3 id="player-title" class="text-white font-bold text-sm md:text-lg drop-shadow-md mt-1">Loading...</h3>
+                <button onclick="window.closeContentPlayer()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-rose-500 text-white transition-colors pointer-events-auto backdrop-blur-sm"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <div class="flex-grow w-full h-full flex items-center justify-center bg-slate-900 relative">
+                <div id="player-loading" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-3 text-brand-blue"></i>
+                    <p class="text-xs font-bold tracking-widest uppercase">Buffering Engine...</p>
+                </div>
+                <iframe id="player-iframe" class="w-full h-full relative z-10 bg-transparent" src="" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
