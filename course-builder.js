@@ -57,8 +57,8 @@ window.addBlock = function(type) {
     } else if(type === 'live' || type === 'video' || type === 'pdf') {
         let icon = ''; let color = ''; let placeholderText = ''; let typeName = ''; let extraInputs = ''; let actionBtnText = ''; let actionColor = '';
         if(type === 'live') { 
-            icon = 'fa-video'; color = 'text-red-400 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Google Meet Link';
-            actionBtnText = '🔴 Join Live Session'; actionColor = 'bg-red-500 hover:bg-red-600 text-white';
+            icon = 'fa-video'; color = 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Meeting Link (Zoom, Meet, etc.)';
+            actionBtnText = '🔴 Join Live Class'; actionColor = 'bg-red-500 hover:bg-red-600 text-white border border-red-600';
             extraInputs = `
                 <div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <div>
@@ -72,30 +72,30 @@ window.addBlock = function(type) {
                 </div>`;
         }
         if(type === 'video') { 
-            icon = 'fa-play'; color = 'text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Bunny.net Video ID'; 
-            actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white'; 
+            icon = 'fa-play'; color = 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Video Link (Bunny.net, YouTube, etc.)'; 
+            actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white border border-blue-700'; 
         }
         if(type === 'pdf') { 
-            icon = 'fa-file-pdf'; color = 'text-rose-400 bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800'; typeName = 'PDF Notes'; placeholderText = 'Firebase PDF URL'; 
-            actionBtnText = '📄 Open Handout'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white'; 
+            icon = 'fa-file-pdf'; color = 'text-rose-500 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800'; typeName = 'PDF Handout'; placeholderText = 'Secure File URL (Firebase Storage etc.)'; 
+            actionBtnText = '📄 View Document'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-600'; 
         }
 
         blockHTML = `
-        <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-start gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center border ${color} shrink-0 text-xl">
+        <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center border ${color} shrink-0 text-xl shadow-inner">
                 <i class="fa-solid ${icon}"></i>
             </div>
             <div class="flex-grow w-full">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${typeName}</span>
-                    <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors" title="Delete Resource"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <input type="text" placeholder="${typeName} Title" class="w-full bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-brand-blue outline-none text-sm font-bold text-slate-900 dark:text-white pb-1 mb-2 transition-colors">
                 <div class="admin-input-area">
-                    <input type="text" placeholder="${placeholderText}" class="link-input w-full bg-transparent border-none outline-none text-xs text-slate-500 dark:text-slate-400">
+                    <input type="text" placeholder="${placeholderText}" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono">
                     ${extraInputs}
                 </div>
-                <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 ${actionColor}" onclick="window.consumeContent('${type}', this)">${actionBtnText}</button>
+                <button class="student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 ${actionColor} hidden w-full sm:w-auto text-center justify-center" onclick="window.consumeContent('${type}', this)">${actionBtnText}</button>
             </div>
         </div>`;
     }
@@ -109,16 +109,16 @@ window.addDynamicFolder = function() {
     const blockId = 'folder-' + Date.now(); 
     const dropzone = document.getElementById('editor-canvas-dropzone');
     const html = `
-        <div id="${blockId}" class="bg-white dark:bg-slate-900 border-2 border-dashed border-amber-300 dark:border-amber-700/50 rounded-2xl p-4 mb-4 shadow-sm" draggable="true" ondragstart="window.drag(event)">
-            <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div id="${blockId}" class="bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-amber-300 dark:border-amber-700/50 rounded-2xl p-4 mb-4 shadow-sm" draggable="true" ondragstart="window.drag(event)">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-3 w-full">
                     <i class="fa-solid fa-folder-open text-amber-500 text-2xl"></i>
-                    <input type="text" placeholder="Folder Name (e.g., Module 1: Blood & Circulation)" class="bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white w-full text-lg">
+                    <input type="text" placeholder="Folder Name (e.g., Module 1: Basics)" class="bg-transparent border-none outline-none font-bold text-slate-800 dark:text-white w-full text-lg">
                 </div>
                 <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors ml-2" title="Delete Folder"><i class="fa-solid fa-trash text-lg"></i></button>
             </div>
-            <div class="folder-dropzone min-h-[60px] space-y-3 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-950/50 transition-colors" ondragover="window.allowDrop(event)" ondrop="window.drop(event)">
-                <div class="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest pointer-events-none mt-2">Drop Blocks Here</div>
+            <div class="folder-dropzone min-h-[80px] space-y-3 p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 transition-colors shadow-inner" ondragover="window.allowDrop(event)" ondrop="window.drop(event)">
+                <div class="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest pointer-events-none mt-4"><i class="fa-solid fa-download block text-lg mb-1 opacity-50"></i>Drop Content Blocks Here</div>
             </div>
         </div>`;
     dropzone.insertAdjacentHTML('beforeend', html); 
