@@ -540,16 +540,28 @@ window.renderHomepage = async function() {
                                 else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
                                 else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
 
-                                // The Master Canva Tile HTML
+                                // ✨ Apply Custom Tile Sizes 
+                                const sz = d.tileSize || 'large';
+                                let tWidth = 'w-64', tPad = 'p-6', iSize = 'w-14 h-14', iText = 'text-2xl', iMarg = 'mb-5';
+                                let tSize = 'text-lg', sText = 'text-xs mb-6 line-clamp-2', bPad = 'py-2.5 text-sm';
+
+                                if (sz === 'medium') {
+                                    tWidth = 'w-52'; tPad = 'p-5'; iSize = 'w-12 h-12'; iText = 'text-xl'; iMarg = 'mb-4';
+                                    tSize = 'text-base'; sText = 'text-[11px] mb-4 line-clamp-2'; bPad = 'py-2 text-xs';
+                                } else if (sz === 'small') {
+                                    tWidth = 'w-40'; tPad = 'p-4'; iSize = 'w-10 h-10'; iText = 'text-lg'; iMarg = 'mb-3';
+                                    tSize = 'text-sm'; sText = 'text-[10px] mb-3 line-clamp-1'; bPad = 'py-1.5 text-[10px]';
+                                }
+
                                 tilesHtml += `
-                                    <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                                    <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl ${tPad} border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
                                         ${badgeHtml}
-                                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};">
+                                        <div class="${iSize} rounded-2xl flex items-center justify-center ${iMarg} ${iText} border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};">
                                             <i class="fa-solid ${d.icon}"></i>
                                         </div>
-                                        <h4 class="text-lg font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">${course.subtitle}</p>
-                                        <button onclick="window.open('${course.paymentLink}', '_blank')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors text-sm shadow-sm active:scale-95">Enroll Now</button>
+                                        <h4 class="${tSize} font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
+                                        <p class="${sText} text-slate-500 dark:text-slate-400 font-medium flex-grow">${course.subtitle}</p>
+                                        <button onclick="window.open('${course.paymentLink}', '_blank')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold ${bPad} rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95">Enroll Now</button>
                                     </div>
                                 `;
                             });
@@ -561,6 +573,7 @@ window.renderHomepage = async function() {
                                         <div>
                                             <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">${cat}</h3>
                                         </div>
+                                        <button onclick="window.showGenericViewAll('${cat}', 'course_${cat}')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                                     </div>
                                     <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
                                         ${tilesHtml}
@@ -651,6 +664,55 @@ window.showGenericViewAll = async function(title, type) {
     const grid = document.getElementById('generic-view-grid');
     grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-10">Loading...</div>';
 
+    // 🚀 NEW: Dynamic Course Grid Viewer
+    if(type.startsWith('course_')) {
+        const catName = type.replace('course_', '');
+        try {
+            const coursesSnap = await getDocs(query(collection(db, "deployed_courses"), where("status", "==", "live"), where("category", "==", catName)));
+            grid.innerHTML = '';
+            if(coursesSnap.empty) {
+                grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-10">No courses found in this category.</div>';
+                return;
+            }
+            
+            coursesSnap.forEach(doc => {
+                const course = doc.data();
+                const d = course.design;
+                
+                let badgeHtml = '';
+                if (course.badge) {
+                    let badgeClass = 'bg-slate-500', badgeText = course.badge;
+                    if(course.badge === 'bestseller') { badgeClass = 'bg-rose-500'; badgeText = '🔥 Bestseller'; }
+                    else if(course.badge === 'new') { badgeClass = 'bg-emerald-500'; badgeText = '✨ New Launch'; }
+                    else if(course.badge === 'limited') { badgeClass = 'bg-amber-500'; badgeText = '⏳ Limited Offer'; }
+                    else if(course.badge === 'premium') { badgeClass = 'bg-purple-500'; badgeText = '💎 Premium'; }
+                    badgeHtml = `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all ${badgeClass}">${badgeText}</div>`;
+                }
+
+                let titleColorClass = 'text-slate-900 dark:text-white';
+                if (d.textColorMode === 'brand') titleColorClass = 'text-brand-blue';
+                else if (d.textColorMode === 'emerald') titleColorClass = 'text-emerald-600 dark:text-emerald-400';
+                else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
+                else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
+
+                // Using standard medium size for the Grid View
+                grid.innerHTML += `
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-transform flex flex-col relative overflow-hidden group w-full" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                        ${badgeHtml}
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};">
+                            <i class="fa-solid ${d.icon}"></i>
+                        </div>
+                        <h4 class="text-base font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle}</p>
+                        <button onclick="window.open('${course.paymentLink}', '_blank')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                    </div>
+                `;
+            });
+        } catch(e) { console.error(e); }
+        return; 
+    }
+
+    // Existing CMS logic for Educators and Arenas
     getDoc(doc(db, "cms", "homepage")).then(snap => {
         if(snap.exists()) {
             const data = snap.data();
@@ -700,7 +762,7 @@ window.renderHomepage();
 // 🚀 THE MASTER COURSE DEPLOYER ENGINE
 // ==========================================
 
-// Magic 1: The Live Preview Mirror 2.0 (With Borders & Badges)
+// Magic 1: The Live Preview Mirror 2.0 (With Borders, Badges & Sizes)
 window.updateLivePreview = function() {
     const title = document.getElementById('deploy-title').value || 'Course Title';
     const subtitle = document.getElementById('deploy-subtitle').value || 'Your catchy subtitle will appear right here.';
@@ -711,6 +773,10 @@ window.updateLivePreview = function() {
     const tileBorder = document.getElementById('deploy-tile-border').value || '#f1f5f9';
     const textMode = document.getElementById('deploy-text-color-mode').value;
     const badge = document.getElementById('deploy-badge').value;
+
+    // Check if Tile Size selector exists, default to large
+    const sizeSelect = document.getElementById('deploy-tile-size');
+    const tileSize = sizeSelect ? sizeSelect.value : 'large';
 
     document.getElementById('preview-title').innerText = title;
     document.getElementById('preview-subtitle').innerText = subtitle;
@@ -724,9 +790,36 @@ window.updateLivePreview = function() {
     const tile = document.getElementById('deploy-preview-tile');
     tile.style.borderColor = tileBorder;
 
+    // ✨ Apply Sizes to Preview Elements
     const titleEl = document.getElementById('preview-title');
-    titleEl.className = 'text-lg font-bold mb-2 leading-snug transition-colors';
+    const subtitleEl = document.getElementById('preview-subtitle');
+    const btnEl = tile.querySelector('button');
+
+    // Reset base classes
+    tile.className = 'bg-white dark:bg-slate-900 rounded-3xl border-2 border-solid shadow-xl flex flex-col transition-all duration-300 overflow-hidden relative mx-auto';
+    box.className = 'rounded-2xl flex items-center justify-center border-2 border-solid shadow-inner transition-transform group-hover:scale-110';
     
+    if (tileSize === 'small') {
+        tile.classList.add('w-40', 'p-4');
+        box.classList.add('w-10', 'h-10', 'text-lg', 'mb-3');
+        titleEl.className = 'text-sm font-bold mb-2 leading-snug transition-colors';
+        subtitleEl.className = 'text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-3 line-clamp-1 flex-grow';
+        btnEl.className = 'mt-auto w-full bg-slate-50 dark:bg-slate-800 text-brand-blue font-bold py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[10px] shadow-sm pointer-events-none';
+    } else if (tileSize === 'medium') {
+        tile.classList.add('w-52', 'p-5');
+        box.classList.add('w-12', 'h-12', 'text-xl', 'mb-4');
+        titleEl.className = 'text-base font-bold mb-2 leading-snug transition-colors';
+        subtitleEl.className = 'text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow';
+        btnEl.className = 'mt-auto w-full bg-slate-50 dark:bg-slate-800 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-sm pointer-events-none';
+    } else { // large
+        tile.classList.add('w-64', 'p-6');
+        box.classList.add('w-14', 'h-14', 'text-2xl', 'mb-5');
+        titleEl.className = 'text-lg font-bold mb-2 leading-snug transition-colors';
+        subtitleEl.className = 'text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2 flex-grow';
+        btnEl.className = 'mt-auto w-full bg-slate-50 dark:bg-slate-800 text-brand-blue font-bold py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm shadow-sm pointer-events-none';
+    }
+
+    // Apply Text Colors
     if (textMode === 'brand') titleEl.classList.add('text-brand-blue');
     else if (textMode === 'emerald') titleEl.classList.add('text-emerald-600', 'dark:text-emerald-400');
     else if (textMode === 'rose') titleEl.classList.add('text-rose-600', 'dark:text-rose-400');
@@ -747,7 +840,7 @@ window.updateLivePreview = function() {
     }
 }
 
-// Magic 2: Deploy to Database (Now with Categories and Drafts)
+// Magic 2: Deploy to Database (Now with Categories, Drafts and Sizes)
 window.deployMasterCourse = async function() {
     const category = document.getElementById('deploy-category').value.trim();
     const title = document.getElementById('deploy-title').value.trim();
@@ -761,6 +854,9 @@ window.deployMasterCourse = async function() {
     const badge = document.getElementById('deploy-badge').value;
     const paymentLink = document.getElementById('deploy-payment-link').value.trim();
     const status = document.getElementById('deploy-status').value;
+
+    const sizeSelect = document.getElementById('deploy-tile-size');
+    const tileSize = sizeSelect ? sizeSelect.value : 'large';
 
     if(!category || !title || !paymentLink) {
         alert("⚠️ HOLD ON! Please fill out the Category, Course Title, and Razorpay Link to deploy.");
@@ -783,7 +879,8 @@ window.deployMasterCourse = async function() {
                 boxBg: boxBg,
                 boxBorder: boxBorder,
                 tileBorder: tileBorder,
-                textColorMode: textColorMode
+                textColorMode: textColorMode,
+                tileSize: tileSize
             },
             badge: badge,
             paymentLink: paymentLink,

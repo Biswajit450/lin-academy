@@ -298,6 +298,15 @@
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tile Border Color</label>
                                     <input type="color" id="deploy-tile-border" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#f1f5f9" oninput="window.updateLivePreview()">
                                 </div>
+                                <!-- Tile Size Selector -->
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tile Size</label>
+                                    <select id="deploy-tile-size" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-blue dark:text-white font-bold cursor-pointer" onchange="window.updateLivePreview()">
+                                        <option value="large">Large (Default)</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="small">Small</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
