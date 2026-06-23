@@ -1,6 +1,6 @@
 // cms.js
 
-import { doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, arrayUnion, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { db, storage } from "./firebase-config.js";
 
@@ -495,6 +495,85 @@ window.renderHomepage = async function() {
                 }
             }
 
+            // ==========================================
+            // 🚀 THE NEW AUTO-SYNC MASTER COURSE ENGINE
+            // ==========================================
+            const courseShowcase = document.getElementById('master-course-showcase');
+            if (courseShowcase) {
+                courseShowcase.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading Premium Ecosystems...</div>';
+
+                const categories = data.courseCategories || [];
+                
+                // Fetch ONLY 'live' courses from the deployed_courses vault
+                const coursesSnap = await getDocs(query(collection(db, "deployed_courses"), where("status", "==", "live")));
+                const courses = [];
+                coursesSnap.forEach(doc => courses.push({ id: doc.id, ...doc.data() }));
+
+                courseShowcase.innerHTML = ''; // Clear loading
+
+                if (categories.length > 0 && courses.length > 0) {
+                    categories.forEach(cat => {
+                        const catCourses = courses.filter(c => c.category === cat);
+                        
+                        if (catCourses.length > 0) {
+                            let tilesHtml = '';
+                            catCourses.forEach(course => {
+                                const d = course.design;
+                                
+                                // Dynamic Badge Logic
+                                let badgeHtml = '';
+                                if (course.badge) {
+                                    let badgeClass = 'bg-slate-500';
+                                    let badgeText = course.badge;
+                                    if(course.badge === 'bestseller') { badgeClass = 'bg-rose-500'; badgeText = '🔥 Bestseller'; }
+                                    else if(course.badge === 'new') { badgeClass = 'bg-emerald-500'; badgeText = '✨ New Launch'; }
+                                    else if(course.badge === 'limited') { badgeClass = 'bg-amber-500'; badgeText = '⏳ Limited Offer'; }
+                                    else if(course.badge === 'premium') { badgeClass = 'bg-purple-500'; badgeText = '💎 Premium'; }
+
+                                    badgeHtml = `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all ${badgeClass}">${badgeText}</div>`;
+                                }
+
+                                // Dynamic Title Color Logic
+                                let titleColorClass = 'text-slate-900 dark:text-white';
+                                if (d.textColorMode === 'brand') titleColorClass = 'text-brand-blue';
+                                else if (d.textColorMode === 'emerald') titleColorClass = 'text-emerald-600 dark:text-emerald-400';
+                                else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
+                                else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
+
+                                // The Master Canva Tile HTML
+                                tilesHtml += `
+                                    <div class="snap-center shrink-0 w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                                        ${badgeHtml}
+                                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};">
+                                            <i class="fa-solid ${d.icon}"></i>
+                                        </div>
+                                        <h4 class="text-lg font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">${course.subtitle}</p>
+                                        <button onclick="window.open('${course.paymentLink}', '_blank')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors text-sm shadow-sm active:scale-95">Enroll Now</button>
+                                    </div>
+                                `;
+                            });
+
+                            // Inject Category Row into Homepage
+                            const sectionHtml = `
+                                <section class="mb-2">
+                                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
+                                        <div>
+                                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">${cat}</h3>
+                                        </div>
+                                    </div>
+                                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
+                                        ${tilesHtml}
+                                    </div>
+                                </section>
+                            `;
+                            courseShowcase.insertAdjacentHTML('beforeend', sectionHtml);
+                        }
+                    });
+                }
+            }
+            // ==========================================
+
             if(data.arenaCategories) {
                 const arenaContainer = document.getElementById('dynamic-arena-container');
                 arenaContainer.innerHTML = ''; 
@@ -728,6 +807,7 @@ window.deployMasterCourse = async function() {
         document.getElementById('deploy-payment-link').value = '';
         window.updateLivePreview();
         window.loadDeployerCategories(); // Refresh Drag&Drop list
+        window.renderHomepage(); // Refresh the homepage to show new course
         
     } catch(e) {
         console.error("Deploy Error", e);
@@ -790,6 +870,7 @@ window.saveCategoryOrder = async function() {
     try {
         await setDoc(doc(db, "cms", "homepage"), { courseCategories: newOrder }, { merge: true });
         alert("Category layout updated! Homepage will reflect this exact order.");
+        window.renderHomepage(); // Refresh the homepage after layout change
     } catch(e) { 
         console.error(e); 
         alert("Failed to save layout."); 
