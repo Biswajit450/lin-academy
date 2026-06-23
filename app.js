@@ -86,6 +86,11 @@ window.showScreen = async function(screenId) {
         if(window.loadProfileData) window.loadProfileData();
     }
     
+    // 🚀 NEW LOGIC: Refresh Admin Dropdown every time Admin Screen is opened
+    if(screenId === 'screen-admin') {
+        if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown();
+    }
+    
     const targetScreen = document.getElementById(screenId);
     if(targetScreen) {
         targetScreen.classList.remove('hidden');
@@ -125,9 +130,35 @@ window.toggleNotifications = function() {
 }
 
 // ==========================================
-// VAULT VISIBILITY ENGINE (STRICT SECURITY FIX)
+// 🚀 DYNAMIC ADMIN DROPDOWN ENGINE 
 // ==========================================
-window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
+window.loadAdminCourseDropdown = async function() {
+    const selector = document.getElementById('admin-course-selector');
+    if (!selector) return;
+
+    try {
+        // Fetch all courses from the deployed_courses vault
+        const snap = await getDocs(collection(db, "deployed_courses"));
+        
+        // Start with the default empty option
+        let optionsHtml = '<option value="" disabled selected>-- Select Course to Edit --</option>';
+        
+        // Add dynamic courses to the dropdown
+        snap.forEach(doc => {
+            const data = doc.data();
+            optionsHtml += `<option value="${data.title}">${data.title}</option>`;
+        });
+        
+        selector.innerHTML = optionsHtml;
+    } catch (e) {
+        console.error("Error loading dynamic dropdown", e);
+    }
+}
+
+// ==========================================
+// 🚀 VAULT VISIBILITY ENGINE (DYNAMIC ENROLLMENTS)
+// ==========================================
+window.renderEnrollments = async function(unlockedCourses = [], passedRole = null) {
     try {
         let role = passedRole || window.currentUserRole || 'student';
         role = String(role).toLowerCase().trim(); 
@@ -141,55 +172,81 @@ window.renderEnrollments = function(unlockedCourses = [], passedRole = null) {
             coursesList = window.currentUnlockedCourses;
         }
 
-        const tiles = document.querySelectorAll('.enrollment-tile');
-        let compCount = 0;
-        let acadCount = 0;
+        const enrollScreen = document.getElementById('screen-enrollments');
+        if(!enrollScreen) return;
 
-        tiles.forEach(tile => {
-            const courseName = tile.getAttribute('data-course');
-            const isUnlocked = coursesList.includes(courseName);
+        // Hide old hardcoded grids to avoid clutter
+        const oldCompGrid = document.getElementById('enrollments-grid-competitive');
+        if(oldCompGrid && oldCompGrid.parentElement) oldCompGrid.parentElement.style.display = 'none';
+        const oldAcadGrid = document.getElementById('enrollments-grid-academics');
+        if(oldAcadGrid && oldAcadGrid.parentElement) oldAcadGrid.parentElement.style.display = 'none';
+
+        // Create or target a dynamic container
+        let dynamicContainer = document.getElementById('dynamic-enrollments-vault');
+        if(!dynamicContainer) {
+            dynamicContainer = document.createElement('div');
+            dynamicContainer.id = 'dynamic-enrollments-vault';
+            dynamicContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
             
-            if (isGodMode || isUnlocked) {
-                tile.classList.remove('hidden');
-                tile.setAttribute('style', 'display: flex !important;'); 
-                
-                const parent = tile.parentElement;
-                if(parent && parent.id === 'enrollments-grid-competitive') compCount++;
-                if(parent && parent.id === 'enrollments-grid-academics') acadCount++;
+            // Insert it under the header of the enrollments tab
+            const headerObj = enrollScreen.querySelector('h3');
+            if(headerObj && headerObj.parentElement.parentElement) {
+                headerObj.parentElement.parentElement.insertAdjacentElement('afterend', dynamicContainer);
             } else {
-                tile.classList.add('hidden');
-                tile.setAttribute('style', 'display: none !important;');
+                enrollScreen.appendChild(dynamicContainer);
+            }
+        }
+
+        dynamicContainer.innerHTML = '<div class="text-slate-400 col-span-full py-10 text-center"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Opening your secure vault...</div>';
+
+        // Fetch courses from DB
+        const coursesSnap = await getDocs(collection(db, "deployed_courses"));
+        let html = '';
+        let count = 0;
+
+        coursesSnap.forEach(docSnap => {
+            const course = docSnap.data();
+            const isUnlocked = coursesList.includes(course.title);
+            
+            // If user owns the course OR user is an admin
+            if (isGodMode || isUnlocked) {
+                count++;
+                const d = course.design || {};
+                
+                // Construct the Premium Dashboard Tile
+                html += `
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-solid shadow-md flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-all" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                        <div class="absolute top-0 right-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i> Unlocked</div>
+                        
+                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
+                            <i class="fa-solid ${d.icon || 'fa-book'}"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">${course.title}</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">${course.subtitle || 'Premium Course'}</p>
+                        
+                        <button onclick="window.consumeContent('course', '${course.title}')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> Enter Classroom
+                        </button>
+                    </div>
+                `;
             }
         });
 
-        const compGrid = document.getElementById('enrollments-grid-competitive');
-        if(compGrid && compGrid.parentElement) {
-            if (compCount > 0) {
-                compGrid.parentElement.classList.remove('hidden');
-                compGrid.parentElement.setAttribute('style', 'display: block !important;');
-            } else {
-                compGrid.parentElement.classList.add('hidden');
-                compGrid.parentElement.setAttribute('style', 'display: none !important;');
-            }
-        }
-        
-        const acadGrid = document.getElementById('enrollments-grid-academics');
-        if(acadGrid && acadGrid.parentElement) {
-            if (acadCount > 0) {
-                acadGrid.parentElement.classList.remove('hidden');
-                acadGrid.parentElement.setAttribute('style', 'display: block !important;');
-            } else {
-                acadGrid.parentElement.classList.add('hidden');
-                acadGrid.parentElement.setAttribute('style', 'display: none !important;');
-            }
+        if (count === 0) {
+            dynamicContainer.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-16 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                    <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4"><i class="fa-solid fa-lock text-3xl text-slate-300 dark:text-slate-600"></i></div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Your Vault is Empty</h3>
+                    <p class="text-sm text-slate-500 mb-6 text-center max-w-sm">You haven't enrolled in any courses yet. Visit the homepage to explore premium ecosystems.</p>
+                    <button onclick="window.showScreen('screen-dashboard')" class="bg-brand-blue hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-sm">Explore Courses</button>
+                </div>
+            `;
+        } else {
+            dynamicContainer.innerHTML = html;
         }
 
     } catch(err) {
         console.error("Strict rendering error:", err);
-        document.querySelectorAll('.enrollment-tile').forEach(t => {
-            t.classList.add('hidden');
-            t.setAttribute('style', 'display: none !important;');
-        });
     }
 }
 
