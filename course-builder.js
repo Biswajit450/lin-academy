@@ -11,7 +11,6 @@ window.clearCanvasPlaceholder = function() {
     if (placeholder) placeholder.remove(); 
 }
 
-// 🚀 BUG FIX: Auto-update Live Class Time for Students
 window.updateLiveTimeUI = function(element) {
     const block = element.closest('[id^="block-"]');
     if(!block) return;
@@ -24,7 +23,6 @@ window.updateLiveTimeUI = function(element) {
     
     if(startVal) {
         const startDate = new Date(startVal);
-        // Format to Indian Date/Time Style
         displayText = startDate.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
         
         if(endVal) {
@@ -161,7 +159,6 @@ window.addDynamicFolder = function() {
     setTimeout(window.autoSaveDraft, 200);
 }
 
-// Table logic
 window.addRow = function(btn) { 
     const table = btn.closest('div[id^="block-"]').querySelector('table'); 
     const cols = table.rows[0].cells.length; 
@@ -213,7 +210,6 @@ window.removeCol = function(btn) {
     } 
 }
 
-// Drag & Drop logic for Course Builder
 window.draggedElement = null;
 
 window.drag = function(ev) { 
@@ -261,7 +257,6 @@ document.addEventListener('dragend', function(e) {
 // SMART ROSTER ENGINE
 // ==========================================
 window.fetchCourseRoster = async function(courseName) {
-    // 🚨 BUG FIX: Targeting correct Button ID
     const rosterBtn = document.getElementById('view-roster-btn');
     const rosterCount = document.getElementById('roster-count-btn');
     const rosterEmails = document.getElementById('roster-emails');
@@ -402,7 +397,9 @@ window.publishCourse = async function() {
     }
 }
 
-// 🐛 BUG FIX: Unfreezing buttons for students after fetching course contents
+// ==========================================
+// 🚨 THE STUDENT LOCKDOWN ENGINE 🚨
+// ==========================================
 window.openCourseView = async function(courseName) {
     await window.showScreen('screen-course-view'); 
     
@@ -416,14 +413,34 @@ window.openCourseView = async function(courseName) {
         
         if (docSnap.exists()) { 
             const data = docSnap.data(); 
-            document.getElementById('student-main-title').value = data.mainTitle || ''; 
-            document.getElementById('student-sub-title').value = data.subTitle || ''; 
+            // Fixed Title text rendering
+            document.getElementById('student-main-title').innerText = data.mainTitle || ''; 
+            document.getElementById('student-sub-title').innerText = data.subTitle || ''; 
             
             canvas.innerHTML = data.canvasHtml || ''; 
+            
+            // 🔒 1. Disable all drag & drop completely
             canvas.querySelectorAll('[draggable]').forEach(el => {
                 el.removeAttribute('draggable');
-                el.style.pointerEvents = 'auto'; 
+                el.classList.remove('cursor-move', 'block-hover-effect');
             });
+            
+            // 🔒 2. Lock all tables and headings so they can't be edited
+            canvas.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                el.setAttribute('contenteditable', 'false');
+            });
+            
+            // 🔒 3. Lock all input boxes and textareas so student can't type
+            canvas.querySelectorAll('input, textarea').forEach(el => {
+                el.readOnly = true;
+                el.classList.add('pointer-events-none');
+            });
+            
+            // 🟢 4. Keep only action buttons clickable
+            canvas.querySelectorAll('button').forEach(btn => {
+                btn.style.pointerEvents = 'auto';
+            });
+            
         } else { 
             canvas.innerHTML = '<div class="text-center text-rose-500 py-10"><i class="fa-solid fa-triangle-exclamation text-2xl mb-3"></i><br>Course content is being updated. Please check back soon!</div>'; 
         } 
