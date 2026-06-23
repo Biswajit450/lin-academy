@@ -1,6 +1,7 @@
 // app.js
 
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// 🚨 IMPORT UPDATED: Added deleteDoc for Inventory Manager
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 import "./auth.js";
@@ -91,6 +92,8 @@ window.showScreen = async function(screenId) {
         // Wake up CMS Data and Categories so they don't disappear on hard refresh
         if(window.loadCMSDataIntoAdmin) window.loadCMSDataIntoAdmin();
         if(window.loadDeployerCategories) window.loadDeployerCategories();
+        // 🚨 NEW: Auto-load Inventory
+        if(window.loadDeployerInventory) window.loadDeployerInventory();
     }
     
     const targetScreen = document.getElementById(screenId);
@@ -206,7 +209,6 @@ window.renderEnrollments = async function(unlockedCourses = [], passedRole = nul
                 count++;
                 const d = course.design || {};
                 
-                // 🚨 BUG FIXED HERE: Button now correctly points to openCourseView 🚨
                 html += `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-solid shadow-md flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-all" style="border-color: ${d.tileBorder || '#f1f5f9'};">
                         <div class="absolute top-0 right-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i> Unlocked</div>
@@ -745,4 +747,104 @@ window.buildExamReviewScreen = function() {
                 </div>
             </div>`;
     });
+}
+
+// ==========================================
+// 🚀 THE STOREFRONT INVENTORY MANAGER (DEPLOYER UPGRADE)
+// ==========================================
+
+window.loadDeployerInventory = async function() {
+    const container = document.getElementById('deployer-inventory-list');
+    if(!container) return;
+    
+    container.innerHTML = '<div class="text-center text-slate-400 text-sm py-4"><i class="fa-solid fa-spinner fa-spin"></i> Fetching inventory...</div>';
+
+    try {
+        const snap = await getDocs(collection(db, "deployed_courses"));
+        let html = '';
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            html += `
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex justify-between items-center shadow-sm hover:shadow-md transition-shadow mb-2">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style="background-color: ${data.design?.boxBg || '#ecfdf5'}; color: ${data.design?.iconColor || '#059669'}; border: 1px solid ${data.design?.boxBorder || 'transparent'}">
+                        <i class="fa-solid ${data.design?.icon || 'fa-book'}"></i>
+                    </div>
+                    <div class="truncate">
+                        <span class="text-[9px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded uppercase tracking-wider">${data.category || 'Uncategorized'}</span>
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate mt-0.5">${data.title}</h4>
+                    </div>
+                </div>
+                <div class="flex gap-2 shrink-0 ml-2">
+                    <button onclick="window.editDeployedCourse('${docSnap.id}')" class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors flex items-center justify-center" title="Edit Course"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button onclick="window.deleteDeployedCourse('${docSnap.id}')" class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors flex items-center justify-center" title="Delete Course"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
+        
+        if(html === '') {
+            html = '<div class="text-center text-slate-400 text-sm py-4">No tiles deployed yet.</div>';
+        }
+        container.innerHTML = html;
+        
+    } catch(e) {
+        console.error("Error loading inventory", e);
+        container.innerHTML = '<div class="text-center text-rose-500 text-sm py-4">Failed to load inventory.</div>';
+    }
+}
+
+window.editDeployedCourse = async function(docId) {
+    try {
+        const docRef = doc(db, "deployed_courses", docId);
+        const docSnap = await getDoc(docRef);
+        
+        if(docSnap.exists()) {
+            const data = docSnap.data();
+            
+            document.getElementById('deploy-category').value = data.category || '';
+            document.getElementById('deploy-title').value = data.title || '';
+            document.getElementById('deploy-subtitle').value = data.subtitle || '';
+            document.getElementById('deploy-badge').value = data.badge || '';
+            document.getElementById('deploy-payment-link').value = data.paymentLink || '';
+            
+            if(data.design) {
+                document.getElementById('deploy-icon').value = data.design.icon || 'fa-book';
+                document.getElementById('deploy-icon-color').value = data.design.iconColor || '#059669';
+                document.getElementById('deploy-box-bg').value = data.design.boxBg || '#ecfdf5';
+                document.getElementById('deploy-box-border').value = data.design.boxBorder || '#a7f3d0';
+                document.getElementById('deploy-tile-border').value = data.design.tileBorder || '#f1f5f9';
+                document.getElementById('deploy-tile-size').value = data.design.size || 'large';
+            }
+            
+            if(window.updateLivePreview) window.updateLivePreview();
+            
+            const deployBtn = document.getElementById('deploy-master-btn');
+            if(deployBtn) {
+                deployBtn.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Update & Deploy Tile';
+                deployBtn.classList.remove('from-brand-blue', 'to-indigo-600');
+                deployBtn.classList.add('from-emerald-500', 'to-emerald-700');
+            }
+            
+            const deployerTab = document.querySelector('#admin-subtab-deployer');
+            if(deployerTab) deployerTab.scrollIntoView({ behavior: 'smooth' });
+            
+            alert(`Loaded "${data.title}" into the Editor! Change anything and hit Update.`);
+        }
+    } catch(e) {
+        console.error("Error editing course", e);
+    }
+}
+
+window.deleteDeployedCourse = async function(docId) {
+    if(confirm(`⚠️ WARNING: Are you sure you want to completely DELETE this course?\n\nThis will remove the tile from the Storefront and Student Enrollments vault forever!`)) {
+        try {
+            await deleteDoc(doc(db, "deployed_courses", docId));
+            alert("Course deleted successfully!");
+            window.loadDeployerInventory(); 
+            if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown(); 
+        } catch(e) {
+            console.error("Error deleting", e);
+            alert("Failed to delete the course.");
+        }
+    }
 }
