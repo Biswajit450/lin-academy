@@ -218,20 +218,25 @@
 
     </div>
 
+    <!-- 🚀 TAB 4: MASTER COURSE DEPLOYER 🚀 -->
     <div id="admin-subtab-deployer" class="admin-subtab hidden space-y-6 max-w-6xl mx-auto">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
+            <!-- LEFT SIDE: THE FORM FACTORY -->
             <div class="lg:col-span-8 space-y-6">
+                <!-- Course Packaging Form -->
                 <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm relative z-10">
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2"><i class="fa-solid fa-rocket text-brand-blue"></i> Course Packaging Engine</h3>
                     
                     <div class="space-y-6">
+                        <!-- Category Input -->
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category / Row Name</label>
                             <input type="text" id="deploy-category" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="e.g., Competitive Bundles" oninput="window.updateLivePreview()">
                             <p class="text-[10px] text-slate-500 mt-1 font-medium">Type an existing category to add to it, or type a new one to create a fresh row on the Homepage.</p>
                         </div>
                         
+                        <!-- Titles, Badge, and Payment -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Course Title</label>
@@ -241,14 +246,40 @@
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sub-Title / Tagline</label>
                                 <input type="text" id="deploy-subtitle" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="e.g., Master all 13 pillars..." oninput="window.updateLivePreview()">
                             </div>
+                            <!-- ✨ The Missing Ribbon Dropdown -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Badge / Ribbon (Optional)</label>
+                                <select id="deploy-badge" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white font-bold cursor-pointer" onchange="window.updateLivePreview()">
+                                    <option value="">None</option>
+                                    <option value="bestseller">🔥 Bestseller (Rose)</option>
+                                    <option value="new">✨ New Launch (Emerald)</option>
+                                    <option value="limited">⏳ Limited Offer (Amber)</option>
+                                    <option value="premium">💎 Premium (Purple)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-link text-indigo-500"></i> Razorpay Payment Link</label>
+                                <input type="url" id="deploy-payment-link" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="https://rzp.io/l/your_course_link">
+                            </div>
                         </div>
 
+                        <!-- 🎨 Enhanced Visual Customization Studio -->
                         <div class="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 text-center border-b border-slate-200 dark:border-slate-700 pb-2">Visual Customization Studio</label>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">FontAwesome Icon</label>
                                     <input type="text" id="deploy-icon" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-blue dark:text-white" placeholder="fa-microscope" value="fa-microscope" oninput="window.updateLivePreview()">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title Text Color</label>
+                                    <select id="deploy-text-color-mode" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-blue dark:text-white font-bold cursor-pointer" onchange="window.updateLivePreview()">
+                                        <option value="default">Default Theme</option>
+                                        <option value="brand">Brand Blue</option>
+                                        <option value="emerald">Emerald Green</option>
+                                        <option value="rose">Rose Red</option>
+                                        <option value="amber">Amber Gold</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon Color</label>
@@ -258,34 +289,44 @@
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon BG Color</label>
                                     <input type="color" id="deploy-box-bg" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#ecfdf5" oninput="window.updateLivePreview()">
                                 </div>
+                                <!-- ✨ Extra Borders Added -->
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Title Text Color</label>
-                                    <select id="deploy-text-color-mode" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-blue dark:text-white font-bold cursor-pointer" onchange="window.updateLivePreview()">
-                                        <option value="default">Default Theme Adaptive</option>
-                                        <option value="brand">Brand Blue</option>
-                                        <option value="emerald">Emerald Green</option>
-                                        <option value="rose">Rose Red</option>
-                                        <option value="amber">Amber Gold</option>
-                                    </select>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon Box Border</label>
+                                    <input type="color" id="deploy-box-border" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#a7f3d0" oninput="window.updateLivePreview()">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tile Border Color</label>
+                                    <input type="color" id="deploy-tile-border" class="w-full h-9 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900" value="#f1f5f9" oninput="window.updateLivePreview()">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-link text-indigo-500"></i> Razorpay Payment Link</label>
-                            <input type="url" id="deploy-payment-link" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="https://rzp.io/l/your_course_link">
-                        </div>
                     </div>
+                </div>
+
+                <!-- 🗂️ Category Manager Section (Drag and Drop UI) -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative z-10">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2"><i class="fa-solid fa-layer-group text-purple-500"></i> Smart Category Engine</h3>
+                    <p class="text-xs text-slate-500 mb-4">Drag and drop categories to reorder them on the homepage. (Auto-syncs in real-time when saved)</p>
+                    <div id="deployer-category-list" class="space-y-3 mb-4" ondragover="window.allowDrop(event)" ondrop="window.dropSortCategory(event)">
+                        <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Categories will load here...</div>
+                    </div>
+                    <button onclick="window.saveCategoryOrder()" class="text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm transition-transform hover:scale-105"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Layout Order</button>
                 </div>
             </div>
 
+            <!-- RIGHT SIDE: THE LIVE MIRROR -->
             <div class="lg:col-span-4">
                 <div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-inner sticky top-24">
                     <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 text-center flex items-center justify-center gap-2"><i class="fa-solid fa-eye animate-pulse text-brand-blue"></i> Live Tile Preview</h4>
                     
-                    <div class="flex justify-center mb-8">
-                        <div id="deploy-preview-tile" class="w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col transition-all duration-300">
-                            <div id="preview-icon-box" class="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl" style="background-color: #ecfdf5; color: #059669;">
+                    <div class="flex justify-center mb-8 relative">
+                        <div id="deploy-preview-tile" class="w-64 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl flex flex-col transition-all duration-300 overflow-hidden relative border-2 border-solid" style="border-color: #f1f5f9;">
+                            
+                            <!-- 🎀 The Ribbon / Badge Container -->
+                            <div id="preview-badge" class="hidden absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm">🔥 Bestseller</div>
+
+                            <div id="preview-icon-box" class="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl border-2 border-solid" style="background-color: #ecfdf5; color: #059669; border-color: #a7f3d0;">
                                 <i id="preview-icon" class="fa-solid fa-microscope"></i>
                             </div>
                             <h4 id="preview-title" class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug transition-colors">Course Title</h4>
@@ -295,12 +336,25 @@
                         </div>
                     </div>
                     
+                    <!-- 🟢 Draft / Live Toggle -->
+                    <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-3.5 rounded-xl mb-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Visibility</p>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-wider">Show on homepage?</p>
+                        </div>
+                        <select id="deploy-status" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold outline-none dark:text-white cursor-pointer shadow-sm">
+                            <option value="live">🟢 Live (Visible)</option>
+                            <option value="draft">🟡 Draft (Hidden)</option>
+                        </select>
+                    </div>
+
                     <button type="button" id="deploy-master-btn" onclick="window.deployMasterCourse()" class="w-full bg-gradient-to-r from-brand-blue to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition-transform active:scale-95 flex items-center justify-center gap-2 text-lg">
                         <i class="fa-solid fa-satellite-dish"></i> Deploy to App
                     </button>
-                    <p class="text-[9px] text-center text-slate-400 font-bold uppercase mt-3">This will instantly push the course to the Homepage.</p>
+                    <p class="text-[9px] text-center text-slate-400 font-bold uppercase mt-3">Syncs with DB, CMS, and Enrollment Engine.</p>
                 </div>
             </div>
 
         </div>
     </div>
+</div>

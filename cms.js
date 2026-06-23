@@ -1,11 +1,19 @@
 // cms.js
 
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { db, storage } from "./firebase-config.js";
 
 // 🚨 THE SYNC LOCK GUARD 🚨
 window.cmsDataLoaded = false;
+
+// Global Drag & Drop Utilities
+window.drag = function(ev) {
+    window.draggedElement = ev.currentTarget;
+}
+window.allowDrop = function(ev) {
+    ev.preventDefault();
+}
 
 // Image Preview & Clear Utilities for CMS
 window.previewImage = function(input, previewId) {
@@ -38,7 +46,6 @@ window.clearImagePreview = function(previewId, inputId) {
     if(span) span.style.display = '';
 }
 
-// BUG FIX: Base64 Fallback logic to protect from Firebase Security Rule errors
 async function uploadFileToStorage(file, folderPath, fallbackPreviewId) {
     if (!file) return null;
     try {
@@ -72,6 +79,8 @@ window.switchAdminSubTab = function(tabId) {
     
     if(tabId === 'homecms') { 
         window.loadCMSDataIntoAdmin(); 
+    } else if (tabId === 'deployer') {
+        window.loadDeployerCategories(); // Load category list when deployer is opened
     }
 }
 
@@ -612,14 +621,17 @@ window.renderHomepage();
 // 🚀 THE MASTER COURSE DEPLOYER ENGINE
 // ==========================================
 
-// Magic 1: The Live Preview Mirror
+// Magic 1: The Live Preview Mirror 2.0 (With Borders & Badges)
 window.updateLivePreview = function() {
     const title = document.getElementById('deploy-title').value || 'Course Title';
     const subtitle = document.getElementById('deploy-subtitle').value || 'Your catchy subtitle will appear right here.';
     const icon = document.getElementById('deploy-icon').value || 'fa-microscope';
     const iconColor = document.getElementById('deploy-icon-color').value || '#059669';
     const boxBg = document.getElementById('deploy-box-bg').value || '#ecfdf5';
+    const boxBorder = document.getElementById('deploy-box-border').value || '#a7f3d0';
+    const tileBorder = document.getElementById('deploy-tile-border').value || '#f1f5f9';
     const textMode = document.getElementById('deploy-text-color-mode').value;
+    const badge = document.getElementById('deploy-badge').value;
 
     document.getElementById('preview-title').innerText = title;
     document.getElementById('preview-subtitle').innerText = subtitle;
@@ -628,21 +640,35 @@ window.updateLivePreview = function() {
     const box = document.getElementById('preview-icon-box');
     box.style.backgroundColor = boxBg;
     box.style.color = iconColor;
+    box.style.borderColor = boxBorder;
+
+    const tile = document.getElementById('deploy-preview-tile');
+    tile.style.borderColor = tileBorder;
 
     const titleEl = document.getElementById('preview-title');
-    
-    // Clean old color classes
     titleEl.className = 'text-lg font-bold mb-2 leading-snug transition-colors';
     
-    // Apply selected color mode
     if (textMode === 'brand') titleEl.classList.add('text-brand-blue');
     else if (textMode === 'emerald') titleEl.classList.add('text-emerald-600', 'dark:text-emerald-400');
     else if (textMode === 'rose') titleEl.classList.add('text-rose-600', 'dark:text-rose-400');
     else if (textMode === 'amber') titleEl.classList.add('text-amber-600', 'dark:text-amber-400');
     else titleEl.classList.add('text-slate-900', 'dark:text-white');
+
+    // Badge Logic
+    const badgeEl = document.getElementById('preview-badge');
+    if(badge) {
+        badgeEl.classList.remove('hidden');
+        badgeEl.className = 'absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all';
+        if(badge === 'bestseller') { badgeEl.innerText = '🔥 Bestseller'; badgeEl.classList.add('bg-rose-500'); }
+        else if(badge === 'new') { badgeEl.innerText = '✨ New Launch'; badgeEl.classList.add('bg-emerald-500'); }
+        else if(badge === 'limited') { badgeEl.innerText = '⏳ Limited Offer'; badgeEl.classList.add('bg-amber-500'); }
+        else if(badge === 'premium') { badgeEl.innerText = '💎 Premium'; badgeEl.classList.add('bg-purple-500'); }
+    } else {
+        badgeEl.classList.add('hidden');
+    }
 }
 
-// Magic 2: Deploy to Database
+// Magic 2: Deploy to Database (Now with Categories and Drafts)
 window.deployMasterCourse = async function() {
     const category = document.getElementById('deploy-category').value.trim();
     const title = document.getElementById('deploy-title').value.trim();
@@ -650,8 +676,12 @@ window.deployMasterCourse = async function() {
     const icon = document.getElementById('deploy-icon').value.trim();
     const iconColor = document.getElementById('deploy-icon-color').value;
     const boxBg = document.getElementById('deploy-box-bg').value;
+    const boxBorder = document.getElementById('deploy-box-border').value;
+    const tileBorder = document.getElementById('deploy-tile-border').value;
     const textColorMode = document.getElementById('deploy-text-color-mode').value;
+    const badge = document.getElementById('deploy-badge').value;
     const paymentLink = document.getElementById('deploy-payment-link').value.trim();
+    const status = document.getElementById('deploy-status').value;
 
     if(!category || !title || !paymentLink) {
         alert("⚠️ HOLD ON! Please fill out the Category, Course Title, and Razorpay Link to deploy.");
@@ -672,23 +702,32 @@ window.deployMasterCourse = async function() {
                 icon: icon,
                 iconColor: iconColor,
                 boxBg: boxBg,
+                boxBorder: boxBorder,
+                tileBorder: tileBorder,
                 textColorMode: textColorMode
             },
+            badge: badge,
             paymentLink: paymentLink,
-            status: "live",
+            status: status,
             deployedAt: new Date().toISOString()
         };
 
-        // Firebase magic: Naya collection 'deployed_courses' banega
+        // Save Course Data
         await setDoc(doc(db, "deployed_courses", title), courseData);
         
-        alert("Boom! 🚀 Course Deployed to the Database Successfully!\n\n(In the next step we will link this database to the Homepage and Admin Dropdowns!)");
+        // Auto-Sync Category in Homepage Tracker
+        await setDoc(doc(db, "cms", "homepage"), {
+            courseCategories: arrayUnion(category)
+        }, { merge: true });
         
-        // Reset inputs after deploy
+        alert("Boom! 🚀 Course Deployed to the Database Successfully!\n\n(It is now saved in the system. The Homepage and Dropdowns will automatically read this data soon!)");
+        
+        // Reset specific inputs
         document.getElementById('deploy-title').value = '';
         document.getElementById('deploy-subtitle').value = '';
         document.getElementById('deploy-payment-link').value = '';
         window.updateLivePreview();
+        window.loadDeployerCategories(); // Refresh Drag&Drop list
         
     } catch(e) {
         console.error("Deploy Error", e);
@@ -696,5 +735,66 @@ window.deployMasterCourse = async function() {
     } finally {
         btn.innerHTML = originalHtml;
         btn.disabled = false;
+    }
+}
+
+// Magic 3: Category Drag & Drop Manager
+window.loadDeployerCategories = async function() {
+    try {
+        const snap = await getDoc(doc(db, "cms", "homepage"));
+        const list = document.getElementById('deployer-category-list');
+        if(!list) return;
+
+        if (snap.exists() && snap.data().courseCategories && snap.data().courseCategories.length > 0) {
+            list.innerHTML = '';
+            snap.data().courseCategories.forEach(cat => {
+                list.innerHTML += `
+                    <div class="cms-cat-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 cursor-move shadow-sm" draggable="true" ondragstart="window.drag(event)">
+                        <i class="fa-solid fa-grip-vertical text-slate-400 px-2 cursor-grab"></i>
+                        <span class="cat-name-text font-bold text-slate-700 dark:text-slate-300 flex-grow">${cat}</span>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500 transition-colors" title="Remove Category"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            });
+        } else {
+            list.innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Categories will appear here once you deploy a course.</div>';
+        }
+    } catch(e) { console.error("Error loading categories", e); }
+}
+
+window.dropSortCategory = function(ev) {
+    ev.preventDefault();
+    if(window.draggedElement && window.draggedElement.classList.contains('cms-cat-item')) {
+        const dropTarget = ev.target.closest('.cms-cat-item');
+        const list = document.getElementById('deployer-category-list');
+
+        if(dropTarget && window.draggedElement !== dropTarget) {
+            dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        } else if (!dropTarget && ev.target.id === 'deployer-category-list') {
+            list.appendChild(window.draggedElement);
+        }
+    }
+}
+
+window.saveCategoryOrder = async function() {
+    const btn = event.currentTarget;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const newOrder = [];
+    document.querySelectorAll('.cms-cat-item .cat-name-text').forEach(el => {
+        newOrder.push(el.innerText.trim());
+    });
+
+    try {
+        await setDoc(doc(db, "cms", "homepage"), { courseCategories: newOrder }, { merge: true });
+        alert("Category layout updated! Homepage will reflect this exact order.");
+    } catch(e) { 
+        console.error(e); 
+        alert("Failed to save layout."); 
+    } finally { 
+        btn.innerHTML = original; 
+        btn.disabled = false; 
     }
 }
