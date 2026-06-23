@@ -97,19 +97,10 @@
                 <div class="flex-grow w-full md:w-auto flex items-center gap-3">
                     <select id="admin-course-selector" onchange="window.loadDraftForAdmin(this.value)" class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white font-bold focus:outline-none focus:border-brand-blue">
                         <option value="" disabled selected>-- Select Course to Edit --</option>
-                        <option value="UPSC CSE Optional Zoology">UPSC CSE Optional Zoology</option>
-                        <option value="UPSC General Studies">UPSC General Studies</option>
-                        <option value="NEET Undergraduate">NEET Undergraduate</option>
-                        <option value="Class VI">Class VI</option>
-                        <option value="Class VII">Class VII</option>
-                        <option value="Class VIII">Class VIII</option>
-                        <option value="Class IX">Class IX</option>
-                        <option value="Class X">Class X</option>
                     </select>
                     <span id="cloud-sync-status" class="text-[10px] text-slate-400 font-bold hidden"><i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Saved to Cloud</span>
                 </div>
                 
-                <!-- THE NEW VIEW ROSTER BUTTON -->
                 <button id="view-roster-btn" onclick="document.getElementById('roster-modal').classList.remove('hidden')" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2">
                     <i class="fa-solid fa-users"></i> View Students (<span id="roster-count-btn">0</span>)
                 </button>
@@ -297,6 +288,19 @@
                             </div>
                         </div>
 
+                    </div>
+                </div>
+
+                <!-- 📦 NEW: Storefront Inventory Manager -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative z-10">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-emerald-500"></i> Storefront Inventory</h3>
+                        <button onclick="window.loadDeployerInventory()" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg font-bold transition-colors"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mb-4 font-medium uppercase tracking-wider">Manage deployed tiles. Click 'Edit' to load a tile back into the Packaging Engine above.</p>
+                    
+                    <div id="deployer-inventory-list" class="space-y-2 max-h-64 overflow-y-auto hide-scrollbar border border-slate-100 dark:border-slate-800 rounded-xl p-2 bg-slate-50/50 dark:bg-slate-950/50">
+                        <div class="text-center text-slate-400 text-sm py-4"><i class="fa-solid fa-spinner fa-spin"></i> Fetching inventory from Firebase...</div>
                     </div>
                 </div>
 
