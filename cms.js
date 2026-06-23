@@ -220,7 +220,6 @@ window.cmsAddEducator = function(eduData = null) {
 }
 
 window.saveCMSData = async function() {
-    // 🚨 SYNC LOCK GUARD: Prevent saving if data isn't loaded yet!
     if (!window.cmsDataLoaded) {
         alert("⚠️ SYNC LOCK ACTIVE: Background data is still loading. Please wait a few seconds before publishing, or refresh the page!");
         return;
@@ -359,7 +358,6 @@ window.loadCMSDataIntoAdmin = async function() {
                 if(logoImg) {
                     logoImg.src = data.appLogo;
                     logoImg.classList.remove('hidden');
-                    // 🐛 BUG FIX: Look in the preview's parent, not the input's parent!
                     const icon = logoImg.parentElement.querySelector('i');
                     if (icon) icon.style.display = 'none';
                 }
@@ -418,10 +416,7 @@ window.loadCMSDataIntoAdmin = async function() {
                 }
             }
         }
-        
-        // 🚨 UNLOCK THE GUARD: Data has fully loaded successfully!
         window.cmsDataLoaded = true;
-        
     } catch(e) { 
         console.error("CMS Load Error", e); 
         alert("Failed to sync background data. The Sync Guard is active to protect your files.");
@@ -611,3 +606,95 @@ window.showGenericViewAll = async function(title, type) {
 
 // Initial Call
 window.renderHomepage();
+
+
+// ==========================================
+// 🚀 THE MASTER COURSE DEPLOYER ENGINE
+// ==========================================
+
+// Magic 1: The Live Preview Mirror
+window.updateLivePreview = function() {
+    const title = document.getElementById('deploy-title').value || 'Course Title';
+    const subtitle = document.getElementById('deploy-subtitle').value || 'Your catchy subtitle will appear right here.';
+    const icon = document.getElementById('deploy-icon').value || 'fa-microscope';
+    const iconColor = document.getElementById('deploy-icon-color').value || '#059669';
+    const boxBg = document.getElementById('deploy-box-bg').value || '#ecfdf5';
+    const textMode = document.getElementById('deploy-text-color-mode').value;
+
+    document.getElementById('preview-title').innerText = title;
+    document.getElementById('preview-subtitle').innerText = subtitle;
+    document.getElementById('preview-icon').className = `fa-solid ${icon}`;
+    
+    const box = document.getElementById('preview-icon-box');
+    box.style.backgroundColor = boxBg;
+    box.style.color = iconColor;
+
+    const titleEl = document.getElementById('preview-title');
+    
+    // Clean old color classes
+    titleEl.className = 'text-lg font-bold mb-2 leading-snug transition-colors';
+    
+    // Apply selected color mode
+    if (textMode === 'brand') titleEl.classList.add('text-brand-blue');
+    else if (textMode === 'emerald') titleEl.classList.add('text-emerald-600', 'dark:text-emerald-400');
+    else if (textMode === 'rose') titleEl.classList.add('text-rose-600', 'dark:text-rose-400');
+    else if (textMode === 'amber') titleEl.classList.add('text-amber-600', 'dark:text-amber-400');
+    else titleEl.classList.add('text-slate-900', 'dark:text-white');
+}
+
+// Magic 2: Deploy to Database
+window.deployMasterCourse = async function() {
+    const category = document.getElementById('deploy-category').value.trim();
+    const title = document.getElementById('deploy-title').value.trim();
+    const subtitle = document.getElementById('deploy-subtitle').value.trim();
+    const icon = document.getElementById('deploy-icon').value.trim();
+    const iconColor = document.getElementById('deploy-icon-color').value;
+    const boxBg = document.getElementById('deploy-box-bg').value;
+    const textColorMode = document.getElementById('deploy-text-color-mode').value;
+    const paymentLink = document.getElementById('deploy-payment-link').value.trim();
+
+    if(!category || !title || !paymentLink) {
+        alert("⚠️ HOLD ON! Please fill out the Category, Course Title, and Razorpay Link to deploy.");
+        return;
+    }
+
+    const btn = document.getElementById('deploy-master-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deploying to App...';
+    btn.disabled = true;
+
+    try {
+        const courseData = {
+            category: category,
+            title: title,
+            subtitle: subtitle,
+            design: {
+                icon: icon,
+                iconColor: iconColor,
+                boxBg: boxBg,
+                textColorMode: textColorMode
+            },
+            paymentLink: paymentLink,
+            status: "live",
+            deployedAt: new Date().toISOString()
+        };
+
+        // Firebase magic: Naya collection 'deployed_courses' banega
+        await setDoc(doc(db, "deployed_courses", title), courseData);
+        
+        alert("Boom! 🚀 Course Deployed to the Database Successfully!\n\n(In the next step we will link this database to the Homepage and Admin Dropdowns!)");
+        
+        // Reset inputs after deploy
+        document.getElementById('deploy-title').value = '';
+        document.getElementById('deploy-subtitle').value = '';
+        document.getElementById('deploy-payment-link').value = '';
+        window.updateLivePreview();
+        
+    } catch(e) {
+        console.error("Deploy Error", e);
+        alert("Failed to deploy course. Please check your connection.");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+}
