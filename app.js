@@ -257,10 +257,12 @@ window.initiateCheckout = async function(courseName) {
     }
 
     try {
-        // 1. Loading State
         console.log(`Initiating secure payment for: ${courseName}...`);
 
-        // 2. Dynamically load Razorpay SDK (agar pehle se load nahi hai)
+        // 🚨 MASTER FIX: Forcefully apne ID Card (Token) ko naya aur taza karo!
+        await auth.currentUser.getIdToken(true); 
+
+        // 2. Dynamically load Razorpay SDK
         if (!window.Razorpay) {
             await new Promise((resolve) => {
                 const script = document.createElement('script');
@@ -270,12 +272,14 @@ window.initiateCheckout = async function(courseName) {
             });
         }
 
-        // 3. Call Firebase Backend Bouncer to create a fresh Order
-        const functions = getFunctions();
+        // 3. Call Firebase Backend Bouncer
+        const functions = getFunctions(auth.app);
         const createOrderApi = httpsCallable(functions, 'createOrder');
         
         const response = await createOrderApi({ courseTitle: courseName });
         const orderData = response.data;
+
+        // ... (Baaki ka Razorpay Options ka code waise hi rahega)
 
         // 4. Open the Real Razorpay Popup!
         const options = {
