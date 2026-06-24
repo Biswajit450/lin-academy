@@ -1,4 +1,6 @@
 const functions = require("firebase-functions");
+// 🚨 MAGIC UPGRADE: Importing Google's modern V2 Engine for secure checkouts
+const { onCall, HttpsError } = require("firebase-functions/v2/https"); 
 const admin = require("firebase-admin");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
@@ -8,7 +10,7 @@ const cors = require("cors")({ origin: true });
 admin.initializeApp();
 const db = admin.firestore();
 
-// 🚨 RAZORPAY KEYS (Abhi ke liye dummy, baad mein asli lagayenge)
+// 🚨 RAZORPAY KEYS (Aapki Live Keys Secure hain)
 const RAZORPAY_KEY_ID = "rzp_live_T5Sz0KnOfFMwzp";
 const RAZORPAY_KEY_SECRET = "EgvyyzwkbSObM67JVVithLJ5";
 const WEBHOOK_SECRET = "lin_academy_super_secret_123"; 
@@ -22,23 +24,25 @@ const razorpay = new Razorpay({
 // ============================================================================
 // API 1: CREATE ORDER (App bulayegi jab bachha 'Enroll Now' dabayega)
 // ============================================================================
-exports.createOrder = functions.https.onCall(async (data, context) => {
-    // Check if user is logged in
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "Bhai, pehle login karo!");
+// 🚨 V2 UPGRADE: Changed from functions.https.onCall to modern onCall(request)
+exports.createOrder = onCall(async (request) => {
+    // Check if user is logged in using the modern V2 'request.auth'
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Bhai, pehle login karo!");
     }
-    const userId = context.auth.uid;
-    const courseTitle = data.courseTitle;
+    
+    const userId = request.auth.uid;
+    const courseTitle = request.data.courseTitle; // V2 uses request.data
 
     if (!courseTitle) {
-        throw new functions.https.HttpsError("invalid-argument", "Course ka naam missing hai.");
+        throw new HttpsError("invalid-argument", "Course ka naam missing hai.");
     }
 
     try {
         // 1. Securely fetch course price & validity from Firestore
         const courseSnap = await db.collection("deployed_courses").doc(courseTitle).get();
         if (!courseSnap.exists) {
-            throw new functions.https.HttpsError("not-found", "Course nahi mila.");
+            throw new HttpsError("not-found", "Course nahi mila.");
         }
         
         const courseData = courseSnap.data();
@@ -46,7 +50,7 @@ exports.createOrder = functions.https.onCall(async (data, context) => {
         const validityDays = courseData.validity || 0;
 
         if (priceInRupees <= 0) {
-             throw new functions.https.HttpsError("failed-precondition", "Free course hai ya price theek nahi hai.");
+             throw new HttpsError("failed-precondition", "Free course hai ya price theek nahi hai.");
         }
 
         // 2. Tell Razorpay to create a fresh Order
@@ -73,7 +77,7 @@ exports.createOrder = functions.https.onCall(async (data, context) => {
 
     } catch (error) {
         console.error("Order Creation Error:", error);
-        throw new functions.https.HttpsError("internal", error.message);
+        throw new HttpsError("internal", error.message);
     }
 });
 
