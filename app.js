@@ -8,6 +8,7 @@ import "./auth.js";
 import "./cms.js";
 import "./course-builder.js";
 import "./profile.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // ==========================================
 // SPA ROUTING & SMART FETCH ENGINE (THE MAGIC ROUTER)
@@ -246,34 +247,75 @@ window.renderEnrollments = async function(unlockedCourses = [], passedRole = nul
 }
 
 // ==========================================
-// CHECKOUT ENGINE 
+// CHECKOUT ENGINE (100% LIVE & SECURE)
 // ==========================================
 window.initiateCheckout = async function(courseName) { 
-    alert(`Razorpay Gateway Initiated for: ${courseName}\n\nOnce payment is successful, our Webhook will automatically tell Firebase to unlock this for the student!`); 
-    
-    if (auth.currentUser) {
-        if(confirm(`[DEV TESTING]: Do you want to instantly unlock "${courseName}" and add it to your Enrollments Vault?`)) {
-            try {
-                const userRef = doc(db, "users", auth.currentUser.uid);
-                const userSnap = await getDoc(userRef);
-                if(userSnap.exists()) {
-                    let unlocked = userSnap.data().unlocked_courses || [];
-                    if(!unlocked.includes(courseName)) {
-                        unlocked.push(courseName);
-                        await setDoc(userRef, { unlocked_courses: unlocked }, { merge: true });
-                        alert("Course Unlocked Successfully! Go check your Enrollments tab.");
-                        window.renderEnrollments(unlocked, userSnap.data().role);
-                    } else {
-                        alert("You already own this course!");
-                    }
-                }
-            } catch(e) {
-                console.error("Unlock error", e);
-            }
-        }
-    } else {
+    if (!auth.currentUser) {
         alert("Please login first to enroll.");
         if(window.openAuthModal) window.openAuthModal('login');
+        return;
+    }
+
+    try {
+        // 1. Loading State
+        console.log(`Initiating secure payment for: ${courseName}...`);
+
+        // 2. Dynamically load Razorpay SDK (agar pehle se load nahi hai)
+        if (!window.Razorpay) {
+            await new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                script.onload = resolve;
+                document.body.appendChild(script);
+            });
+        }
+
+        // 3. Call Firebase Backend Bouncer to create a fresh Order
+        const functions = getFunctions();
+        const createOrderApi = httpsCallable(functions, 'createOrder');
+        
+        const response = await createOrderApi({ courseTitle: courseName });
+        const orderData = response.data;
+
+        // 4. Open the Real Razorpay Popup!
+        const options = {
+            // 🚨 APNI LIVE KEY ID YAHAN BHI DAALIYE (e.g., rzp_live_...) 👇
+            key: "rzp_live_T5Sz0KnOfFMwzp", 
+            amount: orderData.amount,
+            currency: orderData.currency,
+            name: "Lin Academy",
+            description: `Enrollment for ${courseName}`,
+            order_id: orderData.id,
+            prefill: {
+                name: auth.currentUser.displayName || "Student",
+                email: auth.currentUser.email || "",
+            },
+            theme: {
+                color: "#2563eb" // Lin Academy Brand Blue
+            },
+            handler: function (response) {
+                // Payment success hotey hi Razorpay ye function chalayega
+                // Aur background mein humara Webhook Firebase mein course unlock kar dega!
+                alert("Payment Successful! 🎉\n\nYour course is unlocking... Welcome to the premium ecosystem!");
+                
+                // 3 second baad automatic enrollments tab khol denge
+                setTimeout(() => {
+                    window.showScreen('screen-enrollments');
+                    // Page reload karne se vault turant fresh data fetch kar lega
+                    window.location.reload(); 
+                }, 3000);
+            }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response){
+            alert("Payment Failed or Cancelled. Please try again.");
+        });
+        rzp.open();
+
+    } catch (error) {
+        console.error("Checkout Error:", error);
+        alert("Could not initiate payment. Server is verifying data... Error: " + error.message);
     }
 }
 
