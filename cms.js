@@ -553,6 +553,7 @@ window.renderHomepage = async function() {
                                     tSize = 'text-sm'; sText = 'text-[10px] mb-3 line-clamp-1'; bPad = 'py-1.5 text-[10px]';
                                 }
 
+                                // 🛡️ SECURE POPUP UPGRADE: Changed onclick to initiateCheckout Popup Engine
                                 tilesHtml += `
                                     <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl ${tPad} border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
                                         ${badgeHtml}
@@ -561,7 +562,7 @@ window.renderHomepage = async function() {
                                         </div>
                                         <h4 class="${tSize} font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
                                         <p class="${sText} text-slate-500 dark:text-slate-400 font-medium flex-grow">${course.subtitle}</p>
-                                        <button onclick="window.open('${course.paymentLink}', '_blank')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold ${bPad} rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95">Enroll Now</button>
+                                        <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold ${bPad} rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95">Enroll Now</button>
                                     </div>
                                 `;
                             });
@@ -695,7 +696,7 @@ window.showGenericViewAll = async function(title, type) {
                 else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
                 else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
 
-                // Using standard medium size for the Grid View
+                // 🛡️ SECURE POPUP UPGRADE: Grid view buttons also mapped to initiateCheckout Popup Engine
                 grid.innerHTML += `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-transform flex flex-col relative overflow-hidden group w-full" style="border-color: ${d.tileBorder || '#f1f5f9'};">
                         ${badgeHtml}
@@ -704,7 +705,7 @@ window.showGenericViewAll = async function(title, type) {
                         </div>
                         <h4 class="text-base font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle}</p>
-                        <button onclick="window.open('${course.paymentLink}', '_blank')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                        <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
                     </div>
                 `;
             });

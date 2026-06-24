@@ -171,6 +171,7 @@
                         <div id="dynamic-educator-container" class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4"><div class="text-center text-slate-400 text-sm w-full py-4">Loading Educators...</div></div>
                     </section>
                 </div>
+                
                 <div id="screen-course-view" class="app-screen hidden space-y-6">
                     <div class="flex items-center gap-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
                         <button onclick="window.showScreen('screen-enrollments')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0"><i class="fa-solid fa-arrow-left"></i></button>
@@ -185,7 +186,7 @@
                         <p id="student-sub-title" class="text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 mb-8 pointer-events-none"></p>
                         
                         <div id="course-render-canvas" class="space-y-4">
-                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -195,32 +196,6 @@
                         <div><h3 id="generic-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">View All</h3></div>
                     </div>
                     <div id="generic-view-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-                </div>
-
-                <div id="screen-view-competitive" class="app-screen hidden space-y-6">
-                    <div class="flex items-center gap-4">
-                        <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700"><i class="fa-solid fa-arrow-left"></i></button>
-                        <div><h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Competitive Bundles</h3></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col"><div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 text-2xl"><i class="fa-solid fa-microscope"></i></div><h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC CSE Optional Zoology</h4><button onclick="window.initiateCheckout('UPSC CSE Optional Zoology')" class="mt-auto w-full bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-emerald-100 dark:border-emerald-800">Enroll Now</button></div>
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col"><div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-5 text-blue-600 dark:text-blue-400 text-2xl"><i class="fa-solid fa-landmark"></i></div><h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">UPSC General Studies</h4><button onclick="window.initiateCheckout('UPSC General Studies')" class="mt-auto w-full bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 text-blue-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-blue-100 dark:border-blue-800">Enroll Now</button></div>
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col"><div class="w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-5 text-rose-600 dark:text-rose-400 text-2xl"><i class="fa-solid fa-stethoscope"></i></div><h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">NEET Undergraduate</h4><button onclick="window.initiateCheckout('NEET Undergraduate')" class="mt-auto w-full bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 text-rose-600 font-bold py-2.5 rounded-xl transition-colors text-sm border border-rose-100 dark:border-rose-800">Enroll Now</button></div>
-                    </div>
-                </div>
-                
-                <div id="screen-view-academics" class="app-screen hidden space-y-6">
-                    <div class="flex items-center gap-4">
-                        <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700"><i class="fa-solid fa-arrow-left"></i></button>
-                        <div><h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Academics</h3></div>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center"><div class="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-3 text-amber-500 text-xl"><i class="fa-solid fa-pencil"></i></div><h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Class VI</h4><button onclick="window.initiateCheckout('Class VI')" class="mt-auto w-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 text-amber-600 border border-amber-200 dark:border-amber-800 font-bold py-2 rounded-xl text-xs">Enroll Now</button></div>
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center"><div class="w-12 h-12 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mb-3 text-orange-500 text-xl"><i class="fa-solid fa-book"></i></div><h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Class VII</h4><button onclick="window.initiateCheckout('Class VII')" class="mt-auto w-full bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-600 border border-orange-200 dark:border-orange-800 font-bold py-2 rounded-xl text-xs">Enroll Now</button></div>
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center"><div class="w-12 h-12 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-3 text-rose-500 text-xl"><i class="fa-solid fa-flask"></i></div><h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Class VIII</h4><button onclick="window.initiateCheckout('Class VIII')" class="mt-auto w-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 text-rose-600 border border-rose-200 dark:border-rose-800 font-bold py-2 rounded-xl text-xs">Enroll Now</button></div>
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center"><div class="w-12 h-12 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-2xl flex items-center justify-center mb-3 text-fuchsia-500 text-xl"><i class="fa-solid fa-atom"></i></div><h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Class IX</h4><button onclick="window.initiateCheckout('Class IX')" class="mt-auto w-full bg-fuchsia-50 hover:bg-fuchsia-100 dark:bg-fuchsia-900/20 dark:hover:bg-fuchsia-900/40 text-fuchsia-600 border border-fuchsia-200 dark:border-fuchsia-800 font-bold py-2 rounded-xl text-xs">Enroll Now</button></div>
-                        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center"><div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mb-3 text-purple-500 text-xl"><i class="fa-solid fa-square-root-variable"></i></div><h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Class X</h4><button onclick="window.initiateCheckout('Class X')" class="mt-auto w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-600 border border-purple-200 dark:border-purple-800 font-bold py-2 rounded-xl text-xs">Enroll Now</button></div>
-                    </div>
                 </div>
 
             </div>
