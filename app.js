@@ -805,7 +805,8 @@ window.editDeployedCourse = async function(docId) {
             document.getElementById('deploy-title').value = data.title || '';
             document.getElementById('deploy-subtitle').value = data.subtitle || '';
             document.getElementById('deploy-badge').value = data.badge || '';
-            document.getElementById('deploy-payment-link').value = data.paymentLink || '';
+            document.getElementById('deploy-price').value = data.price || '';
+            document.getElementById('deploy-validity').value = data.validity || '';
             
             if(data.design) {
                 document.getElementById('deploy-icon').value = data.design.icon || 'fa-book';
@@ -846,5 +847,100 @@ window.deleteDeployedCourse = async function(docId) {
             console.error("Error deleting", e);
             alert("Failed to delete the course.");
         }
+    }
+}
+
+window.updateLivePreview = function() {
+    const title = document.getElementById('deploy-title').value || 'Course Title';
+    const subtitle = document.getElementById('deploy-subtitle').value || 'Your catchy subtitle will appear right here.';
+    const icon = document.getElementById('deploy-icon').value || 'fa-book';
+    const iconColor = document.getElementById('deploy-icon-color').value || '#059669';
+    const boxBg = document.getElementById('deploy-box-bg').value || '#ecfdf5';
+    const boxBorder = document.getElementById('deploy-box-border').value || '#a7f3d0';
+    const badge = document.getElementById('deploy-badge').value;
+    const tileBorder = document.getElementById('deploy-tile-border').value || '#f1f5f9';
+
+    const previewTitle = document.getElementById('preview-title');
+    if(previewTitle) previewTitle.innerText = title;
+    
+    const previewSubtitle = document.getElementById('preview-subtitle');
+    if(previewSubtitle) previewSubtitle.innerText = subtitle;
+    
+    const previewIcon = document.getElementById('preview-icon');
+    if(previewIcon) previewIcon.className = `fa-solid ${icon}`;
+    
+    const previewIconBox = document.getElementById('preview-icon-box');
+    if(previewIconBox) {
+        previewIconBox.style.color = iconColor;
+        previewIconBox.style.backgroundColor = boxBg;
+        previewIconBox.style.borderColor = boxBorder;
+    }
+
+    const previewTile = document.getElementById('deploy-preview-tile');
+    if(previewTile) {
+        previewTile.style.borderColor = tileBorder;
+    }
+
+    const badgeEl = document.getElementById('preview-badge');
+    if(badgeEl) {
+        if(!badge) {
+            badgeEl.classList.add('hidden');
+        } else {
+            badgeEl.classList.remove('hidden');
+            if(badge === 'bestseller') { badgeEl.innerText = '🔥 Bestseller'; badgeEl.className = 'absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
+            else if(badge === 'new') { badgeEl.innerText = '✨ New Launch'; badgeEl.className = 'absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
+            else if(badge === 'limited') { badgeEl.innerText = '⏳ Limited Offer'; badgeEl.className = 'absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
+            else if(badge === 'premium') { badgeEl.innerText = '💎 Premium'; badgeEl.className = 'absolute top-0 right-0 bg-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
+        }
+    }
+}
+
+window.deployMasterCourse = async function() {
+    if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
+    
+    const title = document.getElementById('deploy-title').value.trim();
+    if(!title) return alert("Course Title is required!");
+
+    const deployBtn = document.getElementById('deploy-master-btn');
+    const originalHtml = deployBtn.innerHTML;
+    deployBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deploying...';
+    deployBtn.disabled = true;
+
+    const courseData = {
+        category: document.getElementById('deploy-category').value.trim() || 'Uncategorized',
+        title: title,
+        subtitle: document.getElementById('deploy-subtitle').value.trim(),
+        badge: document.getElementById('deploy-badge').value,
+        price: Number(document.getElementById('deploy-price').value) || 0,
+        validity: Number(document.getElementById('deploy-validity').value) || 0,
+        status: document.getElementById('deploy-status').value || 'live',
+        design: {
+            icon: document.getElementById('deploy-icon').value || 'fa-book',
+            textColorMode: document.getElementById('deploy-text-color-mode').value || 'default',
+            iconColor: document.getElementById('deploy-icon-color').value || '#059669',
+            boxBg: document.getElementById('deploy-box-bg').value || '#ecfdf5',
+            boxBorder: document.getElementById('deploy-box-border').value || '#a7f3d0',
+            tileBorder: document.getElementById('deploy-tile-border').value || '#f1f5f9',
+            size: document.getElementById('deploy-tile-size').value || 'large'
+        },
+        updatedAt: new Date().toISOString()
+    };
+
+    try {
+        await setDoc(doc(db, "deployed_courses", title), courseData, { merge: true });
+        alert("Course Deployed Successfully! Price and Validity are securely stored.");
+        
+        deployBtn.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Deploy to App';
+        deployBtn.classList.remove('from-emerald-500', 'to-emerald-700');
+        deployBtn.classList.add('from-brand-blue', 'to-indigo-600');
+        deployBtn.disabled = false;
+        
+        if(window.loadDeployerInventory) window.loadDeployerInventory();
+        if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown();
+    } catch(e) {
+        console.error("Deploy error", e);
+        alert("Failed to deploy course.");
+        deployBtn.innerHTML = originalHtml;
+        deployBtn.disabled = false;
     }
 }
