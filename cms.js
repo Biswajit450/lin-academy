@@ -516,72 +516,103 @@ window.renderHomepage = async function() {
                         const catCourses = courses.filter(c => c.category === cat);
                         
                         if (catCourses.length > 0) {
-                            let tilesHtml = '';
+                            // 🚀 NEW: Group courses by Sub-Category
+                            const subCatGroups = {};
+                            const defaultGroup = [];
+                            
                             catCourses.forEach(course => {
-                                const d = course.design;
-                                
-                                // Dynamic Badge Logic
-                                let badgeHtml = '';
-                                if (course.badge) {
-                                    let badgeClass = 'bg-slate-500';
-                                    let badgeText = course.badge;
-                                    if(course.badge === 'bestseller') { badgeClass = 'bg-rose-500'; badgeText = '🔥 Bestseller'; }
-                                    else if(course.badge === 'new') { badgeClass = 'bg-emerald-500'; badgeText = '✨ New Launch'; }
-                                    else if(course.badge === 'limited') { badgeClass = 'bg-amber-500'; badgeText = '⏳ Limited Offer'; }
-                                    else if(course.badge === 'premium') { badgeClass = 'bg-purple-500'; badgeText = '💎 Premium'; }
-
-                                    badgeHtml = `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all ${badgeClass}">${badgeText}</div>`;
+                                if(course.subCategory && course.subCategory.trim() !== '') {
+                                    if(!subCatGroups[course.subCategory]) subCatGroups[course.subCategory] = [];
+                                    subCatGroups[course.subCategory].push(course);
+                                } else {
+                                    defaultGroup.push(course);
                                 }
-
-                                // Dynamic Title Color Logic
-                                let titleColorClass = 'text-slate-900 dark:text-white';
-                                if (d.textColorMode === 'brand') titleColorClass = 'text-brand-blue';
-                                else if (d.textColorMode === 'emerald') titleColorClass = 'text-emerald-600 dark:text-emerald-400';
-                                else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
-                                else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
-
-                                // ✨ Apply Custom Tile Sizes 
-                                const sz = d.tileSize || 'large';
-                                let tWidth = 'w-64', tPad = 'p-6', iSize = 'w-14 h-14', iText = 'text-2xl', iMarg = 'mb-5';
-                                let tSize = 'text-lg', sText = 'text-xs mb-6 line-clamp-2', bPad = 'py-2.5 text-sm';
-
-                                if (sz === 'medium') {
-                                    tWidth = 'w-52'; tPad = 'p-5'; iSize = 'w-12 h-12'; iText = 'text-xl'; iMarg = 'mb-4';
-                                    tSize = 'text-base'; sText = 'text-[11px] mb-4 line-clamp-2'; bPad = 'py-2 text-xs';
-                                } else if (sz === 'small') {
-                                    tWidth = 'w-40'; tPad = 'p-4'; iSize = 'w-10 h-10'; iText = 'text-lg'; iMarg = 'mb-3';
-                                    tSize = 'text-sm'; sText = 'text-[10px] mb-3 line-clamp-1'; bPad = 'py-1.5 text-[10px]';
-                                }
-
-                                // 🛡️ SECURE POPUP UPGRADE: Changed onclick to initiateCheckout Popup Engine
-                                tilesHtml += `
-                                    <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl ${tPad} border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
-                                        ${badgeHtml}
-                                        <div class="${iSize} rounded-2xl flex items-center justify-center ${iMarg} ${iText} border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};">
-                                            <i class="fa-solid ${d.icon}"></i>
-                                        </div>
-                                        <h4 class="${tSize} font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
-                                        <p class="${sText} text-slate-500 dark:text-slate-400 font-medium flex-grow">${course.subtitle}</p>
-                                        <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold ${bPad} rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95">Enroll Now</button>
-                                    </div>
-                                `;
                             });
 
-                            // Inject Category Row into Homepage
-                            const sectionHtml = `
-                                <section class="mb-2">
-                                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
+                            let fullCategoryHtml = `
+                                <section class="mb-4">
+                                    <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-4">
                                         <div>
                                             <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">${cat}</h3>
                                         </div>
                                         <button onclick="window.showGenericViewAll('${cat}', 'course_${cat}')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                                     </div>
-                                    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4">
-                                        ${tilesHtml}
-                                    </div>
-                                </section>
                             `;
-                            courseShowcase.insertAdjacentHTML('beforeend', sectionHtml);
+
+                            // Helper function to render a row of tiles
+                            const renderTiles = (courseArray) => {
+                                let tilesHtml = '';
+                                courseArray.forEach(course => {
+                                    const d = course.design;
+                                    
+                                    // Badge Logic
+                                    let badgeHtml = '';
+                                    if (course.badge) {
+                                        let badgeClass = 'bg-slate-500';
+                                        let badgeText = course.badge;
+                                        if(course.badge === 'bestseller') { badgeClass = 'bg-rose-500'; badgeText = '🔥 Bestseller'; }
+                                        else if(course.badge === 'new') { badgeClass = 'bg-emerald-500'; badgeText = '✨ New Launch'; }
+                                        else if(course.badge === 'limited') { badgeClass = 'bg-amber-500'; badgeText = '⏳ Limited Offer'; }
+                                        else if(course.badge === 'premium') { badgeClass = 'bg-purple-500'; badgeText = '💎 Premium'; }
+                                        badgeHtml = `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all ${badgeClass}">${badgeText}</div>`;
+                                    }
+
+                                    // Color Logic
+                                    let titleColorClass = 'text-slate-900 dark:text-white';
+                                    if (d.textColorMode === 'brand') titleColorClass = 'text-brand-blue';
+                                    else if (d.textColorMode === 'emerald') titleColorClass = 'text-emerald-600 dark:text-emerald-400';
+                                    else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
+                                    else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
+
+                                    // Size Logic
+                                    const sz = d.tileSize || 'large';
+                                    let tWidth = 'w-64', tPad = 'p-6', iSize = 'w-14 h-14', iText = 'text-2xl', iMarg = 'mb-5';
+                                    let tSize = 'text-lg', sText = 'text-xs mb-6 line-clamp-2', bPad = 'py-2.5 text-sm';
+
+                                    if (sz === 'medium') {
+                                        tWidth = 'w-52'; tPad = 'p-5'; iSize = 'w-12 h-12'; iText = 'text-xl'; iMarg = 'mb-4';
+                                        tSize = 'text-base'; sText = 'text-[11px] mb-4 line-clamp-2'; bPad = 'py-2 text-xs';
+                                    } else if (sz === 'small') {
+                                        tWidth = 'w-40'; tPad = 'p-4'; iSize = 'w-10 h-10'; iText = 'text-lg'; iMarg = 'mb-3';
+                                        tSize = 'text-sm'; sText = 'text-[10px] mb-3 line-clamp-1'; bPad = 'py-1.5 text-[10px]';
+                                    }
+
+                                    tilesHtml += `
+                                        <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl ${tPad} border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                                            ${badgeHtml}
+                                            <div class="${iSize} rounded-2xl flex items-center justify-center ${iMarg} ${iText} border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};">
+                                                <i class="fa-solid ${d.icon}"></i>
+                                            </div>
+                                            <h4 class="${tSize} font-bold mb-2 leading-snug ${titleColorClass}">${course.title}</h4>
+                                            <p class="${sText} text-slate-500 dark:text-slate-400 font-medium flex-grow">${course.subtitle}</p>
+                                            <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold ${bPad} rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95">Enroll Now</button>
+                                        </div>
+                                    `;
+                                });
+                                return `<div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-6">${tilesHtml}</div>`;
+                            };
+
+                            // Render Sub-categories (with a nice left border to group them)
+                            for(const [subCatName, coursesInSub] of Object.entries(subCatGroups)) {
+                                fullCategoryHtml += `
+                                    <div class="mb-2 ml-0 md:ml-4 border-l-4 border-brand-blue/20 pl-4 py-2">
+                                        <h4 class="text-sm md:text-base font-extrabold text-slate-600 dark:text-slate-400 mb-4 uppercase tracking-wider">${subCatName}</h4>
+                                        ${renderTiles(coursesInSub)}
+                                    </div>
+                                `;
+                            }
+
+                            // Render default group (courses without sub-category)
+                            if(defaultGroup.length > 0) {
+                                fullCategoryHtml += `
+                                    <div class="mb-4">
+                                        ${renderTiles(defaultGroup)}
+                                    </div>
+                                `;
+                            }
+
+                            fullCategoryHtml += `</section>`;
+                            courseShowcase.insertAdjacentHTML('beforeend', fullCategoryHtml);
                         }
                     });
                 }
@@ -844,6 +875,7 @@ window.updateLivePreview = function() {
 // Magic 2: Deploy to Database (Now with Categories, Drafts and Sizes)
 window.deployMasterCourse = async function() {
     const category = document.getElementById('deploy-category').value.trim();
+    const subCategory = document.getElementById('deploy-sub-category').value.trim(); // 🚀 NEW
     const title = document.getElementById('deploy-title').value.trim();
     const subtitle = document.getElementById('deploy-subtitle').value.trim();
     const icon = document.getElementById('deploy-icon').value.trim();
@@ -872,6 +904,7 @@ window.deployMasterCourse = async function() {
     try {
         const courseData = {
             category: category,
+            subCategory: subCategory, // 🚀 NEW
             title: title,
             subtitle: subtitle,
             design: {
@@ -900,6 +933,7 @@ window.deployMasterCourse = async function() {
         alert("Boom! 🚀 Course Deployed to the Database Successfully!\n\n(It is now saved in the system. The Homepage and Dropdowns will automatically read this data soon!)");
         
         // Reset specific inputs
+        document.getElementById('deploy-sub-category').value = ''; // 🚀 NEW
         document.getElementById('deploy-title').value = '';
         document.getElementById('deploy-subtitle').value = '';
         document.getElementById('deploy-payment-link').value = '';
