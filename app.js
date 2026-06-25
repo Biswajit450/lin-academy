@@ -1,7 +1,7 @@
 // app.js
 
 // 🚨 IMPORT UPDATED: Added deleteDoc for Inventory Manager
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 import "./auth.js";
@@ -881,6 +881,7 @@ window.editDeployedCourse = async function(docId) {
             const data = docSnap.data();
             
             document.getElementById('deploy-category').value = data.category || '';
+            document.getElementById('deploy-sub-category').value = data.subCategory || ''; // 🚀 ADDED
             document.getElementById('deploy-title').value = data.title || '';
             document.getElementById('deploy-subtitle').value = data.subtitle || '';
             document.getElementById('deploy-badge').value = data.badge || '';
@@ -977,8 +978,14 @@ window.updateLivePreview = function() {
 window.deployMasterCourse = async function() {
     if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
     
+    const category = document.getElementById('deploy-category').value.trim();
+    const subCategory = document.getElementById('deploy-sub-category').value.trim(); // 🚀 NEW
     const title = document.getElementById('deploy-title').value.trim();
-    if(!title) return alert("Course Title is required!");
+    
+    if(!category || !title) { 
+        alert("Course Title and Category are required!"); 
+        return; 
+    }
 
     const deployBtn = document.getElementById('deploy-master-btn');
     const originalHtml = deployBtn.innerHTML;
@@ -986,7 +993,8 @@ window.deployMasterCourse = async function() {
     deployBtn.disabled = true;
 
     const courseData = {
-        category: document.getElementById('deploy-category').value.trim() || 'Uncategorized',
+        category: category,
+        subCategory: subCategory, // 🚀 NEW
         title: title,
         subtitle: document.getElementById('deploy-subtitle').value.trim(),
         badge: document.getElementById('deploy-badge').value,
@@ -1006,16 +1014,33 @@ window.deployMasterCourse = async function() {
     };
 
     try {
+        // 1. Save Course Data with Sub-Category
         await setDoc(doc(db, "deployed_courses", title), courseData, { merge: true });
-        alert("Course Deployed Successfully! Price and Validity are securely stored.");
+        
+        // 2. Auto-Sync Category in Homepage Tracker (Crucial Fix!)
+        await setDoc(doc(db, "cms", "homepage"), {
+            courseCategories: arrayUnion(category)
+        }, { merge: true });
+        
+        alert("Course Deployed Successfully! Sub-Category is securely stored.");
+        
+        // 3. Reset form inputs safely
+        document.getElementById('deploy-category').value = '';
+        document.getElementById('deploy-sub-category').value = ''; // 🚀 NEW
+        document.getElementById('deploy-title').value = '';
+        document.getElementById('deploy-subtitle').value = '';
         
         deployBtn.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Deploy to App';
         deployBtn.classList.remove('from-emerald-500', 'to-emerald-700');
         deployBtn.classList.add('from-brand-blue', 'to-indigo-600');
         deployBtn.disabled = false;
         
+        // 4. Fresh UI Re-sync
+        if(window.updateLivePreview) window.updateLivePreview();
         if(window.loadDeployerInventory) window.loadDeployerInventory();
         if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown();
+        if(window.renderHomepage) window.renderHomepage(); 
+        
     } catch(e) {
         console.error("Deploy error", e);
         alert("Failed to deploy course.");
