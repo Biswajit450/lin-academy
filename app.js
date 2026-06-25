@@ -11,6 +11,39 @@ import "./profile.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // ==========================================
+// 🧮 KaTeX & Quill.js RICH EDITOR ENGINE
+// ==========================================
+window.questionEditor = null;
+window.explanationEditor = null;
+
+// Yeh function Test Creator Modal khulte hi chalega
+window.initRichEditors = function() {
+    // Agar pehle se load hain toh dobara load mat karo
+    if(window.questionEditor) return;
+
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // Toggled buttons
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // Superscript/Subscript
+        ['formula'],                                      // 🚀 THE MAGIC MATH BUTTON
+        ['clean']                                         // Remove formatting
+    ];
+
+    // Initialize Question Editor
+    window.questionEditor = new window.Quill('#q-text-editor', {
+        modules: { toolbar: toolbarOptions },
+        theme: 'snow',
+        placeholder: 'Type your question here. Use the (fx) button to add KaTeX math formulas...'
+    });
+
+    // Initialize Explanation Editor
+    window.explanationEditor = new window.Quill('#q-exp-editor', {
+        modules: { toolbar: toolbarOptions },
+        theme: 'snow',
+        placeholder: 'Provide a detailed explanation here...'
+    });
+}
+
+// ==========================================
 // SPA ROUTING & SMART FETCH ENGINE (THE MAGIC ROUTER)
 // ==========================================
 window.showScreen = async function(screenId) {
@@ -594,7 +627,7 @@ window.loadExamQuestion = function(index) {
     
     document.getElementById('exam-q-number').innerText = `Question ${index + 1} of ${session.questions.length}`;
     document.getElementById('exam-q-pos-mark').innerText = `+${session.settings.marksForCorrectAnswer} Marks`;
-    document.getElementById('exam-q-text').innerText = q.question;
+    document.getElementById('exam-q-text').innerHTML = q.question;
     
     const progress = (index / session.questions.length) * 100;
     document.getElementById('exam-progress-bar').style.width = `${progress}%`;

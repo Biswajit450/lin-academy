@@ -433,6 +433,8 @@ window.openCourseView = async function(courseName) {
 // ==========================================
 window.openTestModal = function() { 
     document.getElementById('test-creator-modal').classList.remove('hidden'); 
+    // 🚀 ENGINE START: Modal khulte hi Quill Editors ko zinda karo!
+    if(window.initRichEditors) window.initRichEditors();
 }
 
 window.closeTestModal = function() { 
@@ -442,13 +444,19 @@ window.closeTestModal = function() {
 window.draftQuestions = []; 
 
 window.addDraftQuestion = function() {
-    const qText = document.getElementById('q-text').value; 
+    // 🚀 NEW: Read Question Text from Quill Editor (handle empty state)
+    const qTextHtml = window.questionEditor ? window.questionEditor.root.innerHTML : '';
+    const qText = (qTextHtml === '<p><br></p>') ? '' : qTextHtml; 
+
     const opt1 = document.getElementById('q-opt1').value; 
     const opt2 = document.getElementById('q-opt2').value; 
     const opt3 = document.getElementById('q-opt3').value; 
     const opt4 = document.getElementById('q-opt4').value; 
     const correctAns = parseInt(document.getElementById('q-correct').value); 
-    const explanation = document.getElementById('q-exp').value;
+    
+    // 🚀 NEW: Read Explanation from Quill Editor
+    const expHtml = window.explanationEditor ? window.explanationEditor.root.innerHTML : '';
+    const explanation = (expHtml === '<p><br></p>') ? '' : expHtml;
     
     if(!qText || !opt1 || !opt2 || !opt3 || !opt4) { 
         alert("Please fill out the question and all 4 options!"); 
@@ -464,12 +472,14 @@ window.addDraftQuestion = function() {
     
     document.getElementById('draft-counter').innerText = window.draftQuestions.length;
     
-    document.getElementById('q-text').value = ''; 
+    // 🚀 NEW: Safely Clear Quill Editors for the next question
+    if(window.questionEditor) window.questionEditor.setContents([]);
+    if(window.explanationEditor) window.explanationEditor.setContents([]);
+
     document.getElementById('q-opt1').value = ''; 
     document.getElementById('q-opt2').value = ''; 
     document.getElementById('q-opt3').value = ''; 
     document.getElementById('q-opt4').value = ''; 
-    document.getElementById('q-exp').value = '';
 }
 
 window.publishExamToFirebase = async function() {
@@ -535,6 +545,9 @@ window.publishExamToFirebase = async function() {
         window.draftQuestions = []; 
         document.getElementById('draft-counter').innerText = "0"; 
         document.getElementById('exam-builder-form').reset(); 
+        // 🚀 NEW: Clean up Rich Editors completely after publishing
+        if(window.questionEditor) window.questionEditor.setContents([]);
+        if(window.explanationEditor) window.explanationEditor.setContents([]);
         window.closeTestModal();
         
         alert(`Test Saved! Your Vault ID is: ${docRef.id}\nYou can copy this ID and use it in the Arena Test Manager!`);
