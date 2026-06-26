@@ -137,6 +137,11 @@ exports.razorpayWebhook = functions.https.onRequest((req, res) => {
                     expiresAt.setDate(expiresAt.getDate() + validityDays);
 
                     await userRef.set({
+                        // 🚀 NEW: Frontend App.js isko read karega
+                        course_expiries: {
+                            [courseTitle]: expiresAt.toISOString()
+                        },
+                        // Old backup details for Admin/Audit
                         subscriptions: {
                             [courseTitle]: {
                                 unlockedAt: admin.firestore.FieldValue.serverTimestamp(),

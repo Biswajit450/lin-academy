@@ -193,19 +193,24 @@ window.loadAdminCourseDropdown = async function() {
 // ==========================================
 // 🚀 VAULT VISIBILITY ENGINE (DYNAMIC ENROLLMENTS)
 // ==========================================
+// ==========================================
+// 🚀 VAULT VISIBILITY ENGINE (DYNAMIC ENROLLMENTS WITH AUTO-EXPIRY)
+// ==========================================
 window.renderEnrollments = async function(unlockedCourses = [], passedRole = null) {
     try {
+        if (!auth.currentUser) return;
+
+        // 🚀 NEW: Fetch fresh user data to securely check EXPIRE DATES
+        const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        const courseExpiries = userData.course_expiries || {}; // Gets the expiry dates map
+
         let role = passedRole || window.currentUserRole || 'student';
         role = String(role).toLowerCase().trim(); 
 
         const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
         
-        let coursesList = [];
-        if (Array.isArray(unlockedCourses) && unlockedCourses.length > 0) {
-            coursesList = unlockedCourses;
-        } else if (Array.isArray(window.currentUnlockedCourses)) {
-            coursesList = window.currentUnlockedCourses;
-        }
+        let coursesList = userData.unlocked_courses || [];
 
         const enrollScreen = document.getElementById('screen-enrollments');
         if(!enrollScreen) return;
@@ -243,19 +248,39 @@ window.renderEnrollments = async function(unlockedCourses = [], passedRole = nul
                 count++;
                 const d = course.design || {};
                 
+                // 🚀 SMART EXPIRY CHECK ENGINE 🚀
+                let isExpired = false;
+                let expiryText = "Lifetime Access";
+                let badgeHtml = `<div class="absolute top-0 right-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i> Unlocked</div>`;
+                let actionBtnHtml = `<button onclick="window.openCourseView('${course.title}')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2"><i class="fa-solid fa-play"></i> Enter Classroom</button>`;
+
+                if (!isGodMode && courseExpiries[course.title]) {
+                    const expDate = new Date(courseExpiries[course.title]);
+                    const now = new Date();
+                    
+                    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                    expiryText = "Valid till " + expDate.toLocaleDateString('en-IN', options);
+
+                    if (now > expDate) {
+                        isExpired = true;
+                        badgeHtml = `<div class="absolute top-0 right-0 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm"><i class="fa-solid fa-lock mr-1"></i> Expired</div>`;
+                        actionBtnHtml = `<button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2"><i class="fa-solid fa-rotate-right"></i> Renew Subscription</button>`;
+                    }
+                }
+
                 html += `
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-solid shadow-md flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-all" style="border-color: ${d.tileBorder || '#f1f5f9'};">
-                        <div class="absolute top-0 right-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm"><i class="fa-solid fa-check-circle mr-1"></i> Unlocked</div>
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-solid shadow-md flex flex-col relative overflow-hidden group ${isExpired ? 'opacity-85' : 'hover:-translate-y-1'} transition-all" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                        ${badgeHtml}
                         
                         <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-2xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
                             <i class="fa-solid ${d.icon || 'fa-book'}"></i>
                         </div>
                         <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug">${course.title}</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2">${course.subtitle || 'Premium Course'}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-3 line-clamp-2">${course.subtitle || 'Premium Course'}</p>
                         
-                        <button onclick="window.openCourseView('${course.title}')" class="mt-auto w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-sm active:scale-95 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-play"></i> Enter Classroom
-                        </button>
+                        <p class="text-[10px] font-bold ${isExpired ? 'text-red-500' : 'text-emerald-500'} uppercase tracking-wider mb-6 flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> ${expiryText}</p>
+                        
+                        ${actionBtnHtml}
                     </div>
                 `;
             }
