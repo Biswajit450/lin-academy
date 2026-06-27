@@ -1,6 +1,6 @@
 // profile.js
 
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 // Naya Function: Jab Profile kamra banega, tab yeh call hoga
@@ -67,9 +67,14 @@ window.loadProfileData = async function() {
                 }
             }
             
-            // Progress sirf student ko dikhega
+            // 🚀 Fetch Real Performance Data from Vault
             if (role === "student" && window.renderProgress) {
-                window.renderProgress(data.unlocked_courses || []);
+                const q = query(collection(db, "student_performance"), where("userId", "==", user.uid));
+                const perfSnap = await getDocs(q);
+                const performances = [];
+                perfSnap.forEach(d => performances.push(d.data()));
+                
+                window.renderProgress(data.unlocked_courses || [], performances);
             }
         }
     } catch (error) {
@@ -77,25 +82,70 @@ window.loadProfileData = async function() {
     }
 }
 
-window.renderProgress = function(courses) {
+window.renderProgress = function(courses, performances) {
     const container = document.getElementById('profile-progress-list');
     if(!container) return;
 
-    if(!courses || courses.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400">No active courses found. Enroll in a course to start tracking progress.</p>';
+    if(!performances || performances.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No test data found. Attempt a Mock Test or Challenger Arena to see your live progress here!</p>';
         return;
     }
 
-    let html = '';
-    courses.forEach(course => {
-        const mockProgress = Math.floor(Math.random() * 60) + 10; 
-        html += `
-        <div>
-            <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-700 dark:text-slate-300">${course}</span><span class="text-brand-blue">${mockProgress}%</span></div>
-            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5"><div class="bg-brand-blue h-2.5 rounded-full" style="width: ${mockProgress}%"></div></div>
-        </div>`;
+    // 🧮 Math Calculations for Dashboard
+    let totalTests = performances.length;
+    let totalObtained = 0;
+    let totalMax = 0;
+    let recentTestsHtml = '';
+    
+    // Sort logic: Naya test sabse upar dikhega
+    performances.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    performances.forEach((p, index) => {
+        totalObtained += p.score;
+        totalMax += p.maxScore;
+        
+        // Sirf top 4 recent tests dikhayenge list mein
+        if (index < 4) {
+            let colorClass = p.percentage >= 40 ? 'bg-emerald-500' : 'bg-red-500';
+            let textClass = p.percentage >= 40 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500';
+            recentTestsHtml += `
+            <div class="mb-4 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div class="flex justify-between text-xs font-bold mb-2">
+                    <span class="text-slate-700 dark:text-slate-300 truncate w-2/3"><i class="fa-solid fa-flask text-slate-400 mr-1.5"></i>${p.testTitle}</span>
+                    <span class="${textClass}">${p.percentage.toFixed(1)}%</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5">
+                    <div class="${colorClass} h-1.5 rounded-full" style="width: ${p.percentage}%"></div>
+                </div>
+            </div>`;
+        }
     });
-    container.innerHTML = html;
+
+    const overallPct = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(1) : 0;
+    
+    // 🎨 The Premium UI Construction
+    const dashboardHtml = `
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-2xl border border-blue-100 dark:border-blue-800/50 text-center shadow-sm">
+                <div class="text-xl font-extrabold text-brand-blue">${totalTests}</div>
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Attempts</div>
+            </div>
+            <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 text-center shadow-sm">
+                <div class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">${overallPct}%</div>
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Accuracy</div>
+            </div>
+            <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-2xl border border-purple-100 dark:border-purple-800/50 text-center shadow-sm">
+                <div class="text-xl font-extrabold text-purple-600 dark:text-purple-400">${totalObtained.toFixed(1)}</div>
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Total Score</div>
+            </div>
+        </div>
+        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left"></i> Recent Test History
+        </h4>
+        ${recentTestsHtml}
+    `;
+    
+    container.innerHTML = dashboardHtml;
 }
 
 window.saveProfileInfo = async function() {

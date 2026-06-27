@@ -764,6 +764,25 @@ window.calculateExamResult = function() {
     const totalScore = (correct * s.settings.marksForCorrectAnswer) - (wrong * s.settings.marksForWrongAnswer);
     const maxScore = s.questions.length * s.settings.marksForCorrectAnswer;
     const pct = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+    // 🚀 THE DATA CATCHER: Save Real Result to Firebase
+    if (auth.currentUser) {
+        try {
+            const attemptId = Date.now().toString();
+            // Naya folder banega: student_performance
+            const perfRef = doc(db, "student_performance", auth.currentUser.uid + "_" + attemptId);
+            setDoc(perfRef, {
+                userId: auth.currentUser.uid,
+                testId: s.vaultId || "unknown",
+                testTitle: s.settings.testTitle || "Mock Test",
+                score: totalScore,
+                maxScore: maxScore,
+                percentage: pct,
+                timestamp: new Date().toISOString()
+            });
+        } catch(e) {
+            console.error("Failed to save performance metrics:", e);
+        }
+    }
 
     document.getElementById('exam-final-score').innerText = totalScore.toFixed(2);
     document.getElementById('exam-max-score').innerText = maxScore.toFixed(2);
