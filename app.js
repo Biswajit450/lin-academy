@@ -975,55 +975,92 @@ window.deleteDeployedCourse = async function(docId) {
 }
 
 window.updateLivePreview = function() {
-    const title = document.getElementById('deploy-title').value || 'Course Title';
-    const subtitle = document.getElementById('deploy-subtitle').value || 'Your catchy subtitle will appear right here.';
-    const icon = document.getElementById('deploy-icon').value || 'fa-book';
-    const iconColor = document.getElementById('deploy-icon-color').value || '#059669';
-    const boxBg = document.getElementById('deploy-box-bg').value || '#ecfdf5';
-    const boxBorder = document.getElementById('deploy-box-border').value || '#a7f3d0';
-    const badge = document.getElementById('deploy-badge').value;
-    const tileBorder = document.getElementById('deploy-tile-border').value || '#f1f5f9';
+    const title = document.getElementById('deploy-title')?.value || 'Course Title';
+    const subtitle = document.getElementById('deploy-subtitle')?.value || 'Your catchy subtitle will appear right here.';
+    const icon = document.getElementById('deploy-icon')?.value || 'fa-book';
+    const iconColor = document.getElementById('deploy-icon-color')?.value || '#059669';
+    const boxBg = document.getElementById('deploy-box-bg')?.value || '#ecfdf5';
+    const boxBorder = document.getElementById('deploy-box-border')?.value || '#a7f3d0';
+    const badge = document.getElementById('deploy-badge')?.value;
+    const tileBorder = document.getElementById('deploy-tile-border')?.value || '#f1f5f9';
+    const textMode = document.getElementById('deploy-text-color-mode')?.value || 'default';
+    
+    // 🚀 THE MAGIC SIZE READER
+    const tileSize = document.getElementById('deploy-tile-size')?.value || 'large';
 
     const previewTitle = document.getElementById('preview-title');
-    if(previewTitle) previewTitle.innerText = title;
-    
     const previewSubtitle = document.getElementById('preview-subtitle');
-    if(previewSubtitle) previewSubtitle.innerText = subtitle;
-    
     const previewIcon = document.getElementById('preview-icon');
+    const previewIconBox = document.getElementById('preview-icon-box');
+    const previewTile = document.getElementById('deploy-preview-tile');
+    const badgeEl = document.getElementById('preview-badge');
+    
+    if(previewTitle) previewTitle.innerText = title;
+    if(previewSubtitle) previewSubtitle.innerText = subtitle;
     if(previewIcon) previewIcon.className = `fa-solid ${icon}`;
     
-    const previewIconBox = document.getElementById('preview-icon-box');
     if(previewIconBox) {
         previewIconBox.style.color = iconColor;
         previewIconBox.style.backgroundColor = boxBg;
         previewIconBox.style.borderColor = boxBorder;
+        previewIconBox.className = 'rounded-2xl flex items-center justify-center border-2 border-solid shadow-inner transition-transform group-hover:scale-110';
     }
 
-    const previewTile = document.getElementById('deploy-preview-tile');
     if(previewTile) {
         previewTile.style.borderColor = tileBorder;
+        previewTile.className = 'bg-white dark:bg-slate-900 rounded-3xl border-2 border-solid shadow-xl flex flex-col transition-all duration-300 overflow-hidden relative mx-auto';
     }
 
-    const badgeEl = document.getElementById('preview-badge');
+    const btnEl = previewTile ? previewTile.querySelector('button') : null;
+
+    // 🚀 APPLY SIZES TO PREVIEW
+    if (tileSize === 'small') {
+        if(previewTile) previewTile.classList.add('w-40', 'p-4');
+        if(previewIconBox) previewIconBox.classList.add('w-10', 'h-10', 'text-lg', 'mb-3');
+        if(previewTitle) previewTitle.className = 'text-sm font-bold mb-2 leading-snug transition-colors';
+        if(previewSubtitle) previewSubtitle.className = 'text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-3 line-clamp-1 flex-grow';
+        if(btnEl) btnEl.className = 'mt-auto w-full bg-slate-50 dark:bg-slate-800 text-brand-blue font-bold py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[10px] shadow-sm pointer-events-none';
+    } else if (tileSize === 'medium') {
+        if(previewTile) previewTile.classList.add('w-52', 'p-5');
+        if(previewIconBox) previewIconBox.classList.add('w-12', 'h-12', 'text-xl', 'mb-4');
+        if(previewTitle) previewTitle.className = 'text-base font-bold mb-2 leading-snug transition-colors';
+        if(previewSubtitle) previewSubtitle.className = 'text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow';
+        if(btnEl) btnEl.className = 'mt-auto w-full bg-slate-50 dark:bg-slate-800 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-sm pointer-events-none';
+    } else { 
+        if(previewTile) previewTile.classList.add('w-64', 'p-6');
+        if(previewIconBox) previewIconBox.classList.add('w-14', 'h-14', 'text-2xl', 'mb-5');
+        if(previewTitle) previewTitle.className = 'text-lg font-bold mb-2 leading-snug transition-colors';
+        if(previewSubtitle) previewSubtitle.className = 'text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 line-clamp-2 flex-grow';
+        if(btnEl) btnEl.className = 'mt-auto w-full bg-slate-50 dark:bg-slate-800 text-brand-blue font-bold py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm shadow-sm pointer-events-none';
+    }
+
+    // Apply Text Colors
+    if(previewTitle) {
+        if (textMode === 'brand') previewTitle.classList.add('text-brand-blue');
+        else if (textMode === 'emerald') previewTitle.classList.add('text-emerald-600', 'dark:text-emerald-400');
+        else if (textMode === 'rose') previewTitle.classList.add('text-rose-600', 'dark:text-rose-400');
+        else if (textMode === 'amber') previewTitle.classList.add('text-amber-600', 'dark:text-amber-400');
+        else previewTitle.classList.add('text-slate-900', 'dark:text-white');
+    }
+
+    // Badge Logic
     if(badgeEl) {
         if(!badge) {
             badgeEl.classList.add('hidden');
         } else {
             badgeEl.classList.remove('hidden');
-            if(badge === 'bestseller') { badgeEl.innerText = '🔥 Bestseller'; badgeEl.className = 'absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
-            else if(badge === 'new') { badgeEl.innerText = '✨ New Launch'; badgeEl.className = 'absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
-            else if(badge === 'limited') { badgeEl.innerText = '⏳ Limited Offer'; badgeEl.className = 'absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
-            else if(badge === 'premium') { badgeEl.innerText = '💎 Premium'; badgeEl.className = 'absolute top-0 right-0 bg-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm'; }
+            badgeEl.className = 'absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all';
+            if(badge === 'bestseller') { badgeEl.innerText = '🔥 Bestseller'; badgeEl.classList.add('bg-rose-500'); }
+            else if(badge === 'new') { badgeEl.innerText = '✨ New Launch'; badgeEl.classList.add('bg-emerald-500'); }
+            else if(badge === 'limited') { badgeEl.innerText = '⏳ Limited Offer'; badgeEl.classList.add('bg-amber-500'); }
+            else if(badge === 'premium') { badgeEl.innerText = '💎 Premium'; badgeEl.classList.add('bg-purple-500'); }
         }
     }
 }
 
 window.deployMasterCourse = async function() {
-    // Safe Login Check
     if(!auth.currentUser) return alert("Please login first to deploy courses.");
     
-    // Optional Chaining (?.) lagaya hai taaki element na milne par app crash na ho!
     const category = document.getElementById('deploy-category')?.value.trim() || '';
     const subCategory = document.getElementById('deploy-sub-category')?.value.trim() || ''; 
     const title = document.getElementById('deploy-title')?.value.trim() || '';
@@ -1057,7 +1094,7 @@ window.deployMasterCourse = async function() {
             boxBg: document.getElementById('deploy-box-bg')?.value || '#ecfdf5',
             boxBorder: document.getElementById('deploy-box-border')?.value || '#a7f3d0',
             tileBorder: document.getElementById('deploy-tile-border')?.value || '#f1f5f9',
-            size: document.getElementById('deploy-tile-size')?.value || 'large'
+            tileSize: document.getElementById('deploy-tile-size')?.value || 'large' // 🚀 PROPER FIX: tileSize mapped
         },
         updatedAt: new Date().toISOString()
     };
@@ -1071,7 +1108,6 @@ window.deployMasterCourse = async function() {
         
         alert("Course Deployed Successfully! 🚀");
         
-        // Safe resets
         if (document.getElementById('deploy-category')) document.getElementById('deploy-category').value = '';
         if (document.getElementById('deploy-sub-category')) document.getElementById('deploy-sub-category').value = '';
         if (document.getElementById('deploy-title')) document.getElementById('deploy-title').value = '';
@@ -1084,7 +1120,6 @@ window.deployMasterCourse = async function() {
             deployBtn.disabled = false;
         }
         
-        // Fresh UI Re-sync
         if(window.updateLivePreview) window.updateLivePreview();
         if(window.loadDeployerInventory) window.loadDeployerInventory();
         if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown();
