@@ -876,6 +876,32 @@ window.buildExamReviewScreen = function() {
 // 🚀 THE STOREFRONT INVENTORY MANAGER (DEPLOYER UPGRADE)
 // ==========================================
 
+// ==========================================
+// 🚀 SMART CATEGORY ENGINE (DEPLOYER DATALIST)
+// ==========================================
+window.loadDeployerCategories = async function() {
+    try {
+        const snap = await getDoc(doc(db, "cms", "homepage"));
+        if(snap.exists() && snap.data().courseCategories) {
+            const categories = snap.data().courseCategories;
+            
+            // Datalist ko dhoondho (HTML mein id="category-list" ya "deploy-category-list" hona chahiye)
+            const datalist = document.getElementById('category-list') || document.getElementById('deploy-category-list');
+            
+            if(datalist) {
+                datalist.innerHTML = '';
+                categories.forEach(cat => {
+                    // Dropdown suggestions add ho rahe hain
+                    datalist.innerHTML += `<option value="${cat}">`;
+                });
+                console.log("Smart Category Engine successfully loaded!");
+            }
+        }
+    } catch(e) {
+        console.error("Smart Category Engine Error:", e);
+    }
+}
+
 window.loadDeployerInventory = async function() {
     const container = document.getElementById('deployer-inventory-list');
     if(!container) return;
