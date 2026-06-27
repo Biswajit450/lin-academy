@@ -20,6 +20,8 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            // 🚀 TAILWIND SAFELIST FIX: Isse tile sizes kabhi gayab nahi honge!
+            safelist: ['w-40', 'w-52', 'w-64', 'h-10', 'h-12', 'h-14', 'p-4', 'p-5', 'p-6', 'text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'mb-3', 'mb-4', 'mb-5'],
             theme: {
                 extend: {
                     // 🚀 UPDATED: Configured Auto-Switching Regional Typography Stack
@@ -317,7 +319,7 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=live"></script>
+    <script type="module" src="app.js?v=pro_upgrade_v2"></script>
     <script>
         // 🛠️ DEVELOPMENT LOCK: Testing ke dauran Service Worker Caching ko off kiya hai
         // Taaki aapka naya app.js aur cms.js code turant refresh par live dikhe.

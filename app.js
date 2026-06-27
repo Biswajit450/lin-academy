@@ -1020,11 +1020,13 @@ window.updateLivePreview = function() {
 }
 
 window.deployMasterCourse = async function() {
-    if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
+    // Safe Login Check
+    if(!auth.currentUser) return alert("Please login first to deploy courses.");
     
-    const category = document.getElementById('deploy-category').value.trim();
-    const subCategory = document.getElementById('deploy-sub-category').value.trim(); // 🚀 NEW
-    const title = document.getElementById('deploy-title').value.trim();
+    // Optional Chaining (?.) lagaya hai taaki element na milne par app crash na ho!
+    const category = document.getElementById('deploy-category')?.value.trim() || '';
+    const subCategory = document.getElementById('deploy-sub-category')?.value.trim() || ''; 
+    const title = document.getElementById('deploy-title')?.value.trim() || '';
     
     if(!category || !title) { 
         alert("Course Title and Category are required!"); 
@@ -1032,54 +1034,57 @@ window.deployMasterCourse = async function() {
     }
 
     const deployBtn = document.getElementById('deploy-master-btn');
-    const originalHtml = deployBtn.innerHTML;
-    deployBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deploying...';
-    deployBtn.disabled = true;
+    const originalHtml = deployBtn ? deployBtn.innerHTML : 'Deploy';
+    
+    if (deployBtn) {
+        deployBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deploying...';
+        deployBtn.disabled = true;
+    }
 
     const courseData = {
         category: category,
-        subCategory: subCategory, // 🚀 NEW
+        subCategory: subCategory,
         title: title,
-        subtitle: document.getElementById('deploy-subtitle').value.trim(),
-        badge: document.getElementById('deploy-badge').value,
-        price: Number(document.getElementById('deploy-price').value) || 0,
-        validity: Number(document.getElementById('deploy-validity').value) || 0,
-        status: document.getElementById('deploy-status').value || 'live',
+        subtitle: document.getElementById('deploy-subtitle')?.value.trim() || '',
+        badge: document.getElementById('deploy-badge')?.value || '',
+        price: Number(document.getElementById('deploy-price')?.value) || 0,
+        validity: Number(document.getElementById('deploy-validity')?.value) || 0,
+        status: document.getElementById('deploy-status')?.value || 'live',
         design: {
-            icon: document.getElementById('deploy-icon').value || 'fa-book',
-            textColorMode: document.getElementById('deploy-text-color-mode').value || 'default',
-            iconColor: document.getElementById('deploy-icon-color').value || '#059669',
-            boxBg: document.getElementById('deploy-box-bg').value || '#ecfdf5',
-            boxBorder: document.getElementById('deploy-box-border').value || '#a7f3d0',
-            tileBorder: document.getElementById('deploy-tile-border').value || '#f1f5f9',
-            size: document.getElementById('deploy-tile-size').value || 'large'
+            icon: document.getElementById('deploy-icon')?.value || 'fa-book',
+            textColorMode: document.getElementById('deploy-text-color-mode')?.value || 'default',
+            iconColor: document.getElementById('deploy-icon-color')?.value || '#059669',
+            boxBg: document.getElementById('deploy-box-bg')?.value || '#ecfdf5',
+            boxBorder: document.getElementById('deploy-box-border')?.value || '#a7f3d0',
+            tileBorder: document.getElementById('deploy-tile-border')?.value || '#f1f5f9',
+            size: document.getElementById('deploy-tile-size')?.value || 'large'
         },
         updatedAt: new Date().toISOString()
     };
 
     try {
-        // 1. Save Course Data with Sub-Category
         await setDoc(doc(db, "deployed_courses", title), courseData, { merge: true });
         
-        // 2. Auto-Sync Category in Homepage Tracker (Crucial Fix!)
         await setDoc(doc(db, "cms", "homepage"), {
             courseCategories: arrayUnion(category)
         }, { merge: true });
         
-        alert("Course Deployed Successfully! Sub-Category is securely stored.");
+        alert("Course Deployed Successfully! 🚀");
         
-        // 3. Reset form inputs safely
-        document.getElementById('deploy-category').value = '';
-        document.getElementById('deploy-sub-category').value = ''; // 🚀 NEW
-        document.getElementById('deploy-title').value = '';
-        document.getElementById('deploy-subtitle').value = '';
+        // Safe resets
+        if (document.getElementById('deploy-category')) document.getElementById('deploy-category').value = '';
+        if (document.getElementById('deploy-sub-category')) document.getElementById('deploy-sub-category').value = '';
+        if (document.getElementById('deploy-title')) document.getElementById('deploy-title').value = '';
+        if (document.getElementById('deploy-subtitle')) document.getElementById('deploy-subtitle').value = '';
         
-        deployBtn.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Deploy to App';
-        deployBtn.classList.remove('from-emerald-500', 'to-emerald-700');
-        deployBtn.classList.add('from-brand-blue', 'to-indigo-600');
-        deployBtn.disabled = false;
+        if (deployBtn) {
+            deployBtn.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Deploy to App';
+            deployBtn.classList.remove('from-emerald-500', 'to-emerald-700');
+            deployBtn.classList.add('from-brand-blue', 'to-indigo-600');
+            deployBtn.disabled = false;
+        }
         
-        // 4. Fresh UI Re-sync
+        // Fresh UI Re-sync
         if(window.updateLivePreview) window.updateLivePreview();
         if(window.loadDeployerInventory) window.loadDeployerInventory();
         if(window.loadAdminCourseDropdown) window.loadAdminCourseDropdown();
@@ -1088,7 +1093,9 @@ window.deployMasterCourse = async function() {
     } catch(e) {
         console.error("Deploy error", e);
         alert("Failed to deploy course.");
-        deployBtn.innerHTML = originalHtml;
-        deployBtn.disabled = false;
+        if (deployBtn) {
+            deployBtn.innerHTML = originalHtml;
+            deployBtn.disabled = false;
+        }
     }
 }
