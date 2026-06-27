@@ -774,7 +774,6 @@ window.showGenericViewAll = async function(title, type) {
                         if(window.loadSingleEducatorRating) window.loadSingleEducatorRating(edu.name);
                     }, 50);
                 });
-            }
             } else if(type.startsWith('arena_')) {
                 const catName = type.split('_')[1];
                 const cat = data.arenaCategories.find(c => c.name === catName);
