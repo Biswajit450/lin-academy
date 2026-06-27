@@ -214,7 +214,10 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category / Row Name</label>
-                                <input type="text" id="deploy-category" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="e.g., UPSC CSE" oninput="window.updateLivePreview()">
+                                <input type="text" id="deploy-category" list="deploy-category-list" autocomplete="off" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors" placeholder="e.g., UPSC CSE" oninput="window.updateLivePreview()">
+                                
+                                <datalist id="deploy-category-list"></datalist>
+                                
                                 <p class="text-[10px] text-slate-500 mt-1 font-medium">Creates a main row on the Homepage.</p>
                             </div>
                             <div>
