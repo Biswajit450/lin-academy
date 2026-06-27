@@ -756,13 +756,25 @@ window.showGenericViewAll = async function(title, type) {
             if(type === 'educators' && data.educators) {
                 data.educators.forEach(edu => {
                     const photo = edu.photoUrl || `https://ui-avatars.com/api/?name=${edu.name}&background=2563eb&color=fff`;
+                    const safeName = edu.name.replace(/[^a-zA-Z0-9]/g, '_');
                     grid.innerHTML += `
                         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-md flex flex-col items-center text-center hover:-translate-y-1 transition-transform cursor-pointer">
                             <img src="${photo}" class="w-20 h-20 rounded-full mb-4 object-cover border-4 border-slate-50 dark:border-slate-800 shadow-sm">
-                            <h4 class="font-bold text-slate-900 dark:text-white">${edu.name}</h4>
-                            <p class="text-[10px] text-brand-blue uppercase font-bold tracking-wider mt-1">${edu.expertise}</p>
+                            <h4 class="font-bold text-slate-900 dark:text-white mb-1">${edu.name}</h4>
+                            <p class="text-[10px] text-brand-blue uppercase font-bold tracking-wider mb-3">${edu.expertise}</p>
+                            
+                            <div id="stars-${safeName}-viewall" class="flex gap-1.5 text-base mb-1">
+                                <i class="fa-solid fa-spinner fa-spin text-slate-300 text-xs"></i>
+                            </div>
+                            <span id="rating-text-${safeName}-viewall" class="text-[9px] text-slate-400 font-bold">Loading...</span>
                         </div>`;
+                    
+                    // 🚀 Trigger rating paint for view-all tile instantly
+                    setTimeout(() => {
+                        if(window.loadSingleEducatorRating) window.loadSingleEducatorRating(edu.name);
+                    }, 50);
                 });
+            }
             } else if(type.startsWith('arena_')) {
                 const catName = type.split('_')[1];
                 const cat = data.arenaCategories.find(c => c.name === catName);
@@ -1082,10 +1094,9 @@ window.loadSingleEducatorRating = async function(educatorName) {
             if (count > 0) average = (totalStars / count).toFixed(1);
         }
 
-        const starsContainer = document.getElementById(`stars-${safeName}`);
-        const textContainer = document.getElementById(`rating-text-${safeName}`);
-        
-        if(!starsContainer || !textContainer) return;
+        // 🚀 SMART UPDATE: Select all matching elements (Homepage + View All Screen)
+        const starsContainers = document.querySelectorAll(`[id^="stars-${safeName}"]`);
+        const textContainers = document.querySelectorAll(`[id^="rating-text-${safeName}"]`);
 
         // Build Interactive Stars dynamically
         let starsHtml = '';
@@ -1094,8 +1105,14 @@ window.loadSingleEducatorRating = async function(educatorName) {
             starsHtml += `<i class="${starClass} cursor-pointer hover:scale-125 hover:text-amber-400 transition-all active:scale-95" onclick="window.rateEducator('${educatorName}', ${i})" title="Rate ${i} Stars"></i>`;
         }
         
-        starsContainer.innerHTML = starsHtml;
-        textContainer.innerText = count > 0 ? `${average} / 5 (${count} Ratings)` : "Be the first to rate!";
+        // Dono jagah data live flush karo!
+        starsContainers.forEach(container => {
+            container.innerHTML = starsHtml;
+        });
+        
+        textContainers.forEach(container => {
+            container.innerText = count > 0 ? `${average} / 5 (${count} Ratings)` : "Be the first to rate!";
+        });
 
     } catch (e) {
         console.error("Failed to load ratings for " + educatorName, e);
