@@ -2,7 +2,7 @@
 
 import { doc, getDoc, setDoc, arrayUnion, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-import { db, storage } from "./firebase-config.js";
+import { auth, db, storage } from "./firebase-config.js";
 
 // 🚨 THE SYNC LOCK GUARD 🚨
 window.cmsDataLoaded = false;
@@ -672,12 +672,15 @@ window.renderHomepage = async function() {
                             <p class="text-xs text-brand-blue dark:text-blue-400 font-bold uppercase tracking-wider mb-2">${edu.expertise}</p>
                             <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-4 h-6">${edu.qualifications}</p>
                             
-                            <div class="flex gap-1 text-amber-400 text-sm mb-2">
-                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                            <div id="stars-${edu.name.replace(/[^a-zA-Z0-9]/g, '_')}" class="flex gap-1.5 text-lg mb-2">
+                                <i class="fa-solid fa-spinner fa-spin text-slate-300 text-sm"></i>
                             </div>
-                            <span class="text-[9px] text-slate-400 font-bold">4.8 / 5 (Student Ratings)</span>
+                            <span id="rating-text-${edu.name.replace(/[^a-zA-Z0-9]/g, '_')}" class="text-[9px] text-slate-400 font-bold">Loading ratings...</span>
                         </div>`;
                     eduContainer.insertAdjacentHTML('beforeend', eduHtml);
+                    
+                    // 🚀 Trigger background fetch for this educator's real rating
+                    if(window.loadSingleEducatorRating) window.loadSingleEducatorRating(edu.name);
                 });
                 
                 const eduViewAllBtn = document.getElementById('view-all-edu-btn');
@@ -1009,5 +1012,92 @@ window.saveCategoryOrder = async function() {
     } finally { 
         btn.innerHTML = original; 
         btn.disabled = false; 
+    }
+}
+// ==========================================
+// 🚀 THE SMART EDUCATOR RATING ENGINE (WITH PRO-LEARNER BOUNCER)
+// ==========================================
+window.rateEducator = async function(educatorName, stars) {
+    if (!auth.currentUser) return alert("Please log in first to rate our educators!");
+    
+    try {
+        // 1. THE BOUNCER: Check if User is Admin or a Pro Learner
+        const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        const role = String(userData.role || 'student').toLowerCase().trim();
+        const isGodMode = role.includes('admin') || role === 'superadmin' || role.includes('educator');
+        
+        let isProLearner = false;
+        
+        // Loop through all enrollments to see if at least one is NOT expired
+        if(!isGodMode && userData.course_expiries) {
+            const now = new Date();
+            for (const [course, expDateStr] of Object.entries(userData.course_expiries)) {
+                if (new Date(expDateStr) > now) {
+                    isProLearner = true;
+                    break;
+                }
+            }
+        }
+
+        // Kick out unauthorized users
+        if (!isGodMode && !isProLearner) {
+            return alert("🔒 Access Denied: You need to be an Active Learner (with at least one valid course subscription) to rate educators.");
+        }
+
+        // 2. SAVE RATING (One User = One Vote Math)
+        const safeName = educatorName.replace(/[^a-zA-Z0-9]/g, '_');
+        await setDoc(doc(db, "educator_ratings", safeName), {
+            // Hum ek map me user ki ID ke samne uske stars save karenge. 
+            // Agar wo wapas vote karega, toh purana vote update ho jayega.
+            [`ratings.${auth.currentUser.uid}`]: stars
+        }, { merge: true });
+
+        alert(`Thank you! You rated ${educatorName} ${stars} Stars. 🌟`);
+        
+        // 3. REFRESH UI INSTANTLY
+        window.loadSingleEducatorRating(educatorName);
+        
+    } catch(error) {
+        console.error("Rating Error:", error);
+        alert("Failed to submit rating. Please try again.");
+    }
+}
+
+// Automatically calculates the average and paints the stars on the Homepage
+window.loadSingleEducatorRating = async function(educatorName) {
+    const safeName = educatorName.replace(/[^a-zA-Z0-9]/g, '_');
+    try {
+        const snap = await getDoc(doc(db, "educator_ratings", safeName));
+        let totalStars = 0;
+        let count = 0;
+        let average = 0;
+        
+        if (snap.exists() && snap.data().ratings) {
+            const ratings = snap.data().ratings;
+            for (const uid in ratings) {
+                totalStars += ratings[uid];
+                count++;
+            }
+            if (count > 0) average = (totalStars / count).toFixed(1);
+        }
+
+        const starsContainer = document.getElementById(`stars-${safeName}`);
+        const textContainer = document.getElementById(`rating-text-${safeName}`);
+        
+        if(!starsContainer || !textContainer) return;
+
+        // Build Interactive Stars dynamically
+        let starsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            let starClass = i <= Math.round(average) ? "fa-solid fa-star text-amber-400 drop-shadow-sm" : "fa-regular fa-star text-amber-400/40";
+            starsHtml += `<i class="${starClass} cursor-pointer hover:scale-125 hover:text-amber-400 transition-all active:scale-95" onclick="window.rateEducator('${educatorName}', ${i})" title="Rate ${i} Stars"></i>`;
+        }
+        
+        starsContainer.innerHTML = starsHtml;
+        textContainer.innerText = count > 0 ? `${average} / 5 (${count} Ratings)` : "Be the first to rate!";
+
+    } catch (e) {
+        console.error("Failed to load ratings for " + educatorName, e);
     }
 }
