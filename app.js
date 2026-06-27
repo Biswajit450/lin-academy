@@ -156,6 +156,14 @@ window.switchAdminSubTab = function(tabId) {
         activeBtn.classList.remove('text-slate-500', 'border-transparent');
         activeBtn.classList.add('active', 'text-brand-blue', 'border-brand-blue');
     }
+
+    // 🚀 THE FIX: Engine ko tab click hote hi zinda karna!
+    if(tabId === 'homecms' && window.loadCMSDataIntoAdmin) {
+        window.loadCMSDataIntoAdmin();
+    } else if (tabId === 'deployer') {
+        if (window.loadDeployerCategories) window.loadDeployerCategories();
+        if (window.loadDeployerInventory) window.loadDeployerInventory();
+    }
 }
 
 window.toggleDarkMode = function() { 
@@ -873,11 +881,7 @@ window.buildExamReviewScreen = function() {
 }
 
 // ==========================================
-// 🚀 THE STOREFRONT INVENTORY MANAGER (DEPLOYER UPGRADE)
-// ==========================================
-
-// ==========================================
-// 🚀 SMART CATEGORY ENGINE (DEPLOYER DATALIST)
+// 🚀 SMART CATEGORY ENGINE (DATALIST + DRAG & DROP)
 // ==========================================
 window.loadDeployerCategories = async function() {
     try {
@@ -885,20 +889,79 @@ window.loadDeployerCategories = async function() {
         if(snap.exists() && snap.data().courseCategories) {
             const categories = snap.data().courseCategories;
             
-            // Datalist ko dhoondho (HTML mein id="category-list" ya "deploy-category-list" hona chahiye)
-            const datalist = document.getElementById('category-list') || document.getElementById('deploy-category-list');
-            
+            // 1. Datalist update (For input suggestions)
+            const datalist = document.getElementById('deploy-category-list');
             if(datalist) {
                 datalist.innerHTML = '';
                 categories.forEach(cat => {
-                    // Dropdown suggestions add ho rahe hain
                     datalist.innerHTML += `<option value="${cat}">`;
                 });
-                console.log("Smart Category Engine successfully loaded!");
+            }
+            
+            // 2. Drag and Drop Engine update (For reordering boxes)
+            const dragList = document.getElementById('deployer-category-list');
+            if(dragList) {
+                dragList.innerHTML = '';
+                categories.forEach(cat => {
+                    const safeId = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '_');
+                    dragList.innerHTML += `
+                    <div id="${safeId}" class="deployer-cat-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-move" draggable="true" ondragstart="window.drag(event)">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-grip-vertical text-slate-400"></i>
+                            <span class="cat-name font-bold text-slate-700 dark:text-slate-300">${cat}</span>
+                        </div>
+                        <button onclick="document.getElementById('${safeId}').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                    </div>`;
+                });
             }
         }
     } catch(e) {
         console.error("Smart Category Engine Error:", e);
+    }
+}
+
+// Drag & Drop Sorting Logic for Categories
+window.dropSortCategory = function(ev) {
+    ev.preventDefault();
+    if(window.draggedElement && window.draggedElement.classList.contains('deployer-cat-item')) {
+        const dropTarget = ev.target.closest('.deployer-cat-item');
+        const list = document.getElementById('deployer-category-list');
+        
+        if(dropTarget && window.draggedElement !== dropTarget) {
+            dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        } else if (!dropTarget && ev.target.id === 'deployer-category-list') {
+            list.appendChild(window.draggedElement);
+        }
+    }
+}
+
+// Save Category Order Logic
+window.saveCategoryOrder = async function() {
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const categories = [];
+    document.querySelectorAll('.deployer-cat-item .cat-name').forEach(el => {
+        categories.push(el.innerText.trim());
+    });
+
+    try {
+        await setDoc(doc(db, "cms", "homepage"), {
+            courseCategories: categories
+        }, { merge: true });
+        
+        alert("Category Order Saved Successfully! 🚀");
+        if(window.renderHomepage) window.renderHomepage();
+        if(window.loadDeployerCategories) window.loadDeployerCategories();
+        
+    } catch(e) {
+        console.error("Error saving categories", e);
+        alert("Failed to save categories.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
