@@ -1058,10 +1058,12 @@ window.rateEducator = async function(educatorName, stars) {
 
         // 2. SAVE RATING (One User = One Vote Math)
         const safeName = educatorName.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        // 🚀 FIREBASE FIX: Sahi tareeke se Map (Folder) banakar save karna
         await setDoc(doc(db, "educator_ratings", safeName), {
-            // Hum ek map me user ki ID ke samne uske stars save karenge. 
-            // Agar wo wapas vote karega, toh purana vote update ho jayega.
-            [`ratings.${auth.currentUser.uid}`]: stars
+            ratings: {
+                [auth.currentUser.uid]: stars
+            }
         }, { merge: true });
 
         alert(`Thank you! You rated ${educatorName} ${stars} Stars. 🌟`);
