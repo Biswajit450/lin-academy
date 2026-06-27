@@ -1093,24 +1093,43 @@ window.loadSingleEducatorRating = async function(educatorName) {
             if (count > 0) average = (totalStars / count).toFixed(1);
         }
 
-        // 🚀 SMART UPDATE: Select all matching elements (Homepage + View All Screen)
         const starsContainers = document.querySelectorAll(`[id^="stars-${safeName}"]`);
         const textContainers = document.querySelectorAll(`[id^="rating-text-${safeName}"]`);
 
-        // Build Interactive Stars dynamically
-        let starsHtml = '';
+        // 1. Interactive Stars (Bachhon ke click karne ke liye)
+        let interactiveStarsHtml = '';
         for (let i = 1; i <= 5; i++) {
             let starClass = i <= Math.round(average) ? "fa-solid fa-star text-amber-400 drop-shadow-sm" : "fa-regular fa-star text-amber-400/40";
-            starsHtml += `<i class="${starClass} cursor-pointer hover:scale-125 hover:text-amber-400 transition-all active:scale-95" onclick="window.rateEducator('${educatorName}', ${i})" title="Rate ${i} Stars"></i>`;
+            interactiveStarsHtml += `<i class="${starClass} cursor-pointer hover:scale-125 hover:text-amber-400 transition-all active:scale-95" onclick="window.rateEducator('${educatorName}', ${i})" title="Rate ${i} Stars"></i>`;
         }
+
+        // 2. The Premium Average Badge (Display ke liye)
+        const displayAverage = count > 0 ? average : 'New';
+        const displayReviews = count > 0 ? `${count} Reviews` : 'No Ratings';
+        
+        const fullWidgetHtml = `
+            <div class="flex flex-col items-center w-full mt-1">
+                <div class="flex items-center justify-center gap-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-4 py-1.5 rounded-full mb-3 shadow-sm border border-amber-200 dark:border-amber-800">
+                    <span class="text-sm font-extrabold">${displayAverage}</span>
+                    <i class="fa-solid fa-star text-xs pb-0.5"></i>
+                    <span class="text-[10px] font-bold opacity-80 border-l border-amber-300 dark:border-amber-700 pl-1.5 ml-0.5">${displayReviews}</span>
+                </div>
+                
+                <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Your Rating</p>
+                <div class="flex gap-1 text-lg">
+                    ${interactiveStarsHtml}
+                </div>
+            </div>
+        `;
         
         // Dono jagah data live flush karo!
         starsContainers.forEach(container => {
-            container.innerHTML = starsHtml;
+            container.innerHTML = fullWidgetHtml;
         });
         
+        // Purane chhote text ko hide kar do
         textContainers.forEach(container => {
-            container.innerText = count > 0 ? `${average} / 5 (${count} Ratings)` : "Be the first to rate!";
+            container.style.display = 'none';
         });
 
     } catch (e) {
