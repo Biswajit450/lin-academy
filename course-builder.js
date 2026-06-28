@@ -1,8 +1,10 @@
 // course-builder.js
 
 // 🚨 ADDED query, where, getDocs for Smart Roster 🚨
+// 🚨 ADDED query, where, getDocs for Smart Roster & Firebase Storage for PDF Uploads 🚨
 import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+import { db, storage } from "./firebase-config.js";
 
 // ==========================================
 // COURSE BUILDER CANVAS ENGINE
@@ -84,6 +86,14 @@ window.addBlock = function(type) {
         if(type === 'pdf') { 
             icon = 'fa-file-pdf'; color = 'text-rose-500 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800'; typeName = 'PDF Handout'; placeholderText = 'Secure File URL (Firebase Storage etc.)'; 
             actionBtnText = '📄 View Document'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-600'; 
+            
+            // 🚀 NEW: Firebase Upload Button for PDF
+            extraInputs = `
+                <div class="mt-2 flex items-center gap-2">
+                    <input type="file" accept="application/pdf" class="hidden" onchange="window.uploadCoursePdf(this)">
+                    <button type="button" onclick="this.previousElementSibling.click()" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded font-bold hover:bg-slate-300 transition-colors flex items-center gap-1"><i class="fa-solid fa-cloud-arrow-up"></i> Upload PDF to Firebase</button>
+                    <span class="upload-status text-[10px] text-emerald-500 font-bold hidden"><i class="fa-solid fa-check"></i> Uploaded Successfully</span>
+                </div>`;
         }
 
         blockHTML = `
@@ -109,6 +119,39 @@ window.addBlock = function(type) {
     
     dropzone.insertAdjacentHTML('beforeend', blockHTML); 
     setTimeout(window.autoSaveDraft, 200);
+}
+
+// 🚀 NAYA ENGINE: PDF Upload to Firebase Storage
+window.uploadCoursePdf = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const block = input.closest('[id^="block-"]');
+    const linkInput = block.querySelector('.link-input');
+    const status = block.querySelector('.upload-status');
+    const btn = input.nextElementSibling;
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+    btn.disabled = true;
+    
+    try {
+        const filename = 'course_pdfs/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        const storageRef = ref(storage, filename);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        
+        linkInput.value = url; // Link automatic text box mein fill ho jayega
+        window.autoSaveDraft(); 
+        
+        btn.classList.add('hidden'); // Button chupa do
+        status.classList.remove('hidden'); // Success message dikha do
+    } catch(e) {
+        console.error("PDF Upload Error:", e);
+        alert("Upload failed! Please try again.");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 window.addDynamicFolder = function() {
@@ -608,42 +651,46 @@ window.consumeContent = function(type, elementOrId) {
         
         const playerBox = document.getElementById('player-container-box');
         
+        // 📱 ROBUST MOBILE MAGIC: Auto-Fullscreen & Landscape for iPhones & Android
+        if (window.innerWidth < 768) {
+            try {
+                const modal = document.getElementById('content-player-modal');
+                // Apple/Safari aur Chrome dono ke liye fullscreen command
+                const reqFullscreen = modal.requestFullscreen || modal.webkitRequestFullscreen || modal.msRequestFullscreen;
+                if (reqFullscreen) {
+                    reqFullscreen.call(modal).then(() => {
+                        if (screen.orientation && screen.orientation.lock) {
+                            screen.orientation.lock('landscape').catch(e => console.log("Orientation lock warning:", e));
+                        }
+                    }).catch(e => console.log("Fullscreen request failed:", e));
+                }
+            } catch(e) {}
+        }
+
         if (type === 'video') {
-            // 🚀 SMART AUTO-IFRAME ENGINE FOR BUNNY.NET 🚀
             if (val.includes('<iframe') && val.includes('src="')) {
                 const urlMatch = val.match(/src="([^"]+)"/);
-                if (urlMatch && urlMatch[1]) {
-                    val = urlMatch[1]; 
-                }
+                if (urlMatch && urlMatch[1]) val = urlMatch[1]; 
             }
-            
             if (val.includes('youtube.com/watch?v=')) {
                 val = val.replace('watch?v=', 'embed/');
             } else if (val.includes('youtu.be/')) {
                 val = val.replace('youtu.be/', 'www.youtube.com/embed/');
             }
 
-            // 🎥 Video UI: Aspect Ratio fix karna
-            playerBox.classList.remove('sm:h-[85vh]');
-            playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
-            
-            // 📱 MOBILE MAGIC: Auto-Fullscreen & Landscape
-            if (window.innerWidth < 768) {
-                try {
-                    const modal = document.getElementById('content-player-modal');
-                    if (modal.requestFullscreen) {
-                        modal.requestFullscreen().then(() => {
-                            if (screen.orientation && screen.orientation.lock) {
-                                screen.orientation.lock('landscape').catch(err => console.log("Orientation lock failed (iOS restriction usually):", err));
-                            }
-                        }).catch(err => console.log("Fullscreen request failed:", err));
-                    }
-                } catch(e) {}
+            if (playerBox) {
+                playerBox.classList.remove('sm:h-[85vh]');
+                playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
             }
         } else if (type === 'pdf') {
-            // 📄 PDF UI: Lamba (Tall) view rakhna
-            playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
-            playerBox.classList.add('sm:h-[85vh]');
+            if (playerBox) {
+                playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
+                playerBox.classList.add('sm:h-[85vh]');
+            }
+            // 🚀 MAGIC PDF BYPASS: Firebase PDF links ko Google Viewer mein covert karna taaki Mobile Iframes crash na hon
+            if (val.includes('firebasestorage.googleapis.com') && !val.includes('docs.google.com')) {
+                val = `https://docs.google.com/gview?url=${encodeURIComponent(val)}&embedded=true`;
+            }
         }
         
         document.getElementById('player-iframe').src = val;
@@ -654,11 +701,12 @@ window.closeContentPlayer = function() {
     document.getElementById('content-player-modal').classList.add('hidden');
     document.getElementById('player-iframe').src = ''; 
     
-    // 📱 MOBILE MAGIC: Wapas Portrait Mode mein aana
+    // 📱 ROBUST MOBILE MAGIC: Wapas Portrait Mode mein aana
     if (window.innerWidth < 768) {
         try {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
+            const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+            if (exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
+                exitFullscreen.call(document);
             }
             if (screen.orientation && screen.orientation.unlock) {
                 screen.orientation.unlock();
