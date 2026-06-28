@@ -98,12 +98,12 @@
             <img id="app-logo-img" src="" class="hidden absolute inset-0 w-full h-full object-cover">
         </div>
         
-        <div class="flex flex-col gap-8 text-slate-400 dark:text-slate-500">
-            <button onclick="window.showScreen('screen-dashboard')" class="text-brand-blue dark:text-blue-400 flex flex-col items-center gap-1 transition-colors"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
-            <button onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
-            <button id="nav-admin-btn" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 hover:text-rose-500 text-rose-400 transition-colors drop-shadow-md"><i class="fa-solid fa-wand-magic-sparkles text-xl"></i><span class="text-[10px] font-bold">Admin</span></button>
-            <button onclick="window.showScreen('screen-profile')" class="flex flex-col items-center gap-1 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
-        </div>
+        <nav class="md:hidden fixed bottom-4 left-4 right-4 rounded-full glass-panel border border-white/40 dark:border-slate-700/50 z-50 px-8 py-3 flex justify-between items-center shadow-2xl transition-colors duration-300">
+            <button id="nav-mob-dashboard" onclick="window.showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 transition-all duration-300 active:scale-95"><i class="fa-solid fa-house text-xl mb-0.5"></i><span class="text-[10px] font-bold">Home</span></button>
+            <button id="nav-mob-enrollments" onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 transition-all duration-300 active:scale-95"><i class="fa-solid fa-layer-group text-xl mb-0.5"></i><span class="text-[10px] font-bold">Enrollments</span></button>
+            <button id="nav-mob-admin" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 transition-all duration-300 active:scale-95"><i class="fa-solid fa-wand-magic-sparkles text-xl mb-0.5"></i><span class="text-[10px] font-bold">Admin</span></button>
+            <button id="nav-mob-profile" onclick="window.showScreen('screen-profile')" class="flex flex-col items-center gap-1 transition-all duration-300 active:scale-95"><i class="fa-solid fa-user text-xl mb-0.5"></i><span class="text-[10px] font-bold">Profile</span></button>
+        </nav>
         <div class="w-10 h-10"></div>
     </nav>
 

@@ -82,6 +82,43 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
+// 🚀 DYNAMIC COLOR NAV ENGINE
+// ==========================================
+window.updateNavHighlight = function(activeScreenId) {
+    const navs = [
+        { id: 'dashboard', color: 'text-blue-500' },     // Home = Blue
+        { id: 'enrollments', color: 'text-emerald-500' }, // Enroll = Green
+        { id: 'admin', color: 'text-rose-500' },          // Admin = Red
+        { id: 'profile', color: 'text-amber-500' }        // Profile = Yellow
+    ];
+
+    navs.forEach(nav => {
+        const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
+        const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
+        
+        if(deskBtn && mobBtn) {
+            // 1. Purane sabhi colors aur glows ko saaf karo
+            ['text-blue-500', 'text-emerald-500', 'text-rose-500', 'text-amber-500', 'opacity-40', 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
+                deskBtn.classList.remove(cls);
+                mobBtn.classList.remove(cls);
+            });
+            
+            // 2. Agar yeh tab ACTIVE hai (Glow & Bright Mode)
+            if(`screen-${nav.id}` === activeScreenId) {
+                deskBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
+                mobBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
+            } else {
+                // 3. Agar yeh tab INACTIVE hai (Dim Mode)
+                deskBtn.classList.add(nav.color, 'opacity-40');
+                mobBtn.classList.add(nav.color, 'opacity-40');
+            }
+        }
+    });
+}
+// App start hote hi Home button ko active kar do
+setTimeout(() => window.updateNavHighlight('screen-dashboard'), 500);
+
+// ==========================================
 // SPA ROUTING & SMART FETCH ENGINE (THE MAGIC ROUTER)
 // ==========================================
 window.showScreen = async function(screenId) {
@@ -173,6 +210,14 @@ window.showScreen = async function(screenId) {
         targetScreen.classList.remove('hidden');
     }
     window.scrollTo(0, 0);
+    const targetScreen = document.getElementById(screenId);
+    if(targetScreen) {
+        targetScreen.classList.remove('hidden');
+    }
+    window.scrollTo(0, 0);
+    
+    // 🚀 NEW: Page badalte hi Nav Bar ka color update karo!
+    window.updateNavHighlight(screenId);
 }
 
 // ==========================================
