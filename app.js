@@ -210,11 +210,6 @@ window.showScreen = async function(screenId) {
         targetScreen.classList.remove('hidden');
     }
     window.scrollTo(0, 0);
-    const targetScreen = document.getElementById(screenId);
-    if(targetScreen) {
-        targetScreen.classList.remove('hidden');
-    }
-    window.scrollTo(0, 0);
     
     // 🚀 NEW: Page badalte hi Nav Bar ka color update karo!
     window.updateNavHighlight(screenId);
