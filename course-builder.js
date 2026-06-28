@@ -606,22 +606,44 @@ window.consumeContent = function(type, elementOrId) {
         document.getElementById('content-player-modal').classList.remove('hidden');
         document.getElementById('player-title').innerText = title;
         
+        const playerBox = document.getElementById('player-container-box');
+        
         if (type === 'video') {
             // 🚀 SMART AUTO-IFRAME ENGINE FOR BUNNY.NET 🚀
-            // Agar link Bunny.net ka pura Embed HTML Code hai, toh usme se sirf URL extract karo
             if (val.includes('<iframe') && val.includes('src="')) {
                 const urlMatch = val.match(/src="([^"]+)"/);
                 if (urlMatch && urlMatch[1]) {
-                    val = urlMatch[1]; // Sirf "https://iframe.mediadelivery.net/..." nikala
+                    val = urlMatch[1]; 
                 }
             }
             
-            // YouTube Handler (Pehle jaisa)
             if (val.includes('youtube.com/watch?v=')) {
                 val = val.replace('watch?v=', 'embed/');
             } else if (val.includes('youtu.be/')) {
                 val = val.replace('youtu.be/', 'www.youtube.com/embed/');
             }
+
+            // 🎥 Video UI: Aspect Ratio fix karna
+            playerBox.classList.remove('sm:h-[85vh]');
+            playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
+            
+            // 📱 MOBILE MAGIC: Auto-Fullscreen & Landscape
+            if (window.innerWidth < 768) {
+                try {
+                    const modal = document.getElementById('content-player-modal');
+                    if (modal.requestFullscreen) {
+                        modal.requestFullscreen().then(() => {
+                            if (screen.orientation && screen.orientation.lock) {
+                                screen.orientation.lock('landscape').catch(err => console.log("Orientation lock failed (iOS restriction usually):", err));
+                            }
+                        }).catch(err => console.log("Fullscreen request failed:", err));
+                    }
+                } catch(e) {}
+            }
+        } else if (type === 'pdf') {
+            // 📄 PDF UI: Lamba (Tall) view rakhna
+            playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
+            playerBox.classList.add('sm:h-[85vh]');
         }
         
         document.getElementById('player-iframe').src = val;
@@ -631,4 +653,16 @@ window.consumeContent = function(type, elementOrId) {
 window.closeContentPlayer = function() {
     document.getElementById('content-player-modal').classList.add('hidden');
     document.getElementById('player-iframe').src = ''; 
+    
+    // 📱 MOBILE MAGIC: Wapas Portrait Mode mein aana
+    if (window.innerWidth < 768) {
+        try {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        } catch(e) {}
+    }
 }
