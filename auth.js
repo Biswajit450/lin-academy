@@ -99,8 +99,8 @@ onAuthStateChanged(auth, async (user) => {
                 window.currentUserRole = role; 
                 window.currentUnlockedCourses = unlocked; 
                 
-                const navBtn = document.getElementById('nav-admin-btn');
-                const mobileNavBtn = document.getElementById('mobile-nav-admin-btn');
+                const navBtn = document.getElementById('nav-desk-admin'); // 🚀 NEW DESKTOP ID
+                const mobileNavBtn = document.getElementById('nav-mob-admin'); // 🚀 NEW MOBILE ID
                 const navSpan = navBtn ? navBtn.querySelector('span') : null;
                 const mobileNavSpan = mobileNavBtn ? mobileNavBtn.querySelector('span') : null;
                 
@@ -165,8 +165,11 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('header-unauth').classList.remove('hidden'); 
         document.getElementById('header-auth').classList.add('hidden'); 
         document.getElementById('header-auth').classList.remove('flex');
-        document.getElementById('nav-admin-btn').classList.add('hidden'); 
-        document.getElementById('mobile-nav-admin-btn').classList.add('hidden');
+        // 🚀 SAFELY HIDING NEW ADMIN BUTTONS ON LOGOUT
+        const dAdmin = document.getElementById('nav-desk-admin');
+        const mAdmin = document.getElementById('nav-mob-admin');
+        if(dAdmin) dAdmin.classList.add('hidden'); 
+        if(mAdmin) mAdmin.classList.add('hidden');
         
         if(window.renderEnrollments) window.renderEnrollments([], "student");
         
