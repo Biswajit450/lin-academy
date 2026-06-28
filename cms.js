@@ -513,10 +513,13 @@ window.renderHomepage = async function() {
 
                 if (categories.length > 0 && courses.length > 0) {
                     categories.forEach(cat => {
-                        const catCourses = courses.filter(c => c.category === cat);
+                        // 🚀 UPGRADE: Backward compatibility ke liye (String vs Object check)
+                        const catName = typeof cat === 'string' ? cat : cat.name;
+                        const explicitSubs = typeof cat === 'object' && cat.subCategories ? cat.subCategories : [];
+                        
+                        const catCourses = courses.filter(c => c.category === catName);
                         
                         if (catCourses.length > 0) {
-                            // 🚀 NEW: Group courses by Sub-Category
                             const subCatGroups = {};
                             const defaultGroup = [];
                             
@@ -533,23 +536,19 @@ window.renderHomepage = async function() {
                                 <section class="mb-4">
                                     <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-4">
                                         <div>
-                                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">${cat}</h3>
+                                            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">${catName}</h3>
                                         </div>
-                                        <button onclick="window.showGenericViewAll('${cat}', 'course_${cat}')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
+                                        <button onclick="window.showGenericViewAll('${catName}', 'course_${catName}')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                                     </div>
                             `;
 
-                            // Helper function to render a row of tiles
                             const renderTiles = (courseArray) => {
                                 let tilesHtml = '';
                                 courseArray.forEach(course => {
                                     const d = course.design;
-                                    
-                                    // Badge Logic
                                     let badgeHtml = '';
                                     if (course.badge) {
-                                        let badgeClass = 'bg-slate-500';
-                                        let badgeText = course.badge;
+                                        let badgeClass = 'bg-slate-500', badgeText = course.badge;
                                         if(course.badge === 'bestseller') { badgeClass = 'bg-rose-500'; badgeText = '🔥 Bestseller'; }
                                         else if(course.badge === 'new') { badgeClass = 'bg-emerald-500'; badgeText = '✨ New Launch'; }
                                         else if(course.badge === 'limited') { badgeClass = 'bg-amber-500'; badgeText = '⏳ Limited Offer'; }
@@ -557,25 +556,17 @@ window.renderHomepage = async function() {
                                         badgeHtml = `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm transition-all ${badgeClass}">${badgeText}</div>`;
                                     }
 
-                                    // Color Logic
                                     let titleColorClass = 'text-slate-900 dark:text-white';
                                     if (d.textColorMode === 'brand') titleColorClass = 'text-brand-blue';
                                     else if (d.textColorMode === 'emerald') titleColorClass = 'text-emerald-600 dark:text-emerald-400';
                                     else if (d.textColorMode === 'rose') titleColorClass = 'text-rose-600 dark:text-rose-400';
                                     else if (d.textColorMode === 'amber') titleColorClass = 'text-amber-600 dark:text-amber-400';
 
-                                    // Size Logic
                                     const sz = d.tileSize || 'large';
                                     let tWidth = 'w-64', tPad = 'p-6', iSize = 'w-14 h-14', iText = 'text-2xl', iMarg = 'mb-5';
                                     let tSize = 'text-lg', sText = 'text-xs mb-6 line-clamp-2', bPad = 'py-2.5 text-sm';
-
-                                    if (sz === 'medium') {
-                                        tWidth = 'w-52'; tPad = 'p-5'; iSize = 'w-12 h-12'; iText = 'text-xl'; iMarg = 'mb-4';
-                                        tSize = 'text-base'; sText = 'text-[11px] mb-4 line-clamp-2'; bPad = 'py-2 text-xs';
-                                    } else if (sz === 'small') {
-                                        tWidth = 'w-40'; tPad = 'p-4'; iSize = 'w-10 h-10'; iText = 'text-lg'; iMarg = 'mb-3';
-                                        tSize = 'text-sm'; sText = 'text-[10px] mb-3 line-clamp-1'; bPad = 'py-1.5 text-[10px]';
-                                    }
+                                    if (sz === 'medium') { tWidth = 'w-52'; tPad = 'p-5'; iSize = 'w-12 h-12'; iText = 'text-xl'; iMarg = 'mb-4'; tSize = 'text-base'; sText = 'text-[11px] mb-4 line-clamp-2'; bPad = 'py-2 text-xs'; } 
+                                    else if (sz === 'small') { tWidth = 'w-40'; tPad = 'p-4'; iSize = 'w-10 h-10'; iText = 'text-lg'; iMarg = 'mb-3'; tSize = 'text-sm'; sText = 'text-[10px] mb-3 line-clamp-1'; bPad = 'py-1.5 text-[10px]'; }
 
                                     tilesHtml += `
                                         <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl ${tPad} border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
@@ -592,25 +583,28 @@ window.renderHomepage = async function() {
                                 return `<div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-6">${tilesHtml}</div>`;
                             };
 
-                            // Render Sub-categories (with a nice left border to group them)
+                            // 🚀 1. Render EXPLICIT Sub-categories (In order managed by Admin)
+                            explicitSubs.forEach(subName => {
+                                if(subCatGroups[subName] && subCatGroups[subName].length > 0) {
+                                    fullCategoryHtml += `
+                                        <div class="mb-2 ml-0 md:ml-4 border-l-4 border-brand-blue/20 pl-4 py-2">
+                                            <h4 class="text-sm md:text-base font-extrabold text-slate-600 dark:text-slate-400 mb-4 uppercase tracking-wider">${subName}</h4>
+                                            ${renderTiles(subCatGroups[subName])}
+                                        </div>`;
+                                    delete subCatGroups[subName]; // Mark as done
+                                }
+                            });
+
+                            // 🚀 2. Render Remaining Sub-categories (If any new ones aren't sorted yet)
                             for(const [subCatName, coursesInSub] of Object.entries(subCatGroups)) {
                                 fullCategoryHtml += `
                                     <div class="mb-2 ml-0 md:ml-4 border-l-4 border-brand-blue/20 pl-4 py-2">
                                         <h4 class="text-sm md:text-base font-extrabold text-slate-600 dark:text-slate-400 mb-4 uppercase tracking-wider">${subCatName}</h4>
                                         ${renderTiles(coursesInSub)}
-                                    </div>
-                                `;
+                                    </div>`;
                             }
 
-                            // Render default group (courses without sub-category)
-                            if(defaultGroup.length > 0) {
-                                fullCategoryHtml += `
-                                    <div class="mb-4">
-                                        ${renderTiles(defaultGroup)}
-                                    </div>
-                                `;
-                            }
-
+                            if(defaultGroup.length > 0) fullCategoryHtml += `<div class="mb-4">${renderTiles(defaultGroup)}</div>`;
                             fullCategoryHtml += `</section>`;
                             courseShowcase.insertAdjacentHTML('beforeend', fullCategoryHtml);
                         }

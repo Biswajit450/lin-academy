@@ -199,9 +199,6 @@ window.loadAdminCourseDropdown = async function() {
 }
 
 // ==========================================
-// 🚀 VAULT VISIBILITY ENGINE (DYNAMIC ENROLLMENTS)
-// ==========================================
-// ==========================================
 // 🚀 VAULT VISIBILITY ENGINE (DYNAMIC ENROLLMENTS WITH AUTO-EXPIRY)
 // ==========================================
 window.renderEnrollments = async function(unlockedCourses = [], passedRole = null) {
@@ -881,7 +878,7 @@ window.buildExamReviewScreen = function() {
 }
 
 // ==========================================
-// 🚀 SMART CATEGORY ENGINE (DATALIST + DRAG & DROP)
+// 🚀 SMART NESTED CATEGORY ENGINE (PRO)
 // ==========================================
 window.loadDeployerCategories = async function() {
     try {
@@ -889,53 +886,96 @@ window.loadDeployerCategories = async function() {
         if(snap.exists() && snap.data().courseCategories) {
             const categories = snap.data().courseCategories;
             
-            // 1. Datalist update (For input suggestions)
             const datalist = document.getElementById('deploy-category-list');
             if(datalist) {
                 datalist.innerHTML = '';
                 categories.forEach(cat => {
-                    datalist.innerHTML += `<option value="${cat}">`;
+                    const catName = typeof cat === 'string' ? cat : cat.name;
+                    datalist.innerHTML += `<option value="${catName}">`;
                 });
             }
             
-            // 2. Drag and Drop Engine update (For reordering boxes)
             const dragList = document.getElementById('deployer-category-list');
             if(dragList) {
                 dragList.innerHTML = '';
-                categories.forEach(cat => {
-                    const safeId = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '_');
+                categories.forEach((cat, index) => {
+                    const catName = typeof cat === 'string' ? cat : cat.name;
+                    const subCats = typeof cat === 'object' && cat.subCategories ? cat.subCategories : [];
+                    const safeId = 'cat-' + catName.replace(/[^a-zA-Z0-9]/g, '_') + '-' + index;
+                    
+                    let subsHtml = '';
+                    subCats.forEach((sub, subIdx) => {
+                        const safeSubId = safeId + '-sub-' + subIdx;
+                        subsHtml += `
+                        <div id="${safeSubId}" class="deployer-sub-item bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center cursor-move mt-2 ml-6 shadow-sm" draggable="true" ondragstart="window.drag(event)">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-bars text-slate-300 text-[10px]"></i>
+                                <span class="sub-name text-xs font-bold text-slate-600 dark:text-slate-400">${sub}</span>
+                            </div>
+                            <button onclick="document.getElementById('${safeSubId}').remove()" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+                        </div>`;
+                    });
+
                     dragList.innerHTML += `
-                    <div id="${safeId}" class="deployer-cat-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-move" draggable="true" ondragstart="window.drag(event)">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-grip-vertical text-slate-400"></i>
-                            <span class="cat-name font-bold text-slate-700 dark:text-slate-300">${cat}</span>
+                    <div id="${safeId}" class="deployer-cat-item bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 mb-3 cursor-move shadow-sm" draggable="true" ondragstart="window.drag(event)">
+                        <div class="flex justify-between items-center mb-1">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-grip-vertical text-slate-400"></i>
+                                <span class="cat-name font-bold text-slate-700 dark:text-slate-300">${catName}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.addManualSubCategory('${safeId}')" class="text-[10px] bg-brand-blue text-white px-2 py-1 rounded font-bold hover:bg-blue-600">+ Sub</button>
+                                <button onclick="document.getElementById('${safeId}').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                            </div>
                         </div>
-                        <button onclick="document.getElementById('${safeId}').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                        <div class="sub-category-dropzone min-h-[10px] pb-1" ondragover="window.allowDrop(event)" ondrop="window.dropSortSubCategory(event)">
+                            ${subsHtml}
+                        </div>
                     </div>`;
                 });
             }
         }
-    } catch(e) {
-        console.error("Smart Category Engine Error:", e);
-    }
+    } catch(e) { console.error("Smart Category Engine Error:", e); }
 }
 
-// Drag & Drop Sorting Logic for Categories
+window.addManualSubCategory = function(catId) {
+    const subName = prompt("Enter Sub-Category Name (e.g., UPPSC, IIT JEE):");
+    if(!subName || subName.trim() === '') return;
+    const dropzone = document.getElementById(catId).querySelector('.sub-category-dropzone');
+    const safeSubId = catId + '-sub-' + Date.now();
+    dropzone.innerHTML += `
+        <div id="${safeSubId}" class="deployer-sub-item bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center cursor-move mt-2 ml-6 shadow-sm" draggable="true" ondragstart="window.drag(event)">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bars text-slate-300 text-[10px]"></i>
+                <span class="sub-name text-xs font-bold text-slate-600 dark:text-slate-400">${subName.trim()}</span>
+            </div>
+            <button onclick="document.getElementById('${safeSubId}').remove()" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+        </div>`;
+}
+
+// Parent Category Sorting
 window.dropSortCategory = function(ev) {
     ev.preventDefault();
     if(window.draggedElement && window.draggedElement.classList.contains('deployer-cat-item')) {
         const dropTarget = ev.target.closest('.deployer-cat-item');
         const list = document.getElementById('deployer-category-list');
-        
-        if(dropTarget && window.draggedElement !== dropTarget) {
-            dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
-        } else if (!dropTarget && ev.target.id === 'deployer-category-list') {
-            list.appendChild(window.draggedElement);
-        }
+        if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        else if (!dropTarget && ev.target.id === 'deployer-category-list') list.appendChild(window.draggedElement);
     }
 }
 
-// Save Category Order Logic
+// Child Sub-Category Sorting
+window.dropSortSubCategory = function(ev) {
+    ev.preventDefault();
+    ev.stopPropagation(); // Parent ko trigger hone se rokna
+    if(window.draggedElement && window.draggedElement.classList.contains('deployer-sub-item')) {
+        const dropTarget = ev.target.closest('.deployer-sub-item');
+        const dropzone = ev.target.closest('.sub-category-dropzone');
+        if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        else if (dropzone) dropzone.appendChild(window.draggedElement);
+    }
+}
+
 window.saveCategoryOrder = async function() {
     const btn = event.currentTarget;
     const originalText = btn.innerHTML;
@@ -943,19 +983,19 @@ window.saveCategoryOrder = async function() {
     btn.disabled = true;
 
     const categories = [];
-    document.querySelectorAll('.deployer-cat-item .cat-name').forEach(el => {
-        categories.push(el.innerText.trim());
+    document.querySelectorAll('.deployer-cat-item').forEach(catEl => {
+        const catName = catEl.querySelector('.cat-name').innerText.trim();
+        const subCats = [];
+        catEl.querySelectorAll('.sub-name').forEach(subEl => {
+            subCats.push(subEl.innerText.trim());
+        });
+        categories.push({ name: catName, subCategories: subCats });
     });
 
     try {
-        await setDoc(doc(db, "cms", "homepage"), {
-            courseCategories: categories
-        }, { merge: true });
-        
-        alert("Category Order Saved Successfully! 🚀");
+        await setDoc(doc(db, "cms", "homepage"), { courseCategories: categories }, { merge: true });
+        alert("Hierarchy Layout Saved Successfully! 🚀");
         if(window.renderHomepage) window.renderHomepage();
-        if(window.loadDeployerCategories) window.loadDeployerCategories();
-        
     } catch(e) {
         console.error("Error saving categories", e);
         alert("Failed to save categories.");
@@ -1191,10 +1231,31 @@ window.deployMasterCourse = async function() {
     try {
         await setDoc(doc(db, "deployed_courses", title), courseData, { merge: true });
         
-        await setDoc(doc(db, "cms", "homepage"), {
-            courseCategories: arrayUnion(category)
-        }, { merge: true });
+        // 🚀 UPGRADE: Auto-Add Category & Sub-Category properly inside the new Object Structure
+        const cmsSnap = await getDoc(doc(db, "cms", "homepage"));
+        let existingCats = cmsSnap.exists() && cmsSnap.data().courseCategories ? cmsSnap.data().courseCategories : [];
+        let catFound = false;
         
+        let newCats = existingCats.map(c => {
+            let cObj = typeof c === 'string' ? { name: c, subCategories: [] } : c;
+            if(cObj.name === category) {
+                catFound = true;
+                if(subCategory && !cObj.subCategories.includes(subCategory)) {
+                    cObj.subCategories.push(subCategory);
+                }
+            }
+            return cObj;
+        });
+
+        if(!catFound) {
+            newCats.push({
+                name: category,
+                subCategories: subCategory ? [subCategory] : []
+            });
+        }
+        await setDoc(doc(db, "cms", "homepage"), { courseCategories: newCats }, { merge: true });
+        // --- END UPGRADE ---
+
         alert("Course Deployed Successfully! 🚀");
         
         if (document.getElementById('deploy-category')) document.getElementById('deploy-category').value = '';
