@@ -51,8 +51,22 @@ window.loadProfileData = async function() {
             const phoneInput = document.getElementById('profile-phone');
             const cityInput = document.getElementById('profile-city');
             
-            if(phoneInput && data.phone) phoneInput.value = data.phone;
-            if(cityInput && data.city) cityInput.value = data.city;
+            if (phoneInput && data.phone) { 
+                phoneInput.value = data.phone; 
+                phoneInput.disabled = true; // Data hai toh Lock kardo
+            }
+            if (cityInput && data.city) { 
+                cityInput.value = data.city; 
+                cityInput.disabled = true; // Data hai toh Lock kardo
+            }
+
+            // Agar dono mein se kuch bhi bhara hua hai, toh Save chhupao aur Edit dikhao
+            if (data.phone || data.city) {
+                const btnSave = document.getElementById('btn-save-profile');
+                const btnEdit = document.getElementById('btn-edit-profile');
+                if (btnSave) btnSave.classList.add('hidden');
+                if (btnEdit) btnEdit.classList.remove('hidden');
+            }
 
             // 🚨 DYNAMIC BADGE LOGIC 🚨
             const badgeEl = document.getElementById('profile-learner-badge');
@@ -148,12 +162,31 @@ window.renderProgress = function(courses, performances) {
     container.innerHTML = dashboardHtml;
 }
 
+// ==========================================
+// 🚀 SMART PROFILE TOGGLE ENGINE
+// ==========================================
+window.editProfileMode = function() {
+    // 1. Dabbe khol do (Unlock)
+    document.getElementById('profile-phone').disabled = false;
+    document.getElementById('profile-city').disabled = false;
+    
+    // 2. Edit chupao, Save wapas lao
+    document.getElementById('btn-edit-profile').classList.add('hidden');
+    document.getElementById('btn-save-profile').classList.remove('hidden');
+    
+    // 3. Phone wale dabbe mein cursor daal do
+    document.getElementById('profile-phone').focus();
+}
+
 window.saveProfileInfo = async function() {
     const user = auth.currentUser;
     if(!user) return alert("Please login first!");
 
-    const phone = document.getElementById('profile-phone').value;
-    const city = document.getElementById('profile-city').value;
+    const phoneInput = document.getElementById('profile-phone');
+    const cityInput = document.getElementById('profile-city');
+    
+    const phone = phoneInput.value;
+    const city = cityInput.value;
     const btn = event.target;
     const originalText = btn.innerHTML;
     
@@ -161,8 +194,18 @@ window.saveProfileInfo = async function() {
     btn.disabled = true;
 
     try {
+        // Data Firebase mein bhejo
         await setDoc(doc(db, "users", user.uid), { phone: phone, city: city }, { merge: true });
         alert("Success! Your profile details have been updated.");
+        
+        // 🚀 Data save hone ke baad: Dabbe lock kardo
+        phoneInput.disabled = true;
+        cityInput.disabled = true;
+        
+        // Save chupao, Edit dikhao
+        document.getElementById('btn-save-profile').classList.add('hidden');
+        document.getElementById('btn-edit-profile').classList.remove('hidden');
+        
     } catch (error) {
         console.error("Error saving profile", error);
         alert("Failed to save details. Try again.");
