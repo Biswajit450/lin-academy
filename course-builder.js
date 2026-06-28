@@ -250,10 +250,27 @@ window.fetchCourseRoster = async function(courseName) {
         const querySnapshot = await getDocs(q);
         
         let emails = [];
+        const now = new Date(); // 🚀 NEW: Aaj ki date pakadne ke liye
+
         querySnapshot.forEach((docSnap) => {
             const userData = docSnap.data();
+            
             if(userData.email) {
-                emails.push(userData.email);
+                let isExpired = false;
+                
+                // 🚀 NEW: The Expiry Bouncer Logic
+                // Check karte hain ki kya is course ki date aaj se purani ho chuki hai
+                if (userData.course_expiries && userData.course_expiries[courseName]) {
+                    const expDate = new Date(userData.course_expiries[courseName]);
+                    if (now > expDate) {
+                        isExpired = true; // Validity khatam!
+                    }
+                }
+                
+                // Agar expired NAHI hai, tabhi list mein daalo
+                if (!isExpired) {
+                    emails.push(userData.email);
+                }
             }
         });
 
