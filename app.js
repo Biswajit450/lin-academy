@@ -2,7 +2,9 @@
 
 // 🚨 IMPORT UPDATED: Added deleteDoc for Inventory Manager
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+// 🚀 NEW: Added Firebase Storage tools for Image Uploads
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+import { auth, db, storage } from "./firebase-config.js"; // Added 'storage' here
 
 import "./auth.js";
 import "./cms.js";
@@ -11,33 +13,69 @@ import "./profile.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // ==========================================
-// 🧮 KaTeX & Quill.js RICH EDITOR ENGINE
+// 🧮 KaTeX & Quill.js RICH EDITOR ENGINE (WITH SMART IMAGE UPLOADER)
 // ==========================================
 window.questionEditor = null;
 window.explanationEditor = null;
 
-// Yeh function Test Creator Modal khulte hi chalega
 window.initRichEditors = function() {
-    // Agar pehle se load hain toh dobara load mat karo
     if(window.questionEditor) return;
 
     const toolbarOptions = [
-        ['bold', 'italic', 'underline', 'strike'],        // Toggled buttons
-        [{ 'script': 'sub'}, { 'script': 'super' }],      // Superscript/Subscript
-        ['formula'],                                      // 🚀 THE MAGIC MATH BUTTON
-        ['clean']                                         // Remove formatting
+        ['bold', 'italic', 'underline', 'strike'],        
+        [{ 'script': 'sub'}, { 'script': 'super' }],      
+        ['image', 'formula'],                             // 🚀 THE NEW IMAGE BUTTON ADDED
+        ['clean']                                         
     ];
 
-    // Initialize Question Editor
+    // 🚀 THE SMART UPLOADER LOGIC
+    const imageHandler = function() {
+        const editor = this.quill;
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (file) {
+                const range = editor.getSelection(true);
+                editor.insertText(range.index, 'Uploading image...', 'user');
+                
+                try {
+                    // Create a unique filename and upload to Firebase Storage
+                    const filename = 'exam_images/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                    const storageRef = ref(storage, filename);
+                    await uploadBytes(storageRef, file);
+                    const url = await getDownloadURL(storageRef);
+                    
+                    // Remove "Uploading image..." text and insert the actual image
+                    editor.deleteText(range.index, 18);
+                    editor.insertEmbed(range.index, 'image', url);
+                    editor.setSelection(range.index + 1);
+                } catch (error) {
+                    console.error("Image upload failed:", error);
+                    editor.deleteText(range.index, 18);
+                    alert("Image upload failed. Please check your internet connection.");
+                }
+            }
+        };
+    };
+
+    // Initialize Question Editor with custom handler
     window.questionEditor = new window.Quill('#q-text-editor', {
-        modules: { toolbar: toolbarOptions },
+        modules: { 
+            toolbar: { container: toolbarOptions, handlers: { image: imageHandler } } 
+        },
         theme: 'snow',
-        placeholder: 'Type your question here. Use the (fx) button to add KaTeX math formulas...'
+        placeholder: 'Type question here. Use (fx) for math, and (🖼️) for images...'
     });
 
-    // Initialize Explanation Editor
+    // Initialize Explanation Editor with custom handler
     window.explanationEditor = new window.Quill('#q-exp-editor', {
-        modules: { toolbar: toolbarOptions },
+        modules: { 
+            toolbar: { container: toolbarOptions, handlers: { image: imageHandler } } 
+        },
         theme: 'snow',
         placeholder: 'Provide a detailed explanation here...'
     });
