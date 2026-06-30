@@ -542,17 +542,71 @@ window.renderHomepage = async function() {
                 notifIndicator.classList.add('hidden');
             }
 
-            if(data.event) {
-                const eventSection = document.getElementById('student-featured-event');
-                document.getElementById('student-event-title').innerText = data.event.title || 'Welcome';
-                document.getElementById('student-event-desc').innerText = data.event.desc || 'Explore our premium courses.';
+            // 🚀 NEW: Dynamic Auto-Play Carousel Engine
+            const carouselContainer = document.getElementById('student-carousel-container');
+            if (carouselContainer) {
+                // Clear old interval if it exists (prevents fast-forward glitch)
+                if (window.carouselInterval) clearInterval(window.carouselInterval);
                 
-                const btn = document.getElementById('student-event-btn');
-                btn.innerText = data.event.btnText || 'Explore Now';
-                btn.onclick = () => window.open(data.event.link, '_blank');
-                
-                if(data.event.bannerUrl) {
-                    eventSection.style.backgroundImage = `url('${data.event.bannerUrl}')`;
+                if (data.carousel_slides && data.carousel_slides.length > 0) {
+                    let slidesHtml = '';
+                    let dotsHtml = '';
+                    
+                    data.carousel_slides.forEach((slide, index) => {
+                        // Agar admin ne field khali chhodi hai, toh wo UI par nahi dikhegi! (Zero Restriction)
+                        const titleHtml = slide.title ? `<h3 class="text-3xl md:text-5xl font-extrabold font-serif mb-4 leading-tight text-white drop-shadow-lg">${slide.title}</h3>` : '';
+                        const subHtml = slide.subtitle ? `<p class="text-blue-50 text-sm md:text-lg mb-8 max-w-lg mx-auto drop-shadow-md">${slide.subtitle}</p>` : '';
+                        const btnHtml = slide.btnText ? `<button onclick="window.open('${slide.link || '#'}', '_blank')" class="bg-white text-brand-blue text-sm md:text-base font-bold px-8 py-3 rounded-2xl hover:scale-105 transition-transform shadow-md">${slide.btnText}</button>` : '';
+                        const bgImage = slide.imgUrl ? `background-image: url('${slide.imgUrl}');` : 'background-color: #2563eb;'; // Fallback blue color
+                        
+                        slidesHtml += `
+                            <div class="carousel-slide absolute inset-0 transition-opacity duration-1000 flex flex-col items-center justify-center text-center bg-cover bg-center p-8 md:p-10 ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}" style="${bgImage}">
+                                <div class="absolute inset-0 bg-slate-900/60 z-0"></div>
+                                <div class="relative z-10 max-w-xl w-full">
+                                    ${titleHtml}
+                                    ${subHtml}
+                                    ${btnHtml}
+                                </div>
+                            </div>
+                        `;
+                        
+                        dotsHtml += `<button onclick="window.goToSlide(${index})" class="carousel-dot w-2 h-2 md:w-3 md:h-3 rounded-full transition-colors ${index === 0 ? 'bg-white' : 'bg-white/40'} mx-1 shadow-sm"></button>`;
+                    });
+                    
+                    carouselContainer.innerHTML = `
+                        ${slidesHtml}
+                        <div class="absolute bottom-4 left-0 right-0 flex justify-center z-20">
+                            ${dotsHtml}
+                        </div>
+                    `;
+
+                    // Auto-Play Logic
+                    let currentSlide = 0;
+                    const totalSlides = data.carousel_slides.length;
+                    
+                    window.goToSlide = function(index) {
+                        const slides = carouselContainer.querySelectorAll('.carousel-slide');
+                        const dots = carouselContainer.querySelectorAll('.carousel-dot');
+                        if(!slides.length) return;
+                        
+                        slides[currentSlide].classList.replace('opacity-100', 'opacity-0');
+                        slides[currentSlide].classList.replace('z-10', 'z-0');
+                        dots[currentSlide].classList.replace('bg-white', 'bg-white/40');
+                        
+                        currentSlide = index;
+                        
+                        slides[currentSlide].classList.replace('opacity-0', 'opacity-100');
+                        slides[currentSlide].classList.replace('z-0', 'z-10');
+                        dots[currentSlide].classList.replace('bg-white/40', 'bg-white');
+                    };
+                    
+                    if (totalSlides > 1) {
+                        window.carouselInterval = setInterval(() => {
+                            window.goToSlide((currentSlide + 1) % totalSlides);
+                        }, 4000); // Badlega har 4 second mein
+                    }
+                } else {
+                    carouselContainer.classList.add('hidden'); // Hide container if no slides exist
                 }
             }
 
