@@ -554,13 +554,13 @@ window.renderHomepage = async function() {
                     
                     data.carousel_slides.forEach((slide, index) => {
                         // Agar admin ne field khali chhodi hai, toh wo UI par nahi dikhegi! (Zero Restriction)
-                        const titleHtml = slide.title ? `<h3 class="text-3xl md:text-5xl font-extrabold font-serif mb-4 leading-tight text-white drop-shadow-lg">${slide.title}</h3>` : '';
-                        const subHtml = slide.subtitle ? `<p class="text-blue-50 text-sm md:text-lg mb-8 max-w-lg mx-auto drop-shadow-md">${slide.subtitle}</p>` : '';
-                        const btnHtml = slide.btnText ? `<button onclick="window.open('${slide.link || '#'}', '_blank')" class="bg-white text-brand-blue text-sm md:text-base font-bold px-8 py-3 rounded-2xl hover:scale-105 transition-transform shadow-md">${slide.btnText}</button>` : '';
+                        const titleHtml = slide.title ? `<h3 class="text-xl md:text-5xl font-extrabold font-serif mb-2 md:mb-4 leading-tight text-white drop-shadow-lg">${slide.title}</h3>` : '';
+                        const subHtml = slide.subtitle ? `<p class="text-blue-50 text-xs md:text-lg mb-4 md:mb-8 max-w-lg mx-auto drop-shadow-md line-clamp-2 md:line-clamp-none">${slide.subtitle}</p>` : '';
+                        const btnHtml = slide.btnText ? `<button onclick="window.open('${slide.link || '#'}', '_blank')" class="bg-white text-brand-blue text-xs md:text-base font-bold px-5 py-2 md:px-8 md:py-3 rounded-xl md:rounded-2xl hover:scale-105 transition-transform shadow-md">${slide.btnText}</button>` : '';
                         const bgImage = slide.imgUrl ? `background-image: url('${slide.imgUrl}');` : 'background-color: #2563eb;'; // Fallback blue color
                         
                         slidesHtml += `
-                            <div class="carousel-slide absolute inset-0 transition-opacity duration-1000 flex flex-col items-center justify-center text-center bg-cover bg-center p-8 md:p-10 ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}" style="${bgImage}">
+                            <div class="carousel-slide absolute inset-0 transition-opacity duration-1000 flex flex-col items-center justify-center text-center bg-cover bg-center p-4 md:p-10 ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}" style="${bgImage}">
                                 <div class="absolute inset-0 bg-slate-900/60 z-0"></div>
                                 <div class="relative z-10 max-w-xl w-full">
                                     ${titleHtml}
