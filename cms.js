@@ -118,6 +118,73 @@ window.dropSort = function(ev) {
     }
 }
 
+// 🚀 NEW: Carousel Drag & Drop Logic
+window.dropSortCarousel = function(ev) {
+    ev.preventDefault();
+    if(window.draggedElement && window.draggedElement.classList.contains('cms-slide-item')) {
+        const dropTarget = ev.target.closest('.cms-slide-item');
+        const list = document.getElementById('cms-carousel-list');
+        if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        else if (!dropTarget && ev.target.id === 'cms-carousel-list') list.appendChild(window.draggedElement);
+    }
+}
+
+// 🚀 NEW: Add Slide Dynamic HTML
+window.cmsAddCarouselSlide = function(slideData = null) {
+    const list = document.getElementById('cms-carousel-list');
+    const placeholder = list.querySelector('.text-slate-400.text-center');
+    if(placeholder) placeholder.remove();
+
+    const id = 'slide-' + Date.now() + Math.floor(Math.random() * 1000);
+    const title = slideData && slideData.title ? slideData.title : '';
+    const subtitle = slideData && slideData.subtitle ? slideData.subtitle : '';
+    const btnText = slideData && slideData.btnText ? slideData.btnText : '';
+    const link = slideData && slideData.link ? slideData.link : '';
+    const imgUrl = slideData && slideData.imgUrl ? slideData.imgUrl : '';
+
+    let photoPreviewHtml = imgUrl ? `<img id="preview-${id}" src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover z-10">` : `<img id="preview-${id}" class="absolute inset-0 w-full h-full object-cover hidden z-10">`;
+
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "cms-slide-item bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4 shadow-sm cursor-move relative";
+    div.draggable = true;
+    div.ondragstart = window.drag;
+
+    div.innerHTML = `
+        <div class="shrink-0 w-full md:w-48 flex flex-col items-center">
+            <div class="w-full h-28 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden relative bg-white dark:bg-slate-900 cursor-pointer hover:border-brand-blue transition-colors" onclick="document.getElementById('upload-${id}').click()">
+                ${photoPreviewHtml}
+                <i class="fa-solid fa-image text-slate-300 text-2xl mb-1"></i>
+            </div>
+            <input type="file" id="upload-${id}" class="slide-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
+            <input type="hidden" class="slide-existing-photo" value="${imgUrl}">
+            <button type="button" onclick="window.clearImagePreview('preview-${id}', 'upload-${id}'); document.getElementById('${id}').querySelector('.slide-existing-photo').value='';" class="text-[10px] text-rose-500 hover:underline mt-2 font-bold">Remove Image</button>
+        </div>
+        <div class="flex-grow w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 mb-1 block uppercase">Title (Optional)</label>
+                <input type="text" class="slide-title w-full p-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${title}" placeholder="e.g. Mega Launch">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 mb-1 block uppercase">Button Text (Optional)</label>
+                <input type="text" class="slide-btn w-full p-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${btnText}" placeholder="e.g. Enroll Now">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="text-[9px] font-bold text-slate-400 mb-1 block uppercase">Subtitle (Optional)</label>
+                <input type="text" class="slide-subtitle w-full p-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${subtitle}" placeholder="Short description...">
+            </div>
+            <div class="sm:col-span-2 flex gap-2">
+                <div class="flex-grow">
+                    <label class="text-[9px] font-bold text-slate-400 mb-1 block uppercase">Target Link URL</label>
+                    <input type="text" class="slide-link w-full p-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white outline-none" value="${link}" placeholder="https://...">
+                </div>
+                <button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-400 hover:text-rose-500 transition-colors self-end pb-2 ml-2"><i class="fa-solid fa-trash text-lg"></i></button>
+            </div>
+        </div>
+    `;
+    list.appendChild(div);
+}
+
 window.cmsAddArenaCategory = function(catData = null) {
     const list = document.getElementById('cms-arena-category-list');
     const placeholder = list.querySelector('.text-slate-400.text-center');
@@ -255,22 +322,28 @@ window.saveCMSData = async function() {
             if(text) notifications.push(text);
         });
 
-        let eventBannerUrl = document.getElementById('cms-event-img-preview').src;
-        const eventFileInput = document.getElementById('cms-event-img-upload').files[0];
-        if(eventFileInput) {
-            const bUrl = await uploadFileToStorage(eventFileInput, 'cms_images/events', 'cms-event-img-preview');
-            if(bUrl) eventBannerUrl = bUrl;
-        } else if (!eventBannerUrl || eventBannerUrl.includes('index.html')) {
-            eventBannerUrl = '';
+        // 🚀 NEW: Process Multiple Carousel Slides
+        const carousel_slides = [];
+        const slideNodes = document.querySelectorAll('.cms-slide-item');
+        for (let item of slideNodes) {
+            let imgUrl = item.querySelector('.slide-existing-photo').value;
+            const fileInput = item.querySelector('.slide-upload').files[0];
+            
+            if (fileInput) {
+                const sUrl = await uploadFileToStorage(fileInput, 'cms_images/carousel', item.querySelector('img').id);
+                if(sUrl) imgUrl = sUrl;
+            } else if (!imgUrl || imgUrl.includes('index.html')) {
+                imgUrl = ''; // Avoid base64 or empty local paths if not selected
+            }
+            
+            carousel_slides.push({
+                imgUrl: imgUrl,
+                title: item.querySelector('.slide-title').value.trim(),
+                subtitle: item.querySelector('.slide-subtitle').value.trim(),
+                btnText: item.querySelector('.slide-btn').value.trim(),
+                link: item.querySelector('.slide-link').value.trim()
+            });
         }
-
-        const eventData = {
-            bannerUrl: eventBannerUrl,
-            title: document.getElementById('cms-event-title').value, 
-            btnText: document.getElementById('cms-event-btn-text').value,
-            desc: document.getElementById('cms-event-desc').value, 
-            link: document.getElementById('cms-event-link').value
-        };
 
         const arenaCategories = [];
         let validationFailed = false;
@@ -334,7 +407,7 @@ window.saveCMSData = async function() {
         const finalCmsData = {
             appLogo: globalLogoUrl,
             notifications: notifications,
-            event: eventData, 
+            carousel_slides: carousel_slides, // 🚀 NEW ADDITION
             arenaCategories: arenaCategories, 
             educators: educators, 
             updatedAt: new Date().toISOString()
@@ -382,26 +455,14 @@ window.loadCMSDataIntoAdmin = async function() {
                 }
             }
 
-            if(data.event) { 
-                const titleEl = document.getElementById('cms-event-title');
-                if(titleEl) {
-                    titleEl.value = data.event.title || ''; 
-                    document.getElementById('cms-event-btn-text').value = data.event.btnText || ''; 
-                    document.getElementById('cms-event-desc').value = data.event.desc || ''; 
-                    document.getElementById('cms-event-link').value = data.event.link || ''; 
-                }
-                
-                if(data.event.bannerUrl) {
-                    const bannerImg = document.getElementById('cms-event-img-preview');
-                    if(bannerImg) {
-                        bannerImg.src = data.event.bannerUrl;
-                        bannerImg.classList.remove('hidden');
-                        
-                        const icon = bannerImg.parentElement.querySelector('i');
-                        if (icon) icon.style.display = 'none';
-                        const span = bannerImg.parentElement.querySelector('span');
-                        if (span) span.style.display = 'none';
-                    }
+            // 🚀 NEW: Load Carousel Slides
+            const slideList = document.getElementById('cms-carousel-list');
+            if(slideList) {
+                slideList.innerHTML = '';
+                if(data.carousel_slides && data.carousel_slides.length > 0) {
+                    data.carousel_slides.forEach(slide => window.cmsAddCarouselSlide(slide));
+                } else {
+                    slideList.innerHTML = '<div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Slide" to create your first carousel banner.</div>';
                 }
             }
             

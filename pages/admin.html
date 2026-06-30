@@ -44,22 +44,13 @@
         </div>
 
         <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-            <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-star text-indigo-500 mr-2"></i>Featured Event Controller</h4>
-            <div class="mb-4">
-                <label class="text-[10px] font-bold text-slate-400 mb-2 block">BANNER IMAGE (16:9 RECOMMENDED)</label>
-                <div class="w-full h-40 md:h-48 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 relative cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors" onclick="document.getElementById('cms-event-img-upload').click()">
-                    <img id="cms-event-img-preview" class="absolute inset-0 w-full h-full object-cover hidden z-10">
-                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
-                    <span class="text-xs text-slate-500 font-medium">Click to upload banner image</span>
-                </div>
-                <input type="file" id="cms-event-img-upload" accept="image/*" class="hidden" onchange="window.previewImage(this, 'cms-event-img-preview')">
-                <div class="flex justify-end mt-2"><button onclick="window.clearImagePreview('cms-event-img-preview', 'cms-event-img-upload')" class="text-[10px] text-rose-500 hover:underline">Remove Image</button></div>
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-images text-indigo-500 mr-2"></i>Homepage Image Carousel</h4>
+                <button onclick="window.cmsAddCarouselSlide()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Slide</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT TITLE</label><input type="text" id="cms-event-title" placeholder="Mastering Mains Answer Writing" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
-                <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON TEXT</label><input type="text" id="cms-event-btn-text" placeholder="Register Now" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
-                <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-400 mb-1 block">EVENT SUBTITLE</label><textarea id="cms-event-desc" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></textarea></div>
-                <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-400 mb-1 block">BUTTON REDIRECT LINK (URL)</label><input type="text" id="cms-event-link" placeholder="https://meet.google.com/..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white"></div>
+            <p class="text-[10px] text-slate-500 mb-4 font-medium uppercase tracking-wider">Drag & drop to reorder slides. Leave text/button fields blank to hide them on the banner. (16:9 Images Recommended)</p>
+            <div id="cms-carousel-list" class="space-y-4" ondragover="window.allowDrop(event)" ondrop="window.dropSortCarousel(event)">
+                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Slide" to create your first carousel banner.</div>
             </div>
         </div>
 
