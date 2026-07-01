@@ -561,7 +561,6 @@ window.renderHomepage = async function() {
                         
                         slidesHtml += `
                             <div class="carousel-slide absolute inset-0 transition-opacity duration-1000 flex flex-col items-center justify-center text-center bg-cover bg-center p-4 md:p-10 ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}" style="${bgImage}">
-                                <div class="absolute inset-0 bg-slate-900/60 z-0"></div>
                                 <div class="relative z-10 max-w-xl w-full">
                                     ${titleHtml}
                                     ${subHtml}
