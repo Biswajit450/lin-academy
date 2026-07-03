@@ -640,7 +640,8 @@ window.updateUserRole = async function() {
         
         alert(`Success! User has been granted [${newRole.toUpperCase()}] access.`);
         document.getElementById('role-edit-panel').classList.add('hidden');
-        document.getElementById('role-search-email').value = "";
+        // 🚀 BUG FIX: Yahan 'role-search-input' kar diya hai
+        document.getElementById('role-search-input').value = ""; 
         window.currentEditingUserId = null;
         
     } catch(e) {
