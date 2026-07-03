@@ -1,7 +1,7 @@
 // app.js
 
 // 🚨 IMPORT UPDATED: Added deleteDoc for Inventory Manager
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, arrayUnion, getCountFromServer, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 // 🚀 NEW: Added Firebase Storage tools for Image Uploads
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { auth, db, storage } from "./firebase-config.js"; // Added 'storage' here
@@ -855,12 +855,17 @@ window.calculateExamResult = function() {
             const perfRef = doc(db, "student_performance", auth.currentUser.uid + "_" + attemptId);
             setDoc(perfRef, {
                 userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName || "Student", // 🚀 ADDED: Naam
+                userPhoto: auth.currentUser.photoURL || "",          // 🚀 ADDED: Photo
                 testId: s.vaultId || "unknown",
                 testTitle: s.settings.testTitle || "Mock Test",
                 score: totalScore,
                 maxScore: maxScore,
                 percentage: pct,
                 timestamp: new Date().toISOString()
+            }).then(() => {
+                // 🚀 NEW: Result save hote hi background mein Rank aur Percentile calculate karo
+                window.calculateRankAndPercentile(totalScore, s.vaultId);
             });
         } catch(e) {
             console.error("Failed to save performance metrics:", e);
@@ -1360,5 +1365,89 @@ window.deployMasterCourse = async function() {
             deployBtn.innerHTML = originalHtml;
             deployBtn.disabled = false;
         }
+    }
+}
+
+// ==========================================
+// 🏆 LEADERBOARD & RANK ENGINE
+// ==========================================
+window.calculateRankAndPercentile = async function(myScore, testId) {
+    if (!testId || testId === "unknown") return;
+    
+    try {
+        const perfCol = collection(db, "student_performance");
+        
+        // 1. Total bachhe (using getCountFromServer for zero cost)
+        const totalQuery = query(perfCol, where("testId", "==", testId));
+        const totalSnap = await getCountFromServer(totalQuery);
+        const totalStudents = totalSnap.data().count;
+        
+        // 2. Kitne bachhon ka score mujhse ZYADA hai?
+        const higherQuery = query(perfCol, where("testId", "==", testId), where("score", ">", myScore));
+        const higherSnap = await getCountFromServer(higherQuery);
+        const higherStudents = higherSnap.data().count;
+        
+        // 3. Math Magic: Rank aur Percentile
+        const myRank = higherStudents + 1; 
+        const myPercentile = totalStudents > 1 ? ((totalStudents - myRank) / totalStudents) * 100 : 100;
+        
+        // 4. Update the UI (Hum isey exam-engine.html mein add karenge)
+        const rankEl = document.getElementById('exam-my-rank');
+        const percEl = document.getElementById('exam-my-percentile');
+        
+        if(rankEl) rankEl.innerText = `AIR ${myRank} / ${totalStudents}`;
+        if(percEl) percEl.innerText = `${myPercentile.toFixed(1)}%ile`;
+        
+    } catch (e) {
+        console.error("Rank calculation error:", e);
+    }
+}
+
+window.fetchLeaderboard = async function(testId) {
+    if (!testId || testId === "unknown") return;
+    const listContainer = document.getElementById('leaderboard-list');
+    if(!listContainer) return;
+    
+    listContainer.innerHTML = '<div class="text-center py-6"><i class="fa-solid fa-spinner fa-spin text-brand-blue text-2xl mb-2"></i><br><span class="text-xs text-slate-500 font-bold">Summoning Top 10...</span></div>';
+    
+    try {
+        // Sirf Top 10 data download hoga (Cost saving!)
+        const q = query(collection(db, "student_performance"), where("testId", "==", testId), orderBy("score", "desc"), limit(10));
+        const snap = await getDocs(q);
+        
+        let html = '';
+        let rank = 1;
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            const photo = data.userPhoto || `https://ui-avatars.com/api/?name=${data.userName}&background=2563eb&color=fff`;
+            
+            // The Podium Crowns
+            let badge = `<span class="text-slate-400 font-bold w-6 text-center text-sm">#${rank}</span>`;
+            if(rank === 1) badge = `<span class="text-2xl" title="Rank 1">🥇</span>`;
+            else if(rank === 2) badge = `<span class="text-2xl" title="Rank 2">🥈</span>`;
+            else if(rank === 3) badge = `<span class="text-2xl" title="Rank 3">🥉</span>`;
+            
+            html += `
+            <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl mb-2 hover:border-brand-blue transition-colors shadow-sm">
+                <div class="shrink-0 w-8 flex justify-center">${badge}</div>
+                <img src="${photo}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                <div class="flex-grow min-w-0">
+                    <div class="font-bold text-slate-800 text-sm truncate">${data.userName}</div>
+                </div>
+                <div class="shrink-0 text-right bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
+                    <div class="text-brand-blue font-extrabold text-sm">${data.score.toFixed(2)}</div>
+                    <div class="text-[8px] text-blue-500 font-bold uppercase">Score</div>
+                </div>
+            </div>`;
+            rank++;
+        });
+        
+        if(html === '') html = '<div class="text-center py-4 text-slate-500">No warriors on the board yet.</div>';
+        listContainer.innerHTML = html;
+        
+    } catch(e) {
+        console.error("Leaderboard fetch error:", e);
+        listContainer.innerHTML = '<div class="text-center py-4 text-rose-500 font-bold">Failed to load leaderboard.</div>';
     }
 }
