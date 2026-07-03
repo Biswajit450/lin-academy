@@ -90,6 +90,18 @@ onAuthStateChanged(auth, async (user) => {
                 if(window.renderEnrollments) window.renderEnrollments([], "student");
             } else {
                 const userData = userSnap.data();
+                // 🛑 NEW: THE BOUNCER MIDDLEWARE (Block Checker) 🛑
+                if (userData.isBlocked && userData.blockedUntil) {
+                    const blockEndDate = new Date(userData.blockedUntil);
+                    const now = new Date();
+                    
+                    if (now < blockEndDate) {
+                        alert(`🛑 Access Denied: Your account has been suspended until ${blockEndDate.toLocaleDateString()}. Please contact support for any queries.`);
+                        await signOut(auth);
+                        window.location.reload();
+                        return; // Pura code yahi rok do
+                    }
+                }
                 
                 // BULLETPROOF ROLE & COURSE VARIABLES
                 const rawRole = userData.role || userData.Role || userData.ROLE || "student";

@@ -1,7 +1,7 @@
 // app.js
 
 // 🚨 IMPORT UPDATED: Added deleteDoc for Inventory Manager
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, arrayUnion, getCountFromServer, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, getCountFromServer, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 // 🚀 NEW: Added Firebase Storage tools for Image Uploads
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { auth, db, storage } from "./firebase-config.js"; // Added 'storage' here
@@ -259,20 +259,25 @@ window.toggleNotifications = function() {
 // ==========================================
 window.loadAdminCourseDropdown = async function() {
     const selector = document.getElementById('admin-course-selector');
-    if (!selector) return;
+    const injectSelector = document.getElementById('inject-course-name');
+    const datalist = document.getElementById('admin-course-datalist');
 
     try {
         const snap = await getDocs(collection(db, "deployed_courses"));
-        let optionsHtml = '<option value="" disabled selected>-- Select Course to Edit --</option>';
+        let optionsHtml = '<option value="" disabled selected>-- Select Course --</option>';
+        let datalistHtml = '';
         
         snap.forEach(doc => {
             const data = doc.data();
             optionsHtml += `<option value="${data.title}">${data.title}</option>`;
+            datalistHtml += `<option value="${data.title}">`;
         });
         
-        selector.innerHTML = optionsHtml;
+        if (selector) selector.innerHTML = optionsHtml;
+        if (injectSelector) injectSelector.innerHTML = optionsHtml;
+        if (datalist) datalist.innerHTML = datalistHtml;
     } catch (e) {
-        console.error("Error loading dynamic dropdown", e);
+        console.error("Error loading dynamic dropdowns", e);
     }
 }
 
@@ -574,40 +579,51 @@ window.openPolicyPage = async function(pageId, pageTitle) {
 }
 
 // ==========================================
-// SUPER ADMIN USER ROLE MANAGER
+// SUPER ADMIN USER ROLE & OMNIBOX MANAGER
 // ==========================================
-window.searchUserForRole = async function() {
+window.executeSmartAdminSearch = async function() {
     if(!String(window.currentUserRole).includes('admin')) return alert("Access Denied: Admin Only.");
     
-    const emailToSearch = document.getElementById('role-search-email').value.trim();
-    if(!emailToSearch) return alert("Please enter a valid student email to search.");
+    const inputStr = document.getElementById('role-search-input').value.trim();
+    if(!inputStr) return alert("Please enter an email, 'admin', or a Course Name.");
     
+    const resultsContainer = document.getElementById('smart-admin-results-container');
+    const editPanel = document.getElementById('role-edit-panel');
+    
+    resultsContainer.innerHTML = '<div class="text-center text-brand-blue py-10"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br><span class="font-bold text-sm">Executing Smart Search...</span></div>';
+    editPanel.classList.add('hidden');
+    
+    const lowerInput = inputStr.toLowerCase();
+
     try {
-        const q = query(collection(db, "users"), where("email", "==", emailToSearch));
-        const querySnapshot = await getDocs(q);
-        
-        if(querySnapshot.empty) {
-            alert("No user found with this email! Please check the spelling.");
-            document.getElementById('role-edit-panel').classList.add('hidden');
-            return;
+        // MODE A: Email Identity Search (Purana Logic Intact!)
+        if (inputStr.includes('@')) {
+            resultsContainer.innerHTML = ''; // Table ki zaroorat nahi
+            const q = query(collection(db, "users"), where("email", "==", inputStr));
+            const snap = await getDocs(q);
+            
+            if(snap.empty) return alert("No user found with this email!");
+            
+            snap.forEach((docSnap) => {
+                const userData = docSnap.data();
+                window.currentEditingUserId = docSnap.id;
+                document.getElementById('role-user-name').innerText = userData.name || "Unknown Name";
+                document.getElementById('role-user-email').innerText = userData.email;
+                document.getElementById('role-user-select').value = String(userData.role || 'student').toLowerCase().trim();
+                editPanel.classList.remove('hidden');
+            });
+        } 
+        // MODE B: Role Search
+        else if (lowerInput === 'admin' || lowerInput === 'superadmin') {
+            await window.fetchCourseRosterData(null, lowerInput); // Fetch Admins
+        } 
+        // MODE C: Course Roster Search
+        else {
+            await window.fetchCourseRosterData(inputStr, null);
         }
-        
-        querySnapshot.forEach((docSnap) => {
-            const userData = docSnap.data();
-            window.currentEditingUserId = docSnap.id;
-            
-            document.getElementById('role-user-name').innerText = userData.name || "Unknown Name";
-            document.getElementById('role-user-email').innerText = userData.email;
-            
-            const userRoleVal = String(userData.role || userData.Role || userData.ROLE || 'student').toLowerCase().trim();
-            document.getElementById('role-user-select').value = userRoleVal;
-            
-            document.getElementById('role-edit-panel').classList.remove('hidden');
-        });
-        
     } catch(e) {
-        console.error("Search error", e);
-        alert("An error occurred while searching for the user.");
+        console.error("Search engine error:", e);
+        resultsContainer.innerHTML = '<div class="text-center text-rose-500 py-4">Search failed. Check console.</div>';
     }
 }
 
@@ -630,6 +646,158 @@ window.updateUserRole = async function() {
     } catch(e) {
         console.error("Role update error", e);
         alert("Failed to update user role.");
+    }
+}
+
+window.fetchCourseRosterData = async function(courseName, roleType) {
+    const container = document.getElementById('smart-admin-results-container');
+    try {
+        let q;
+        let titleText = "";
+        
+        if (roleType) {
+            q = query(collection(db, "users"), where("role", "==", roleType));
+            titleText = `All ${roleType.toUpperCase()}S`;
+        } else {
+            q = query(collection(db, "users"), where("unlocked_courses", "array-contains", courseName));
+            titleText = `Enrolled Students in: ${courseName}`;
+        }
+        
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            container.innerHTML = `<div class="text-center text-slate-500 py-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900">No active users found for this query.</div>`;
+            return;
+        }
+
+        let tableRows = '';
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            const photo = data.photoURL || `https://ui-avatars.com/api/?name=${data.name || 'S'}&background=2563eb&color=fff`;
+            
+            tableRows += `
+            <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td class="px-4 py-3 flex items-center gap-3">
+                    <img src="${photo}" class="w-8 h-8 rounded-full bg-slate-200 shrink-0 object-cover">
+                    <span class="font-bold text-slate-800 dark:text-white">${data.name || 'Unknown'}</span>
+                </td>
+                <td class="px-4 py-3 font-mono text-[10px] text-slate-400">${docSnap.id}</td>
+                <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${data.email}</td>
+                <td class="px-4 py-3 text-right space-x-2">
+                    <button onclick="window.blockStudentTemp('${docSnap.id}', '${data.email}')" class="text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-lg font-bold transition-colors" title="Suspend User"><i class="fa-solid fa-ban"></i> Block</button>
+                    ${courseName ? `<button onclick="window.banStudentFromCourse('${docSnap.id}', '${courseName}', '${data.email}')" class="text-[10px] bg-rose-100 text-rose-700 hover:bg-rose-200 px-3 py-1.5 rounded-lg font-bold transition-colors" title="Remove from this course"><i class="fa-solid fa-user-slash"></i> Ban</button>` : ''}
+                </td>
+            </tr>`;
+        });
+
+        container.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="bg-slate-50 dark:bg-slate-950 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <h4 class="font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-table-list text-brand-blue"></i> ${titleText}</h4>
+                <span class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-full font-bold text-slate-600 dark:text-slate-300">Total: ${snap.size}</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-white dark:bg-slate-900 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        <tr><th class="px-4 py-3">Student Name</th><th class="px-4 py-3">Firebase UID</th><th class="px-4 py-3">Email Address</th><th class="px-4 py-3 text-right">Action Controls</th></tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            </div>
+        </div>`;
+    } catch(e) {
+        console.error("Table render error:", e);
+        container.innerHTML = '<div class="text-center text-rose-500 py-4">Failed to load roster.</div>';
+    }
+}
+
+window.adminAuditLog = async function(actionText) {
+    try {
+        await setDoc(doc(collection(db, "admin_audit_logs")), {
+            adminId: auth.currentUser.uid,
+            adminEmail: auth.currentUser.email,
+            action: actionText,
+            timestamp: new Date().toISOString()
+        });
+    } catch(e) { console.warn("Audit log failed to save", e); }
+}
+
+window.blockStudentTemp = async function(userId, email) {
+    const days = prompt(`For how many days do you want to block ${email}? (e.g., 7, 30)`);
+    if(!days || isNaN(days)) return;
+    
+    if(confirm(`Are you sure you want to block ${email} for ${days} days from the entire platform?`)) {
+        try {
+            const blockedUntil = new Date();
+            blockedUntil.setDate(blockedUntil.getDate() + parseInt(days));
+            
+            await updateDoc(doc(db, "users", userId), {
+                isBlocked: true,
+                blockedUntil: blockedUntil.toISOString()
+            });
+            window.adminAuditLog(`Blocked user ${email} for ${days} days.`);
+            alert(`User suspended until ${blockedUntil.toDateString()}`);
+        } catch(e) { console.error(e); alert("Failed to block user."); }
+    }
+}
+
+window.banStudentFromCourse = async function(userId, courseName, email) {
+    if(confirm(`⚠️ WARNING: Permanently remove ${email} from [${courseName}]? They will lose access immediately.`)) {
+        try {
+            await updateDoc(doc(db, "users", userId), {
+                unlocked_courses: arrayRemove(courseName)
+            });
+            window.adminAuditLog(`Banned user ${email} from course ${courseName}.`);
+            alert("User successfully banned from the course.");
+            // Refresh table
+            document.getElementById('role-search-input').value = courseName;
+            window.executeSmartAdminSearch();
+        } catch(e) { console.error(e); alert("Failed to ban user from course."); }
+    }
+}
+
+window.manualEnrollStudent = async function() {
+    const email = document.getElementById('inject-email').value.trim();
+    const courseName = document.getElementById('inject-course-name').value;
+    const validityDays = parseInt(document.getElementById('inject-validity').value);
+    
+    if(!email || !courseName || !validityDays) return alert("Please fill all fields!");
+    
+    const btn = event.target;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+    btn.disabled = true;
+    
+    try {
+        // 1. Find user by email
+        const q = query(collection(db, "users"), where("email", "==", email));
+        const snap = await getDocs(q);
+        
+        if(snap.empty) {
+            alert("No registered user found with this email! They must sign up first.");
+            btn.innerHTML = 'Grant Access'; btn.disabled = false; return;
+        }
+        
+        // 2. Calculate Expiry Date
+        const expDate = new Date();
+        expDate.setDate(expDate.getDate() + validityDays);
+        const expDateString = expDate.toISOString();
+        
+        // 3. Inject Course
+        snap.forEach(async (docSnap) => {
+            const userId = docSnap.id;
+            await updateDoc(doc(db, "users", userId), {
+                unlocked_courses: arrayUnion(courseName),
+                [`course_expiries.${courseName}`]: expDateString
+            });
+            window.adminAuditLog(`Manually enrolled ${email} into ${courseName} for ${validityDays} days.`);
+            alert(`Success! ${email} has been enrolled in ${courseName}.`);
+            document.getElementById('manual-inject-modal').classList.add('hidden');
+        });
+    } catch(e) {
+        console.error(e);
+        alert("Failed to inject student. Check console.");
+    } finally {
+        btn.innerHTML = 'Grant Access';
+        btn.disabled = false;
     }
 }
 
