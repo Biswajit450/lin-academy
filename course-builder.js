@@ -709,16 +709,30 @@ window.closeContentPlayer = function() {
     document.getElementById('content-player-modal').classList.add('hidden');
     document.getElementById('player-iframe').src = ''; 
     
-    // 📱 ROBUST MOBILE MAGIC: Wapas Portrait Mode mein aana
-    if (window.innerWidth < 768) {
-        try {
-            const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-            if (exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
-                exitFullscreen.call(document);
-            }
-            if (screen.orientation && screen.orientation.unlock) {
+    // 📱 ROBUST MOBILE MAGIC: The Android Fullscreen & Portrait Fix
+    try {
+        // 1. Pehle Fullscreen se bahar aao
+        const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || document.mozCancelFullScreen;
+        if (exitFS && (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement)) {
+            exitFS.call(document).catch(err => console.log("Exit FS Error:", err));
+        }
+        
+        // 2. Zabardasti Portrait mode mein laao, phir Unlock karo
+        if (screen.orientation) {
+            if (screen.orientation.lock) {
+                // Force portrait
+                screen.orientation.lock('portrait').then(() => {
+                    // 1 second baad lock hata do taaki device naturally behave kare
+                    setTimeout(() => screen.orientation.unlock(), 1000);
+                }).catch(e => {
+                    // Agar browser restrict kare, toh directly unlock chala do
+                    screen.orientation.unlock();
+                });
+            } else if (screen.orientation.unlock) {
                 screen.orientation.unlock();
             }
-        } catch(e) {}
+        }
+    } catch(e) {
+        console.error("Mobile rotation fix failed", e);
     }
 }
