@@ -1622,22 +1622,63 @@ window.fetchLeaderboard = async function(testId) {
 }
 
 // ==========================================
-// 🚀 DEEP LINKING & MARKETING ROUTER
+// 🚀 DEEP LINKING & MARKETING ROUTER (ULTIMATE BOUNCER)
 // ==========================================
-setTimeout(() => {
+setTimeout(async () => {
     // URL se data padhne wala engine
     const urlParams = new URLSearchParams(window.location.search);
-    const targetCourse = urlParams.get('course'); // e.g., ?course=UPSC_Zoology
+    const targetCourse = urlParams.get('course');
 
     if (targetCourse) {
-        // Spaces ko theek karne ke liye (in case URL mein %20 ho)
         const cleanCourseName = decodeURIComponent(targetCourse);
-        
         console.log("Deep link detected for course:", cleanCourseName);
-        
-        // Seedha Checkout / Enroll wala function trigger kar do
-        if(window.initiateCheckout) {
-            window.initiateCheckout(cleanCourseName);
+
+        let hasValidAccess = false;
+
+        // 🧠 SECURE CHECK: Firebase se direct user ki kundali (data) nikalo
+        if (auth.currentUser) {
+            try {
+                // Yahan hum doc aur getDoc ka use karke seedha database check kar rahe hain
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    const role = String(userData.role || 'student').toLowerCase();
+                    const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
+                    const unlocked = userData.unlocked_courses || [];
+
+                    if (isGodMode) {
+                        hasValidAccess = true; // Admin/Educator ke liye sab free hai
+                    } else if (unlocked.includes(cleanCourseName)) {
+                        // ⏳ THE EXPIRY CHECKER ENGINE
+                        const expiries = userData.course_expiries || {};
+                        if (expiries[cleanCourseName]) {
+                            const expDate = new Date(expiries[cleanCourseName]);
+                            if (new Date() <= expDate) {
+                                hasValidAccess = true; // Validity bachi hai
+                            } else {
+                                console.log("Course expired! Forcing renewal...");
+                            }
+                        } else {
+                            hasValidAccess = true; // Lifetime access (koi expiry set nahi thi)
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Deep Link Security Check Failed:", e);
+            }
+        }
+
+        // 🚦 THE FINAL DECISION
+        if (hasValidAccess) {
+            // ✅ Case 1: Active Subscription hai! Seedha Classroom mein bhejo
+            console.log("Valid access found. Opening classroom...");
+            if (window.openCourseView) window.openCourseView(cleanCourseName);
+        } else {
+            // ❌ Case 2: Subscription nahi hai YA Expire ho gaya hai! Checkout/Renewal par bhejo
+            console.log("No valid access. Initiating checkout...");
+            if (window.initiateCheckout) window.initiateCheckout(cleanCourseName);
         }
     }
-}, 3000); // 3 seconds ka wait taaki Firebase Auth makkhan ki tarah load ho jaye
+}, 3000); // 3 seconds wait taaki auth load ho jaye
