@@ -672,17 +672,25 @@ window.consumeContent = function(type, elementOrId) {
                 const urlMatch = val.match(/src="([^"]+)"/);
                 if (urlMatch && urlMatch[1]) val = urlMatch[1]; 
             }
+            
+            // YouTube Logic
             if (val.includes('youtube.com/watch?v=')) {
                 val = val.replace('watch?v=', 'embed/');
             } else if (val.includes('youtu.be/')) {
                 val = val.replace('youtu.be/', 'www.youtube.com/embed/');
+            }
+            
+            // 🐰 NAYA BUNNY.NET ENGINE
+            if (val.includes('iframe.mediadelivery.net') || val.includes('bunny.net')) {
+                const separator = val.includes('?') ? '&' : '?';
+                val = val + separator + 'autoplay=true&loop=false&muted=false&preload=true&responsive=true';
             }
 
             if (playerBox) {
                 playerBox.classList.remove('sm:h-[85vh]');
                 playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
             }
-        } else if (type === 'pdf') {
+        } else if (type === 'pdf') { // 🚀 BUG FIX: Yahan ka extra '}' hata diya gaya hai!
             if (playerBox) {
                 playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
                 playerBox.classList.add('sm:h-[85vh]');
