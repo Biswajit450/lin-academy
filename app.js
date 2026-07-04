@@ -1620,3 +1620,27 @@ window.fetchLeaderboard = async function(testId) {
         listContainer.innerHTML = '<div class="text-center py-4 text-rose-500 font-bold">Failed to load leaderboard.</div>';
     }
 }
+
+// ==========================================
+// 🚀 DEEP LINKING & MARKETING ROUTER
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    // URL se data padhne wala engine
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetCourse = urlParams.get('course'); // e.g., ?course=UPSC_Zoology
+
+    if (targetCourse) {
+        // Spaces ko theek karne ke liye (in case URL mein %20 ho)
+        const cleanCourseName = decodeURIComponent(targetCourse);
+        
+        console.log("Deep link detected for course:", cleanCourseName);
+
+        // App ko thoda time do (2.5 seconds) taaki Firebase aur User login data load ho jaye
+        setTimeout(() => {
+            // Seedha Checkout / Enroll wala function trigger kar do
+            if(window.initiateCheckout) {
+                window.initiateCheckout(cleanCourseName);
+            }
+        }, 2500);
+    }
+});
