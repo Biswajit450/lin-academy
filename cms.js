@@ -109,6 +109,17 @@ window.dropHomeWidget = function(ev) {
     }
 }
 
+window.dropSubCat = function(ev) {
+    ev.preventDefault();
+    ev.stopPropagation(); // Main canvas ko disturb na kare
+    if(window.draggedElement && window.draggedElement.classList.contains('cms-subcat-block')) {
+        const dropTarget = ev.target.closest('.cms-subcat-block');
+        const list = ev.target.closest('.widget-subcat-list');
+        if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        else if (!dropTarget && list) list.appendChild(window.draggedElement);
+    }
+}
+
 window.addHomeWidget = function(type, data = null) {
     const dropzone = document.getElementById('home-canvas-inner');
     const placeholder = document.getElementById('home-canvas-placeholder');
@@ -148,9 +159,34 @@ window.addHomeWidget = function(type, data = null) {
         html += `<span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider"><i class="fa-solid fa-layer-group mr-1"></i> Course Row</span>
                  <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
         const cat = data ? data.category : '';
+        
+        // Agar pehle se subcategories saved hain, toh unhe draw karo
+        let existingSubCatsHtml = '';
+        if (data && data.orderedSubCats && data.orderedSubCats.length > 0) {
+            data.orderedSubCats.forEach(sub => {
+                existingSubCatsHtml += `
+                    <div class="cms-subcat-block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 rounded text-xs font-bold cursor-move flex items-center gap-2 shadow-sm" draggable="true" ondragstart="window.drag(event)" ondrop="window.dropSubCat(event)" ondragover="window.allowDrop(event)">
+                        <i class="fa-solid fa-grip-vertical text-slate-400"></i>
+                        <span class="subcat-name text-slate-700 dark:text-slate-300 flex-grow">${sub}</span>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+                    </div>`;
+            });
+        } else {
+            existingSubCatsHtml = `<div class="text-[10px] text-slate-400 text-center py-2 italic pointer-events-none">Type category name above and click 'Fetch Sub-Cats'</div>`;
+        }
+
         html += `
-            <label class="text-[9px] font-bold text-slate-400 block mb-1">CATEGORY TO DISPLAY</label>
-            <input type="text" list="deploy-category-list" class="widget-category w-full p-2 text-sm font-bold rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 dark:text-white outline-none focus:border-emerald-500" placeholder="e.g. UPSC CSE" value="${cat}">`;
+            <div class="flex gap-2 items-end">
+                <div class="flex-grow">
+                    <label class="text-[9px] font-bold text-slate-400 block mb-1">CATEGORY TO DISPLAY</label>
+                    <input type="text" list="deploy-category-list" class="widget-category w-full p-2 text-sm font-bold rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 dark:text-white outline-none focus:border-emerald-500" placeholder="e.g. UPSC CSE" value="${cat}">
+                </div>
+                <button type="button" onclick="window.fetchWidgetSubCategories(this)" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded font-bold text-xs h-[38px] transition-colors whitespace-nowrap"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Fetch Sub-Cats</button>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-3 mb-1.5 uppercase font-bold tracking-wider">Sub-Category Rendering Order (Drag to sort)</p>
+            <div class="widget-subcat-list space-y-1 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-700 min-h-[40px]" ondragover="window.allowDrop(event)" ondrop="window.dropSubCat(event)">
+                ${existingSubCatsHtml}
+            </div>`;
     }
     else if (type === 'arenaRow') {
         html += `<span class="text-[10px] font-bold text-blue-500 uppercase tracking-wider"><i class="fa-solid fa-bolt mr-1"></i> Arena Category</span>
@@ -199,6 +235,37 @@ window.addHomeWidget = function(type, data = null) {
 
     div.innerHTML = html;
     dropzone.appendChild(div);
+}
+
+window.fetchWidgetSubCategories = async function(btn) {
+    const catInput = btn.previousElementSibling.querySelector('.widget-category').value.trim();
+    if(!catInput) return alert("Please enter a category name first!");
+
+    const container = btn.parentElement.parentElement.querySelector('.widget-subcat-list');
+    container.innerHTML = '<div class="text-[10px] text-center py-2 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Finding sub-categories...</div>';
+
+    try {
+        const q = query(collection(db, "deployed_courses"), where("status", "==", "live"), where("category", "==", catInput));
+        const snap = await getDocs(q);
+        
+        let subCats = new Set();
+        snap.forEach(doc => { subCats.add(doc.data().subCategory || "Uncategorized"); });
+
+        if(subCats.size === 0) {
+            container.innerHTML = '<div class="text-[10px] text-center py-2 text-rose-500">No courses found in this category.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        Array.from(subCats).forEach(subCat => {
+            container.innerHTML += `
+                <div class="cms-subcat-block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 rounded text-xs font-bold cursor-move flex items-center gap-2 shadow-sm" draggable="true" ondragstart="window.drag(event)" ondrop="window.dropSubCat(event)" ondragover="window.allowDrop(event)">
+                    <i class="fa-solid fa-grip-vertical text-slate-400"></i>
+                    <span class="subcat-name text-slate-700 dark:text-slate-300 flex-grow">${subCat}</span>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+                </div>`;
+        });
+    } catch(e) { console.error(e); container.innerHTML = '<div class="text-[10px] text-center py-2 text-rose-500">Fetch failed.</div>'; }
 }
 
 window.addTestToArenaWidget = function(btn, testData = null) {
@@ -256,7 +323,9 @@ window.saveHomeCMSData = async function() {
             } 
             else if (type === 'courseRow') {
                 const cat = block.querySelector('.widget-category').value.trim();
-                if(cat) sduiLayout.push({ type: 'courseRow', data: { category: cat }});
+                const subCats = [];
+                block.querySelectorAll('.subcat-name').forEach(el => subCats.push(el.innerText.trim()));
+                if(cat) sduiLayout.push({ type: 'courseRow', data: { category: cat, orderedSubCats: subCats }});
             }
             else if (type === 'arenaRow') {
                 const catName = block.querySelector('.arena-cat-name').value.trim();
@@ -445,9 +514,15 @@ window.renderHomepage = async function() {
                                 <button onclick="window.showGenericViewAll('${catName}', 'course_${catName}')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
                             </div>`;
 
+                        // 🧠 SMART ENGINE: Ordered Sub-Categories ko combine karo
+                        const orderedSubCats = item.data.orderedSubCats || [];
+                        const availableSubCats = Object.keys(groupedCourses);
+                        const finalRenderOrder = [...new Set([...orderedSubCats, ...availableSubCats])];
+
                         // Ab har Sub-Category ke hisaab se alag row render karenge
-                        for (const [subCat, courses] of Object.entries(groupedCourses)) {
-                            if (courses.length === 0) continue;
+                        for (const subCat of finalRenderOrder) {
+                            const courses = groupedCourses[subCat];
+                            if (!courses || courses.length === 0) continue;
                             
                             let tilesHtml = '';
                             courses.forEach(course => {
