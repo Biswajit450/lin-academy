@@ -429,32 +429,65 @@ window.renderHomepage = async function() {
                     const catCourses = allLiveCourses.filter(c => c.category === catName);
                     
                     if(catCourses.length > 0) {
-                        let tilesHtml = '';
+                        // 🧠 SMART ENGINE: Group courses by Sub-Category
+                        const groupedCourses = { "Uncategorized": [] };
                         catCourses.forEach(course => {
-                            const d = course.design || {};
-                            let badgeHtml = course.badge ? `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm ${course.badge==='bestseller'?'bg-rose-500':course.badge==='new'?'bg-emerald-500':course.badge==='premium'?'bg-purple-500':'bg-amber-500'}">${course.badge.toUpperCase()}</div>` : '';
-                            let tWidth = d.tileSize==='small'?'w-40':d.tileSize==='medium'?'w-52':'w-64';
-                            
-                            tilesHtml += `
-                            <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
-                                ${badgeHtml}
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
-                                    <i class="fa-solid ${d.icon || 'fa-book'}"></i>
-                                </div>
-                                <h4 class="text-base font-bold mb-2 leading-snug text-slate-900 dark:text-white" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle || ''}</p>
-                                <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
-                            </div>`;
+                            const subCat = course.subCategory || "Uncategorized";
+                            if (!groupedCourses[subCat]) groupedCourses[subCat] = [];
+                            groupedCourses[subCat].push(course);
                         });
 
-                        canvas.innerHTML += `
-                        <section class="w-full">
-                            <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-4 border-l-4 border-brand-blue pl-3">
+                        // Pehle Main Category ka Header banayenge
+                        let categorySectionHtml = `
+                        <section class="w-full mb-2">
+                            <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-2 border-l-4 border-brand-blue pl-3">
                                 <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">${catName}</h3>
                                 <button onclick="window.showGenericViewAll('${catName}', 'course_${catName}')" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
-                            </div>
-                            <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 pb-4">${tilesHtml}</div>
-                        </section>`;
+                            </div>`;
+
+                        // Ab har Sub-Category ke hisaab se alag row render karenge
+                        for (const [subCat, courses] of Object.entries(groupedCourses)) {
+                            if (courses.length === 0) continue;
+                            
+                            let tilesHtml = '';
+                            courses.forEach(course => {
+                                const d = course.design || {};
+                                let badgeHtml = course.badge ? `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm ${course.badge==='bestseller'?'bg-rose-500':course.badge==='new'?'bg-emerald-500':course.badge==='premium'?'bg-purple-500':'bg-amber-500'}">${course.badge.toUpperCase()}</div>` : '';
+                                let tWidth = d.tileSize==='small'?'w-40':d.tileSize==='medium'?'w-52':'w-64';
+                                
+                                tilesHtml += `
+                                <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                                    ${badgeHtml}
+                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
+                                        <i class="fa-solid ${d.icon || 'fa-book'}"></i>
+                                    </div>
+                                    <h4 class="text-base font-bold mb-2 leading-snug text-slate-900 dark:text-white" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle || ''}</p>
+                                    <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                                </div>`;
+                            });
+
+                            // Sub-category ka Title tabhi dikhayenge jab wo actually bani ho
+                            let subCatHeading = '';
+                            if (subCat !== "Uncategorized") {
+                                subCatHeading = `<h4 class="text-sm font-bold text-slate-600 dark:text-slate-400 mb-3 mt-4 ml-1 uppercase tracking-wider"><i class="fa-solid fa-layer-group text-brand-blue mr-1"></i> ${subCat}</h4>`;
+                            } else if (Object.keys(groupedCourses).length > 1) {
+                                // Agar kuch uncategorized bhi hain, toh unhe 'Others' dikha do
+                                subCatHeading = `<h4 class="text-sm font-bold text-slate-600 dark:text-slate-400 mb-3 mt-4 ml-1 uppercase tracking-wider"><i class="fa-solid fa-layer-group text-brand-blue mr-1"></i> General</h4>`;
+                            } else {
+                                // Agar koi sub-category hai hi nahi, toh bas thoda margin de do
+                                subCatHeading = `<div class="mt-4"></div>`;
+                            }
+
+                            categorySectionHtml += `
+                            <div>
+                                ${subCatHeading}
+                                <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 pb-4">${tilesHtml}</div>
+                            </div>`;
+                        }
+
+                        categorySectionHtml += `</section>`;
+                        canvas.innerHTML += categorySectionHtml;
                     }
                 }
                 
