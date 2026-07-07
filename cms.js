@@ -137,24 +137,26 @@ window.addHomeWidget = function(type, data = null) {
     let html = `<div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">`;
 
     if (type === 'banner') {
-        html += `<span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider"><i class="fa-solid fa-images mr-1"></i> Hero Banner</span>
+        html += `<span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider"><i class="fa-solid fa-images mr-1"></i> Image Carousel</span>
                  <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
-        const imgUrl = data ? data.imgUrl : '';
-        const link = data ? data.link : '';
+        
         html += `
-            <div class="flex gap-4">
-                <div class="shrink-0 w-24 h-16 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center relative cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-950" onclick="document.getElementById('upload-${id}').click()">
-                    <img id="preview-${id}" src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover z-10 ${imgUrl ? '' : 'hidden'}">
-                    <i class="fa-solid fa-image text-slate-300"></i>
-                </div>
-                <input type="file" id="upload-${id}" class="widget-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
-                <input type="hidden" class="widget-existing-photo" value="${imgUrl}">
-                <div class="flex-grow">
-                    <label class="text-[9px] font-bold text-slate-400 block mb-1">ON-CLICK LINK (URL)</label>
-                    <input type="text" class="widget-link w-full p-2 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 dark:text-white outline-none" placeholder="https://..." value="${link}">
-                </div>
-            </div>`;
-    } 
+            <div class="carousel-slides-container space-y-2 mb-3"></div>
+            <button type="button" onclick="window.addCarouselSlideUI(this)" class="w-full py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold transition-colors hover:bg-indigo-100">+ Add New Slide</button>`;
+        
+        // Timeout to render existing slides safely
+        setTimeout(() => {
+            const btn = div.querySelector('button[onclick="window.addCarouselSlideUI(this)"]');
+            if (data && data.slides && data.slides.length > 0) {
+                data.slides.forEach(s => window.addCarouselSlideUI(btn, s));
+            } else if (data && data.imgUrl) {
+                // Backwards compatibility for old single banner
+                window.addCarouselSlideUI(btn, { imgUrl: data.imgUrl, link: data.link });
+            } else {
+                window.addCarouselSlideUI(btn); // Add one blank slide by default
+            }
+        }, 50);
+    }
     else if (type === 'courseRow') {
         html += `<span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider"><i class="fa-solid fa-layer-group mr-1"></i> Course Row</span>
                  <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
@@ -237,6 +239,43 @@ window.addHomeWidget = function(type, data = null) {
     dropzone.appendChild(div);
 }
 
+window.addCarouselSlideUI = function(btn, slideData = null) {
+    const container = btn.previousElementSibling;
+    const id = 'slide-' + Date.now() + Math.floor(Math.random()*1000);
+    const imgUrl = slideData ? slideData.imgUrl : '';
+    const link = slideData ? slideData.link : '';
+
+    const div = document.createElement('div');
+    div.className = "carousel-slide-item flex gap-4 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 relative shadow-sm hover:border-indigo-300 transition-colors cursor-move";
+    div.draggable = true;
+    div.ondragstart = window.drag;
+    div.ondrop = function(ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        if(window.draggedElement && window.draggedElement.classList.contains('carousel-slide-item')) {
+            const dropTarget = ev.target.closest('.carousel-slide-item');
+            if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+            else if (!dropTarget && container) container.appendChild(window.draggedElement);
+        }
+    };
+    div.ondragover = window.allowDrop;
+
+    div.innerHTML = `
+        <i class="fa-solid fa-grip-vertical text-slate-400 flex items-center shrink-0"></i>
+        <div class="shrink-0 w-24 h-16 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center relative cursor-pointer overflow-hidden bg-white dark:bg-slate-900" onclick="document.getElementById('upload-${id}').click()">
+            <img id="preview-${id}" src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover z-10 ${imgUrl ? '' : 'hidden'}">
+            <i class="fa-solid fa-image text-slate-300"></i>
+        </div>
+        <input type="file" id="upload-${id}" class="slide-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
+        <input type="hidden" class="slide-existing-photo" value="${imgUrl}">
+        <div class="flex-grow flex flex-col justify-center">
+            <label class="text-[9px] font-bold text-slate-400 block mb-1">IMAGE ON-CLICK URL</label>
+            <input type="text" class="slide-link w-full p-2 text-xs rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-indigo-500" placeholder="https://..." value="${link}">
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-rose-100 text-rose-600 rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-rose-200 shadow-sm"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    container.appendChild(div);
+}
+
 window.fetchWidgetSubCategories = async function(btn) {
     const catInput = btn.previousElementSibling.querySelector('.widget-category').value.trim();
     if(!catInput) return alert("Please enter a category name first!");
@@ -313,14 +352,23 @@ window.saveHomeCMSData = async function() {
             const type = block.getAttribute('data-type');
             
             if (type === 'banner') {
-                let imgUrl = block.querySelector('.widget-existing-photo').value;
-                const file = block.querySelector('.widget-upload').files[0];
-                if (file) {
-                    const upUrl = await uploadFileToStorage(file, 'cms_images/banners', block.querySelector('img').id);
-                    if(upUrl) imgUrl = upUrl;
+                const slides = [];
+                const slideItems = block.querySelectorAll('.carousel-slide-item');
+                for (let item of slideItems) {
+                    let imgUrl = item.querySelector('.slide-existing-photo').value;
+                    const file = item.querySelector('.slide-upload').files[0];
+                    if (file) {
+                        const upUrl = await uploadFileToStorage(file, 'cms_images/banners', item.querySelector('img').id);
+                        if (upUrl) imgUrl = upUrl;
+                    }
+                    if (imgUrl) {
+                        slides.push({ imgUrl: imgUrl, link: item.querySelector('.slide-link').value.trim() });
+                    }
                 }
-                sduiLayout.push({ type: 'banner', data: { imgUrl: imgUrl, link: block.querySelector('.widget-link').value.trim() }});
-            } 
+                if (slides.length > 0) {
+                    sduiLayout.push({ type: 'banner', data: { slides: slides } });
+                }
+            }
             else if (type === 'courseRow') {
                 const cat = block.querySelector('.widget-category').value.trim();
                 const subCats = [];
@@ -486,11 +534,36 @@ window.renderHomepage = async function() {
             data.sduiLayout.forEach(item => {
                 if(item.type !== 'educatorRow' && item.type !== 'announcement') flushGroups();
 
-                if (item.type === 'banner' && item.data.imgUrl) {
-                    canvas.innerHTML += `
-                        <section class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-900 aspect-video md:min-h-[400px] cursor-pointer hover:opacity-95 transition-opacity" onclick="window.open('${item.data.link || '#'}', '_blank')">
-                            <img src="${item.data.imgUrl}" class="w-full h-full object-cover">
-                        </section>`;
+                if (item.type === 'banner') {
+                    // Extract new slides array or fallback to old imgUrl
+                    const slides = item.data.slides || (item.data.imgUrl ? [{imgUrl: item.data.imgUrl, link: item.data.link}] : []);
+                    
+                    if (slides.length > 0) {
+                        const cid = 'carousel-' + Math.random().toString(36).substr(2, 9);
+                        let dotsHtml = ''; let slidesHtml = '';
+
+                        slides.forEach((slide, i) => {
+                            const activeClass = i === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0';
+                            slidesHtml += `
+                                <div class="absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${activeClass}" data-slide-index="${i}" onclick="if('${slide.link}') window.open('${slide.link}', '_blank')">
+                                    <img src="${slide.imgUrl}" class="w-full h-full object-cover">
+                                </div>`;
+                            const dotActive = i === 0 ? 'bg-white w-5' : 'bg-white/50 w-2 hover:bg-white/80';
+                            dotsHtml += `<button onclick="window.goToCarouselSlide('${cid}', ${i}); event.stopPropagation();" class="h-2.5 rounded-full transition-all duration-300 shadow-sm ${dotActive}" data-dot-index="${i}"></button>`;
+                        });
+
+                        canvas.innerHTML += `
+                            <section id="${cid}" class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-900 aspect-video md:aspect-[21/9] group" data-current-slide="0" data-total-slides="${slides.length}">
+                                ${slidesHtml}
+                                <button onclick="window.moveCarousel('${cid}', -1); event.stopPropagation();" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm"><i class="fa-solid fa-chevron-left"></i></button>
+                                <button onclick="window.moveCarousel('${cid}', 1); event.stopPropagation();" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm"><i class="fa-solid fa-chevron-right"></i></button>
+                                <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+                                    ${dotsHtml}
+                                </div>
+                            </section>`;
+                        
+                        setTimeout(() => window.initCarouselAutoplay(cid), 200);
+                    }
                 }
                 
                 else if (item.type === 'courseRow') {
@@ -769,3 +842,48 @@ window.loadSingleEducatorRating = async function(educatorName) {
         console.error("Failed to load ratings for " + educatorName, e);
     }
 }
+
+// ==========================================
+// 🚀 DYNAMIC CAROUSEL ANIMATION ENGINE
+// ==========================================
+window.carouselTimers = window.carouselTimers || {};
+
+window.moveCarousel = function(cid, direction) {
+    const c = document.getElementById(cid);
+    if(!c) return;
+    let curr = parseInt(c.getAttribute('data-current-slide'));
+    let total = parseInt(c.getAttribute('data-total-slides'));
+    let next = (curr + direction + total) % total;
+    window.goToCarouselSlide(cid, next);
+    window.resetCarouselTimer(cid);
+};
+
+window.goToCarouselSlide = function(cid, index) {
+    const c = document.getElementById(cid);
+    if(!c) return;
+    c.setAttribute('data-current-slide', index);
+    
+    // Slide fade animation
+    const slides = c.querySelectorAll('div[data-slide-index]');
+    slides.forEach((sl, i) => {
+        if (i === index) { sl.classList.replace('opacity-0', 'opacity-100'); sl.classList.replace('z-0', 'z-10'); } 
+        else { sl.classList.replace('opacity-100', 'opacity-0'); sl.classList.replace('z-10', 'z-0'); }
+    });
+
+    // Dot expansion animation
+    const dots = c.querySelectorAll('button[data-dot-index]');
+    dots.forEach((dot, i) => {
+        if (i === index) dot.className = "h-2.5 rounded-full transition-all duration-300 shadow-sm bg-white w-5";
+        else dot.className = "h-2.5 rounded-full transition-all duration-300 shadow-sm bg-white/50 w-2 hover:bg-white/80";
+    });
+};
+
+window.initCarouselAutoplay = function(cid) { window.resetCarouselTimer(cid); };
+
+window.resetCarouselTimer = function(cid) {
+    if(window.carouselTimers[cid]) clearInterval(window.carouselTimers[cid]);
+    const c = document.getElementById(cid);
+    if(c && parseInt(c.getAttribute('data-total-slides')) > 1) {
+        window.carouselTimers[cid] = setInterval(() => window.moveCarousel(cid, 1), 4000); // 4 Seconds Auto-Shuffle
+    }
+};
