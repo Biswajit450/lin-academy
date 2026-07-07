@@ -553,7 +553,7 @@ window.renderHomepage = async function() {
                         });
 
                         canvas.innerHTML += `
-                            <section id="${cid}" class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-900 aspect-video md:aspect-[21/9] group" data-current-slide="0" data-total-slides="${slides.length}">
+                            <section id="${cid}" class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-900 aspect-video group" data-current-slide="0" data-total-slides="${slides.length}">
                                 ${slidesHtml}
                                 <button onclick="window.moveCarousel('${cid}', -1); event.stopPropagation();" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm"><i class="fa-solid fa-chevron-left"></i></button>
                                 <button onclick="window.moveCarousel('${cid}', 1); event.stopPropagation();" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm"><i class="fa-solid fa-chevron-right"></i></button>
