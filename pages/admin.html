@@ -15,9 +15,10 @@
         <button id="admin-tab-deployer" onclick="window.switchAdminSubTab('deployer')" class="admin-tab-btn hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-bold px-4 py-2 border-b-2 border-transparent whitespace-nowrap"><i class="fa-solid fa-rocket mr-1"></i> Course Deployer</button>
     </div>
 
-    <!-- 🚀 TAB 1: HOMEPAGE CMS 🚀 -->
+    <!-- 🚀 TAB 1: HOMEPAGE CMS (SDUI UPGRADE) 🚀 -->
     <div id="admin-subtab-homecms" class="admin-subtab hidden space-y-8">
         
+        <!-- 1. Global Settings (Stays Intact) -->
         <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
             <h4 class="font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-image text-brand-blue mr-2"></i>Global App Logo</h4>
             <div class="flex items-center gap-4">
@@ -27,57 +28,63 @@
                 </div>
                 <div class="flex flex-col gap-2">
                     <input type="file" id="cms-logo-upload" accept="image/*" class="hidden" onchange="window.previewImage(this, 'cms-logo-preview')">
-                    <button onclick="document.getElementById('cms-logo-upload').click()" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold px-3 py-1.5 rounded">Upload/Replace Logo</button>
-                    <button onclick="window.clearImagePreview('cms-logo-preview', 'cms-logo-upload')" class="text-xs text-rose-500 hover:underline text-left">Remove</button>
+                    <button onclick="document.getElementById('cms-logo-upload').click()" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold px-3 py-1.5 rounded hover:bg-slate-200 transition-colors">Upload/Replace Logo</button>
+                    <button onclick="window.clearImagePreview('cms-logo-preview', 'cms-logo-upload')" class="text-xs text-rose-500 hover:underline text-left font-bold">Remove</button>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-bell text-amber-500 mr-2"></i>Notification Manager</h4>
-                <button onclick="window.cmsAddNotification()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Notification</button>
+        <!-- 2. The SDUI Visual Builder -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- TOOLBOX (Left Arsenal) -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm sticky top-24">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-toolbox text-purple-500 mr-2"></i>Widget Toolbox</h3>
+                    <p class="text-[10px] text-slate-500 mb-6 font-bold uppercase tracking-wider">Click to add blocks to your canvas</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                        <button onclick="window.addHomeWidget('banner')" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-3 hover:border-brand-blue hover:shadow-md transition-all text-left text-sm font-bold text-slate-700 dark:text-slate-300 active:scale-95"><i class="fa-solid fa-images text-indigo-500 text-lg w-6"></i> Hero Banner</button>
+                        
+                        <button onclick="window.addHomeWidget('courseRow')" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-3 hover:border-brand-blue hover:shadow-md transition-all text-left text-sm font-bold text-slate-700 dark:text-slate-300 active:scale-95"><i class="fa-solid fa-layer-group text-emerald-500 text-lg w-6"></i> Course Row</button>
+                        
+                        <button onclick="window.addHomeWidget('arenaRow')" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-3 hover:border-brand-blue hover:shadow-md transition-all text-left text-sm font-bold text-slate-700 dark:text-slate-300 active:scale-95"><i class="fa-solid fa-bolt text-blue-500 text-lg w-6"></i> Arena Row</button>
+                        
+                        <button onclick="window.addHomeWidget('educatorRow')" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-3 hover:border-brand-blue hover:shadow-md transition-all text-left text-sm font-bold text-slate-700 dark:text-slate-300 active:scale-95"><i class="fa-solid fa-chalkboard-user text-purple-500 text-lg w-6"></i> Educators Grid</button>
+                        
+                        <button onclick="window.addHomeWidget('announcement')" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-3 hover:border-brand-blue hover:shadow-md transition-all text-left text-sm font-bold text-slate-700 dark:text-slate-300 active:scale-95"><i class="fa-solid fa-bell text-amber-500 text-lg w-6"></i> Announcements</button>
+                    </div>
+                </div>
             </div>
-            <div id="cms-notification-list" class="space-y-3" ondragover="window.allowDrop(event)" ondrop="window.dropSort(event)">
-                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Notification" to create alerts. Drag to reorder priority.</div>
-            </div>
-        </div>
 
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-images text-indigo-500 mr-2"></i>Homepage Image Carousel</h4>
-                <button onclick="window.cmsAddCarouselSlide()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Slide</button>
+            <!-- CANVAS (Right Live Preview) -->
+            <div class="lg:col-span-8">
+                <div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-4 md:p-8 border border-slate-200 dark:border-slate-700 shadow-inner min-h-[70vh] flex flex-col relative">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-mobile-screen text-brand-blue text-lg"></i> Live App Canvas</h4>
+                        <button onclick="window.clearHomeCanvas()" class="text-[10px] bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg font-bold hover:bg-rose-200 transition-colors"><i class="fa-solid fa-trash mr-1"></i> Clear Canvas</button>
+                    </div>
+                    
+                    <!-- The Dropzone -->
+                    <div id="home-canvas-dropzone" class="flex-grow space-y-4 bg-white dark:bg-slate-900 border-[3px] border-slate-300 dark:border-slate-700 rounded-[2.5rem] p-4 sm:p-6 w-full max-w-md mx-auto shadow-2xl relative overflow-y-auto overflow-x-hidden min-h-[500px]" style="max-height: 80vh;">
+                        <div class="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full z-10"></div>
+                        <div class="pt-6 pb-4" id="home-canvas-inner">
+                            <div id="home-canvas-placeholder" class="text-center text-slate-400 dark:text-slate-500 py-20 text-sm font-medium flex flex-col items-center justify-center h-full opacity-50">
+                                <i class="fa-solid fa-wand-magic-sparkles text-4xl mb-4 animate-bounce text-brand-blue"></i>
+                                <span>Click widgets from the toolbox<br>to build your homepage.</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Publish Button -->
+                    <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-center">
+                        <button type="button" id="cms-publish-btn" onclick="window.saveHomeCMSData()" class="w-full max-w-md bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-emerald-500/30 transition-transform active:scale-95 flex items-center justify-center gap-2 text-lg">
+                            <i class="fa-solid fa-rocket"></i> Publish Live Homepage
+                        </button>
+                    </div>
+                </div>
             </div>
-            <p class="text-[10px] text-slate-500 mb-4 font-medium uppercase tracking-wider">Drag & drop to reorder slides. Leave text/button fields blank to hide them on the banner. (16:9 Images Recommended)</p>
-            <div id="cms-carousel-list" class="space-y-4" ondragover="window.allowDrop(event)" ondrop="window.dropSortCarousel(event)">
-                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Slide" to create your first carousel banner.</div>
-            </div>
-        </div>
 
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-bolt text-blue-500 mr-2"></i>Arena Test Manager</h4>
-                <button onclick="window.cmsAddArenaCategory()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Category</button>
-            </div>
-            <div id="cms-arena-category-list" class="space-y-6">
-                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Click "+ Add Category" (e.g., "NEET UG Minor") to start building Arenas.</div>
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-chalkboard-user text-purple-500 mr-2"></i>Educator Profiles</h4>
-                <button onclick="window.cmsAddEducator()" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">+ Add Educator</button>
-            </div>
-            <div id="cms-educator-list" class="space-y-4">
-                <div class="text-center text-slate-400 text-sm py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl pointer-events-none">Click "+ Add Educator" to create a public profile.</div>
-            </div>
-        </div>
-
-        <div class="flex justify-end pt-4 pb-8 border-t border-slate-200 dark:border-slate-800">
-            <button onclick="window.saveCMSData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-2 text-lg">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Publish Homepage
-            </button>
         </div>
     </div>
 

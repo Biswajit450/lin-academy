@@ -160,26 +160,13 @@
 
             <div id="dynamic-screen-container">
                 
-                <div id="screen-dashboard" class="app-screen space-y-8 md:space-y-10">
-                    <section id="student-carousel-container" class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-200 dark:bg-slate-800 aspect-video md:min-h-[400px]">
-                        </section>
-
-                    <div id="master-course-showcase" class="space-y-8 md:space-y-10 w-full"></div>
-
-                    <section class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
-                        <div class="flex items-end justify-between mb-6">
-                            <div><h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-500"></i> Challenger Arena</h3><p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Free Strict Evaluation Portal</p></div>
+                <div id="screen-dashboard" class="app-screen w-full">
+                    <div id="dynamic-home-canvas" class="w-full flex flex-col space-y-8 md:space-y-10">
+                        <div class="text-center text-slate-400 py-20 font-bold border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl w-full flex flex-col items-center justify-center">
+                            <i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-brand-blue"></i>
+                            <span class="tracking-widest uppercase text-xs">Fetching Premium Ecosystem...</span>
                         </div>
-                        <div id="dynamic-arena-container" class="space-y-6"><div class="text-center text-slate-400 text-sm py-4">Loading Arenas...</div></div>
-                    </section>
-
-                    <section>
-                        <div class="flex flex-row justify-between items-start sm:items-end flex-wrap gap-2 mb-5">
-                            <div><h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif">Meet Our Top Educators</h3><p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Learn from the absolute best.</p></div>
-                            <button id="view-all-edu-btn" class="text-brand-blue dark:text-blue-400 text-xs md:text-sm font-bold hover:underline shrink-0">View All</button>
-                        </div>
-                        <div id="dynamic-educator-container" class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 md:gap-5 pb-4"><div class="text-center text-slate-400 text-sm w-full py-4">Loading Educators...</div></div>
-                    </section>
+                    </div>
                 </div>
                 
                 <div id="screen-course-view" class="app-screen hidden space-y-6">
