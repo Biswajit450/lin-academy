@@ -249,10 +249,119 @@ window.toggleDarkMode = function() {
     localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); 
 }
 
+// ==========================================
+// 🚀 IN-APP UNIVERSAL BROADCAST ENGINE
+// ==========================================
+
 window.toggleNotifications = function() { 
     const panel = document.getElementById('notification-panel');
-    if(panel) panel.classList.toggle('hidden'); 
+    if(!panel) return;
+    
+    panel.classList.toggle('hidden'); 
+    
+    if(!panel.classList.contains('hidden')) {
+        // 1. Agar user Superadmin hai, toh Broadcast Box dikhao
+        const role = String(window.currentUserRole).toLowerCase().trim();
+        const adminBox = document.getElementById('admin-broadcast-box');
+        if (role === 'superadmin' || role === 'admin') {
+            if (adminBox) adminBox.classList.remove('hidden');
+        }
+        
+        // 2. Fetch latest notifications
+        window.fetchUniversalNotifications();
+    }
 }
+
+window.pushUniversalNotification = async function() {
+    const textEl = document.getElementById('admin-broadcast-text');
+    const text = textEl.value.trim();
+    if(!text) return alert("Please write a message to broadcast!");
+
+    const btn = event.currentTarget;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    btn.disabled = true;
+
+    try {
+        const newNotif = {
+            id: Date.now().toString(),
+            text: text,
+            time: new Date().toISOString()
+        };
+
+        // Firebase mein ek single file (cms/notifications) mein sab save karenge
+        const { doc, setDoc, arrayUnion } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        await setDoc(doc(db, "cms", "notifications"), {
+            list: arrayUnion(newNotif)
+        }, { merge: true });
+
+        alert("Universal Broadcast sent successfully! 🚀");
+        textEl.value = "";
+        window.fetchUniversalNotifications();
+    } catch(e) {
+        console.error("Broadcast failed:", e);
+        alert("Failed to send broadcast.");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+}
+
+window.fetchUniversalNotifications = async function() {
+    const listEl = document.getElementById('bell-notif-list');
+    const countEl = document.getElementById('bell-notif-count');
+    const dotEl = document.getElementById('bell-notif-indicator');
+
+    try {
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDoc(doc(db, "cms", "notifications"));
+
+        if(snap.exists() && snap.data().list) {
+            let list = snap.data().list;
+            
+            // Sabse nayi notification sabse upar
+            list.sort((a,b) => new Date(b.time) - new Date(a.time));
+            
+            // UI Update: Count and Red Dot
+            if(list.length > 0) {
+                if(countEl) countEl.innerText = `${list.length} Alerts`;
+                if(dotEl) dotEl.style.display = 'block';
+            } else {
+                if(countEl) countEl.innerText = `0 New`;
+                if(dotEl) dotEl.style.display = 'none';
+            }
+
+            // UI Update: List Render
+            if(list.length === 0) {
+                listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
+                return;
+            }
+
+            let html = '';
+            list.forEach(item => {
+                const dateObj = new Date(item.time);
+                const dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                html += `
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 relative group">
+                    <p class="text-xs text-slate-700 dark:text-slate-300 mb-1 leading-relaxed">${item.text}</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase"><i class="fa-regular fa-clock"></i> ${dateStr}</p>
+                </div>`;
+            });
+            listEl.innerHTML = html;
+
+        } else {
+            if(listEl) listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
+            if(dotEl) dotEl.style.display = 'none';
+            if(countEl) countEl.innerText = '0 New';
+        }
+    } catch(e) {
+        console.error("Error fetching notifications", e);
+        if(listEl) listEl.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Failed to load alerts.</div>';
+    }
+}
+
+// Background Check on App Load (Taaki app khulte hi Red Dot dikh jaye)
+setTimeout(() => { window.fetchUniversalNotifications(); }, 3500);
 
 // ==========================================
 // 🚀 DYNAMIC ADMIN DROPDOWN ENGINE 

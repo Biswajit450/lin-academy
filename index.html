@@ -146,10 +146,17 @@
                     </button>
                     <div id="notification-panel" class="hidden absolute top-full right-0 mt-3 w-72 md:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-4 z-50">
                         <h4 class="text-sm font-extrabold text-slate-900 dark:text-white mb-3 font-serif flex justify-between items-center">
-                            Announcements <span id="bell-notif-count" class="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-full">0 New</span>
+                            Announcements <span id="bell-notif-count" class="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
                         </h4>
+                        
+                        <div id="admin-broadcast-box" class="hidden mb-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                            <label class="text-[9px] font-bold text-rose-500 uppercase tracking-widest mb-1 block"><i class="fa-solid fa-satellite-dish"></i> Superadmin Broadcast</label>
+                            <textarea id="admin-broadcast-text" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs outline-none dark:text-white focus:border-brand-blue resize-none shadow-inner" placeholder="Type universal alert here..."></textarea>
+                            <button onclick="window.pushUniversalNotification()" class="mt-2 w-full bg-slate-900 dark:bg-brand-blue hover:bg-slate-800 text-white text-[10px] font-bold py-2 rounded-lg shadow-sm transition-transform active:scale-95 uppercase tracking-wider"><i class="fa-solid fa-paper-plane mr-1"></i> Send to All Students</button>
+                        </div>
+
                         <div id="bell-notif-list" class="flex flex-col gap-3 max-h-64 overflow-y-auto hide-scrollbar">
-                            <div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>
+                            <div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mb-2"></i><br>Fetching alerts...</div>
                         </div>
                     </div>
                 </div>
