@@ -250,7 +250,7 @@ window.toggleDarkMode = function() {
 }
 
 // ==========================================
-// 🚀 IN-APP UNIVERSAL BROADCAST ENGINE
+// 🚀 IN-APP UNIVERSAL BROADCAST ENGINE (PRO)
 // ==========================================
 
 window.toggleNotifications = function() { 
@@ -267,7 +267,8 @@ window.toggleNotifications = function() {
             if (adminBox) adminBox.classList.remove('hidden');
         }
         
-        // 2. Fetch latest notifications
+        // 2. Bell khulte hi "Last Opened" time save kar lo taaki Red Dot gayab ho jaye
+        localStorage.setItem('lastOpenedNotifs', new Date().toISOString());
         window.fetchUniversalNotifications();
     }
 }
@@ -289,7 +290,6 @@ window.pushUniversalNotification = async function() {
             time: new Date().toISOString()
         };
 
-        // Firebase mein ek single file (cms/notifications) mein sab save karenge
         const { doc, setDoc, arrayUnion } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         await setDoc(doc(db, "cms", "notifications"), {
             list: arrayUnion(newNotif)
@@ -311,6 +311,9 @@ window.fetchUniversalNotifications = async function() {
     const listEl = document.getElementById('bell-notif-list');
     const countEl = document.getElementById('bell-notif-count');
     const dotEl = document.getElementById('bell-notif-indicator');
+    
+    const role = String(window.currentUserRole).toLowerCase().trim();
+    const isAdmin = role === 'superadmin' || role === 'admin';
 
     try {
         const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
@@ -319,34 +322,64 @@ window.fetchUniversalNotifications = async function() {
         if(snap.exists() && snap.data().list) {
             let list = snap.data().list;
             
-            // Sabse nayi notification sabse upar
+            // 🧠 SORTING: Sabse nayi notification hamesha upar (Top)
             list.sort((a,b) => new Date(b.time) - new Date(a.time));
             
-            // UI Update: Count and Red Dot
-            if(list.length > 0) {
-                if(countEl) countEl.innerText = `${list.length} Alerts`;
+            // 🧠 CLEAR ENGINE: Agar student ne "Clear All" dabaya tha, toh purani hide kardo
+            const clearedTime = localStorage.getItem('clearedNotifsTime');
+            if (clearedTime && !isAdmin) { // Admins ko hamesha sab dikhega
+                list = list.filter(item => new Date(item.time) > new Date(clearedTime));
+            }
+            
+            // 🧠 RED DOT ENGINE: Agar latest notification ka time 'lastOpenedNotifs' se naya hai
+            const lastOpened = localStorage.getItem('lastOpenedNotifs');
+            const hasNewAlerts = list.length > 0 && (!lastOpened || new Date(list[0].time) > new Date(lastOpened));
+
+            if(hasNewAlerts) {
                 if(dotEl) dotEl.style.display = 'block';
             } else {
-                if(countEl) countEl.innerText = `0 New`;
                 if(dotEl) dotEl.style.display = 'none';
             }
 
-            // UI Update: List Render
+            // Count Update
+            if(countEl) countEl.innerText = list.length > 0 ? `${list.length} Alerts` : `0 New`;
+
+            // Agar list khali hai
             if(list.length === 0) {
                 listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
                 return;
             }
 
+            // UI Render
             let html = '';
             list.forEach(item => {
                 const dateObj = new Date(item.time);
                 const dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                const safeText = encodeURIComponent(item.text); // Taaki line-breaks UI na tode
+                
+                // 🧠 ADMIN CONTROLS (Edit & Delete)
+                let adminControlsHtml = '';
+                if (isAdmin) {
+                    adminControlsHtml = `
+                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="window.editUniversalNotification('${item.id}', '${safeText}')" class="w-6 h-6 rounded bg-slate-200 hover:bg-brand-blue hover:text-white text-slate-600 flex items-center justify-center text-[10px] transition-colors shadow-sm" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="window.deleteUniversalNotification('${item.id}')" class="w-6 h-6 rounded bg-rose-100 hover:bg-rose-500 hover:text-white text-rose-600 flex items-center justify-center text-[10px] transition-colors shadow-sm" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        </div>`;
+                }
+
                 html += `
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 relative group">
-                    <p class="text-xs text-slate-700 dark:text-slate-300 mb-1 leading-relaxed">${item.text}</p>
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 relative group ${isAdmin ? 'pr-16' : ''}">
+                    <p class="text-xs text-slate-700 dark:text-slate-300 mb-1 leading-relaxed whitespace-pre-wrap">${item.text}</p>
                     <p class="text-[9px] font-bold text-slate-400 uppercase"><i class="fa-regular fa-clock"></i> ${dateStr}</p>
+                    ${adminControlsHtml}
                 </div>`;
             });
+            
+            // 🧠 STUDENT CLEAR BUTTON
+            if (!isAdmin && list.length > 0) {
+                html += `<button onclick="window.clearStudentNotifications()" class="mt-2 text-[10px] text-slate-400 hover:text-rose-500 font-bold uppercase tracking-wider w-full text-center py-2 transition-colors bg-slate-50 dark:bg-slate-800 rounded-lg"><i class="fa-solid fa-broom mr-1"></i> Clear All Alerts</button>`;
+            }
+
             listEl.innerHTML = html;
 
         } else {
@@ -358,6 +391,47 @@ window.fetchUniversalNotifications = async function() {
         console.error("Error fetching notifications", e);
         if(listEl) listEl.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Failed to load alerts.</div>';
     }
+}
+
+// Helper Functions for Controls
+window.clearStudentNotifications = function() {
+    localStorage.setItem('clearedNotifsTime', new Date().toISOString());
+    window.fetchUniversalNotifications();
+}
+
+window.deleteUniversalNotification = async function(notifId) {
+    if(!confirm("Are you sure you want to completely delete this notification for ALL students?")) return;
+    try {
+        const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDoc(doc(db, "cms", "notifications"));
+        if(snap.exists() && snap.data().list) {
+            let list = snap.data().list;
+            list = list.filter(n => n.id !== notifId); // Remove specific ID
+            await setDoc(doc(db, "cms", "notifications"), { list: list }, { merge: true });
+            window.fetchUniversalNotifications(); // Refresh Live
+        }
+    } catch(e) { console.error("Delete failed", e); alert("Failed to delete."); }
+}
+
+window.editUniversalNotification = async function(notifId, encodedOldText) {
+    const oldText = decodeURIComponent(encodedOldText);
+    const newText = prompt("Edit your notification text below:", oldText);
+    if(newText === null || newText.trim() === "" || newText === oldText) return; // Cancelled or no change
+
+    try {
+        const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDoc(doc(db, "cms", "notifications"));
+        if(snap.exists() && snap.data().list) {
+            let list = snap.data().list;
+            let index = list.findIndex(n => n.id === notifId);
+            if(index > -1) {
+                list[index].text = newText.trim();
+                // Hum time change nahi kar rahe, taaki sorting order purana hi rahe
+                await setDoc(doc(db, "cms", "notifications"), { list: list }, { merge: true });
+                window.fetchUniversalNotifications(); // Refresh Live
+            }
+        }
+    } catch(e) { console.error("Edit failed", e); alert("Failed to edit."); }
 }
 
 // Background Check on App Load (Taaki app khulte hi Red Dot dikh jaye)
