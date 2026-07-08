@@ -307,6 +307,9 @@ window.pushUniversalNotification = async function() {
     }
 }
 
+let isInitialNotifLoad = true;
+let previousNotifId = null;
+
 window.fetchUniversalNotifications = async function() {
     const listEl = document.getElementById('bell-notif-list');
     const countEl = document.getElementById('bell-notif-count');
@@ -316,80 +319,86 @@ window.fetchUniversalNotifications = async function() {
     const isAdmin = role === 'superadmin' || role === 'admin';
 
     try {
-        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        const snap = await getDoc(doc(db, "cms", "notifications"));
-
-        if(snap.exists() && snap.data().list) {
-            let list = snap.data().list;
-            
-            // 🧠 SORTING: Sabse nayi notification hamesha upar (Top)
-            list.sort((a,b) => new Date(b.time) - new Date(a.time));
-            
-            // 🧠 CLEAR ENGINE: Agar student ne "Clear All" dabaya tha, toh purani hide kardo
-            const clearedTime = localStorage.getItem('clearedNotifsTime');
-            if (clearedTime && !isAdmin) { // Admins ko hamesha sab dikhega
-                list = list.filter(item => new Date(item.time) > new Date(clearedTime));
-            }
-            
-            // 🧠 RED DOT ENGINE: Agar latest notification ka time 'lastOpenedNotifs' se naya hai
-            const lastOpened = localStorage.getItem('lastOpenedNotifs');
-            const hasNewAlerts = list.length > 0 && (!lastOpened || new Date(list[0].time) > new Date(lastOpened));
-
-            if(hasNewAlerts) {
-                if(dotEl) dotEl.style.display = 'block';
-            } else {
-                if(dotEl) dotEl.style.display = 'none';
-            }
-
-            // Count Update
-            if(countEl) countEl.innerText = list.length > 0 ? `${list.length} Alerts` : `0 New`;
-
-            // Agar list khali hai
-            if(list.length === 0) {
-                listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
-                return;
-            }
-
-            // UI Render
-            let html = '';
-            list.forEach(item => {
-                const dateObj = new Date(item.time);
-                const dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
-                const safeText = encodeURIComponent(item.text); // Taaki line-breaks UI na tode
+        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        // 🚀 THE MAGIC: onSnapshot 24/7 live data sunega
+        onSnapshot(doc(db, "cms", "notifications"), (snap) => {
+            if(snap.exists() && snap.data().list) {
+                let list = snap.data().list;
                 
-                // 🧠 ADMIN CONTROLS (Edit & Delete)
-                let adminControlsHtml = '';
-                if (isAdmin) {
-                    adminControlsHtml = `
-                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="window.editUniversalNotification('${item.id}', '${safeText}')" class="w-6 h-6 rounded bg-slate-200 hover:bg-brand-blue hover:text-white text-slate-600 flex items-center justify-center text-[10px] transition-colors shadow-sm" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="window.deleteUniversalNotification('${item.id}')" class="w-6 h-6 rounded bg-rose-100 hover:bg-rose-500 hover:text-white text-rose-600 flex items-center justify-center text-[10px] transition-colors shadow-sm" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                        </div>`;
+                list.sort((a,b) => new Date(b.time) - new Date(a.time)); // Naya sabse upar
+                
+                // 🧠 LIVE POPUP ENGINE: Check if a genuinely new notification arrived
+                if (list.length > 0) {
+                    const latestNotif = list[0];
+                    if (!isInitialNotifLoad && previousNotifId !== latestNotif.id && !isAdmin) {
+                        // Naya alert aaya hai aur ye initial page load nahi hai!
+                        window.showLiveToastNotification(latestNotif.text);
+                    }
+                    previousNotifId = latestNotif.id;
+                }
+                isInitialNotifLoad = false;
+                
+                // 🧠 CLEAR ENGINE
+                const clearedTime = localStorage.getItem('clearedNotifsTime');
+                if (clearedTime && !isAdmin) { 
+                    list = list.filter(item => new Date(item.time) > new Date(clearedTime));
+                }
+                
+                // 🧠 RED DOT ENGINE
+                const lastOpened = localStorage.getItem('lastOpenedNotifs');
+                const hasNewAlerts = list.length > 0 && (!lastOpened || new Date(list[0].time) > new Date(lastOpened));
+
+                if(hasNewAlerts) {
+                    if(dotEl) dotEl.style.display = 'block';
+                } else {
+                    if(dotEl) dotEl.style.display = 'none';
                 }
 
-                html += `
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 relative group ${isAdmin ? 'pr-16' : ''}">
-                    <p class="text-xs text-slate-700 dark:text-slate-300 mb-1 leading-relaxed whitespace-pre-wrap">${item.text}</p>
-                    <p class="text-[9px] font-bold text-slate-400 uppercase"><i class="fa-regular fa-clock"></i> ${dateStr}</p>
-                    ${adminControlsHtml}
-                </div>`;
-            });
-            
-            // 🧠 STUDENT CLEAR BUTTON
-            if (!isAdmin && list.length > 0) {
-                html += `<button onclick="window.clearStudentNotifications()" class="mt-2 text-[10px] text-slate-400 hover:text-rose-500 font-bold uppercase tracking-wider w-full text-center py-2 transition-colors bg-slate-50 dark:bg-slate-800 rounded-lg"><i class="fa-solid fa-broom mr-1"></i> Clear All Alerts</button>`;
+                if(countEl) countEl.innerText = list.length > 0 ? `${list.length} Alerts` : `0 New`;
+
+                if(list.length === 0) {
+                    listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
+                    return;
+                }
+
+                // UI Render
+                let html = '';
+                list.forEach(item => {
+                    const dateObj = new Date(item.time);
+                    const dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    const safeText = encodeURIComponent(item.text); 
+                    
+                    let adminControlsHtml = '';
+                    if (isAdmin) {
+                        adminControlsHtml = `
+                            <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="window.editUniversalNotification('${item.id}', '${safeText}')" class="w-6 h-6 rounded bg-slate-200 hover:bg-brand-blue hover:text-white text-slate-600 flex items-center justify-center text-[10px] transition-colors shadow-sm" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="window.deleteUniversalNotification('${item.id}')" class="w-6 h-6 rounded bg-rose-100 hover:bg-rose-500 hover:text-white text-rose-600 flex items-center justify-center text-[10px] transition-colors shadow-sm" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </div>`;
+                    }
+
+                    html += `
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 relative group ${isAdmin ? 'pr-16' : ''}">
+                        <p class="text-xs text-slate-700 dark:text-slate-300 mb-1 leading-relaxed whitespace-pre-wrap">${item.text}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase"><i class="fa-regular fa-clock"></i> ${dateStr}</p>
+                        ${adminControlsHtml}
+                    </div>`;
+                });
+                
+                if (!isAdmin && list.length > 0) {
+                    html += `<button onclick="window.clearStudentNotifications()" class="mt-2 text-[10px] text-slate-400 hover:text-rose-500 font-bold uppercase tracking-wider w-full text-center py-2 transition-colors bg-slate-50 dark:bg-slate-800 rounded-lg"><i class="fa-solid fa-broom mr-1"></i> Clear All Alerts</button>`;
+                }
+                listEl.innerHTML = html;
+
+            } else {
+                if(listEl) listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
+                if(dotEl) dotEl.style.display = 'none';
+                if(countEl) countEl.innerText = '0 New';
             }
-
-            listEl.innerHTML = html;
-
-        } else {
-            if(listEl) listEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No new announcements.</div>';
-            if(dotEl) dotEl.style.display = 'none';
-            if(countEl) countEl.innerText = '0 New';
-        }
+        });
     } catch(e) {
-        console.error("Error fetching notifications", e);
-        if(listEl) listEl.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Failed to load alerts.</div>';
+        console.error("Error setting up live notifications", e);
     }
 }
 
@@ -1758,3 +1767,59 @@ setTimeout(async () => {
         }
     }
 }, 3000); // 3 seconds wait taaki auth load ho jaye
+
+// ==========================================
+// 🚀 LIVE TOAST POPUP ENGINE
+// ==========================================
+window.showLiveToastNotification = function(message) {
+    // Purana toast ho toh hata do
+    const existingToast = document.getElementById('live-toast-notif');
+    if (existingToast) existingToast.remove();
+
+    // Naya Toast Banao
+    const toast = document.createElement('div');
+    toast.id = 'live-toast-notif';
+    
+    // UI Styling (Sleek and Premium)
+    toast.className = `fixed top-20 md:top-24 right-4 md:right-8 z-[100] max-w-xs md:max-w-sm w-full bg-white dark:bg-slate-900 border-l-4 border-brand-blue rounded-xl shadow-2xl p-4 transform transition-all duration-500 translate-x-full opacity-0 cursor-pointer hover:shadow-brand-blue/20`;
+    
+    // Text ko thoda chhota karke dikhayenge (Truncate)
+    const snippet = message.length > 50 ? message.substring(0, 50) + '...' : message;
+
+    toast.innerHTML = `
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-bell text-brand-blue text-sm animate-wiggle"></i>
+            </div>
+            <div class="flex-grow">
+                <h5 class="text-xs font-bold text-slate-900 dark:text-white mb-0.5">New Announcement</h5>
+                <p class="text-[10px] font-medium text-slate-500 dark:text-slate-400 line-clamp-2">${snippet}</p>
+            </div>
+        </div>
+    `;
+
+    // Click karne par panel open ho jayega aur toast gayab!
+    toast.onclick = () => {
+        window.toggleNotifications();
+        toast.style.transform = 'translateX(120%)';
+        setTimeout(() => toast.remove(), 300);
+    };
+
+    document.body.appendChild(toast);
+
+    // Slide In Animation
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        }, 50);
+    });
+
+    // 5 Second Auto-Destruct
+    setTimeout(() => {
+        if (document.body.contains(toast)) {
+            toast.style.transform = 'translateX(120%)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }
+    }, 5000);
+}
