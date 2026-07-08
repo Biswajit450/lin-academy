@@ -140,7 +140,16 @@ window.addHomeWidget = function(type, data = null) {
         html += `<span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider"><i class="fa-solid fa-images mr-1"></i> Image Carousel</span>
                  <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
         
+        const aspect = data && data.aspectRatio ? data.aspectRatio : 'video';
+
         html += `
+            <div class="flex justify-between items-center mb-3 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Banner Shape (Size)</label>
+                <select class="banner-aspect-ratio text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded p-1 font-bold outline-none dark:text-white cursor-pointer">
+                    <option value="video" ${aspect === 'video' ? 'selected' : ''}>Standard (16:9)</option>
+                    <option value="4/1" ${aspect === '4/1' ? 'selected' : ''}>Classroom Style (4:1)</option>
+                </select>
+            </div>
             <div class="carousel-slides-container space-y-2 mb-3"></div>
             <button type="button" onclick="window.addCarouselSlideUI(this)" class="w-full py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold transition-colors hover:bg-indigo-100">+ Add New Slide</button>`;
         
@@ -353,6 +362,7 @@ window.saveHomeCMSData = async function() {
             
             if (type === 'banner') {
                 const slides = [];
+                const aspectRatio = block.querySelector('.banner-aspect-ratio').value;
                 const slideItems = block.querySelectorAll('.carousel-slide-item');
                 for (let item of slideItems) {
                     let imgUrl = item.querySelector('.slide-existing-photo').value;
@@ -366,7 +376,7 @@ window.saveHomeCMSData = async function() {
                     }
                 }
                 if (slides.length > 0) {
-                    sduiLayout.push({ type: 'banner', data: { slides: slides } });
+                    sduiLayout.push({ type: 'banner', data: { slides: slides, aspectRatio: aspectRatio } });
                 }
             }
             else if (type === 'courseRow') {
@@ -537,6 +547,7 @@ window.renderHomepage = async function() {
                 if (item.type === 'banner') {
                     // Extract new slides array or fallback to old imgUrl
                     const slides = item.data.slides || (item.data.imgUrl ? [{imgUrl: item.data.imgUrl, link: item.data.link}] : []);
+                    const aspectClass = item.data.aspectRatio === '4/1' ? 'aspect-[4/1]' : 'aspect-video';
                     
                     if (slides.length > 0) {
                         const cid = 'carousel-' + Math.random().toString(36).substr(2, 9);
@@ -553,7 +564,7 @@ window.renderHomepage = async function() {
                         });
 
                         canvas.innerHTML += `
-                            <section id="${cid}" class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-900 aspect-video group" data-current-slide="0" data-total-slides="${slides.length}">
+                            <section id="${cid}" class="w-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-900 ${aspectClass} group" data-current-slide="0" data-total-slides="${slides.length}">
                                 ${slidesHtml}
                                 <button onclick="window.moveCarousel('${cid}', -1); event.stopPropagation();" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm"><i class="fa-solid fa-chevron-left"></i></button>
                                 <button onclick="window.moveCarousel('${cid}', 1); event.stopPropagation();" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-sm"><i class="fa-solid fa-chevron-right"></i></button>
