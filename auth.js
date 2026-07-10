@@ -167,6 +167,9 @@ onAuthStateChanged(auth, async (user) => {
                 
                 // Safely attempt first render
                 if(window.renderEnrollments) window.renderEnrollments(unlocked, role);
+                
+                // 🚨 TRIGGER THE BOUNCER ENGINE 🚨
+                if(window.registerDeviceSession) window.registerDeviceSession(user);
             }
         } catch (error) { 
             console.error(error); 
@@ -174,7 +177,7 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         window.currentUserRole = null;
         window.currentUnlockedCourses = [];
-        document.getElementById('header-unauth').classList.remove('hidden'); 
+        document.getElementById('header-unauth').classList.remove('hidden');
         document.getElementById('header-auth').classList.add('hidden'); 
         document.getElementById('header-auth').classList.remove('flex');
         // 🚀 SAFELY HIDING NEW ADMIN BUTTONS ON LOGOUT

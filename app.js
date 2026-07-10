@@ -1823,3 +1823,74 @@ window.showLiveToastNotification = function(message) {
         }
     }, 5000);
 }
+
+// ==========================================
+// 🚨 SMART DEVICE LIMIT BOUNCER ENGINE
+// ==========================================
+
+window.registerDeviceSession = async function(user) {
+    if (!user) return;
+    
+    // 1. Check if user is Superadmin/Admin (Unke liye limit mat lagaiye)
+    const role = String(window.currentUserRole || 'student').toLowerCase().trim();
+    if (role === 'superadmin' || role === 'admin') return;
+
+    // 2. Generate or fetch a Unique Device ID for this browser
+    let deviceId = localStorage.getItem('lin_device_id');
+    if (!deviceId) {
+        deviceId = 'DEV_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('lin_device_id', deviceId);
+    }
+
+    try {
+        const { doc, getDoc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const userRef = doc(db, "users", user.uid);
+
+        // 3. Fetch current sessions
+        const snap = await getDoc(userRef);
+        let activeSessions = [];
+        if (snap.exists() && snap.data().active_sessions) {
+            activeSessions = snap.data().active_sessions;
+        }
+
+        // 4. If current device is not in the list, add it!
+        if (!activeSessions.includes(deviceId)) {
+            activeSessions.push(deviceId);
+            
+            // THE BOUNCER RULE: Maximum 2 devices allowed!
+            if (activeSessions.length > 2) {
+                // Slice last 2 elements (removes the oldest one)
+                activeSessions = activeSessions.slice(-2); 
+            }
+            
+            // Save updated list to Firebase
+            await setDoc(userRef, { active_sessions: activeSessions }, { merge: true });
+        }
+
+        // 5. Start the Live Radar (Listens for remote kicks)
+        if (window.sessionBouncerUnsubscribe) window.sessionBouncerUnsubscribe();
+        
+        window.sessionBouncerUnsubscribe = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const currentSessions = docSnap.data().active_sessions || [];
+                
+                // Agar list mein mera ID nahi hai, iska matlab mujhe kick kar diya gaya hai!
+                if (!currentSessions.includes(deviceId)) {
+                    // Stop radar
+                    window.sessionBouncerUnsubscribe(); 
+                    
+                    // Force Logout
+                    import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js").then(({ signOut }) => {
+                        signOut(auth).then(() => {
+                            alert("🚨 Security Alert: Your account was accessed from a new device. You have been securely logged out from here.");
+                            window.location.reload();
+                        });
+                    });
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error("Device Bouncer Error:", e);
+    }
+}
