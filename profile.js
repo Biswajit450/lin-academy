@@ -16,12 +16,22 @@ window.loadProfileData = async function() {
     if(nameEl) nameEl.innerText = user.displayName || user.email.split('@')[0];
     if(emailEl) emailEl.innerText = user.email || '';
     
-    // 🚨 BULLETPROOF WORKSPACE IMAGE FIX 🚨
+    // 🚨 THE ULTIMATE IMAGE ERROR CATCHER 🚨
     let finalPhotoUrl = user.photoURL;
+    const fallbackUrl = `https://ui-avatars.com/api/?name=${user.displayName || 'S'}&background=2563eb&color=fff`;
+    
     if (!finalPhotoUrl || finalPhotoUrl.includes('picture/0')) {
-        finalPhotoUrl = `https://ui-avatars.com/api/?name=${user.displayName || 'S'}&background=2563eb&color=fff`;
+        finalPhotoUrl = fallbackUrl;
     }
-    if(picEl) picEl.src = finalPhotoUrl;
+    
+    if(picEl) {
+        // Agar image load hone mein fail ho jaye
+        picEl.onerror = function() {
+            this.onerror = null;
+            this.src = fallbackUrl;
+        };
+        picEl.src = finalPhotoUrl;
+    }
     // 2. Role check karo aur zaroorat ke hisaab se UI chupao (Strict Mode)
     const role = String(window.currentUserRole).toLowerCase().trim();
     const studentBadges = document.getElementById('profile-student-badges');

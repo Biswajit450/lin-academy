@@ -71,12 +71,19 @@ onAuthStateChanged(auth, async (user) => {
         let displayName = user.displayName || user.email.split('@')[0];
         document.getElementById('user-profile-name').innerText = displayName; 
         
-        // 🚨 BULLETPROOF WORKSPACE IMAGE FIX 🚨
+        // 🚨 THE ULTIMATE IMAGE ERROR CATCHER 🚨
         let finalPhotoUrl = user.photoURL;
         if (!finalPhotoUrl || finalPhotoUrl.includes('picture/0')) {
             finalPhotoUrl = `https://ui-avatars.com/api/?name=${displayName}&background=2563eb&color=fff`;
         }
-        document.getElementById('user-profile-pic').src = finalPhotoUrl;
+        
+        const profilePicEl = document.getElementById('user-profile-pic');
+        // Agar image load hone mein fail ho jaye (Workspace CORS / 403 Error)
+        profilePicEl.onerror = function() {
+            this.onerror = null; // Infinite loop rokne ke liye
+            this.src = `https://ui-avatars.com/api/?name=${displayName}&background=2563eb&color=fff`;
+        };
+        profilePicEl.src = finalPhotoUrl;
         window.closeAuthModal();
 
         try {
