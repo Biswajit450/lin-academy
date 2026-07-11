@@ -15,8 +15,13 @@ window.loadProfileData = async function() {
 
     if(nameEl) nameEl.innerText = user.displayName || user.email.split('@')[0];
     if(emailEl) emailEl.innerText = user.email || '';
-    if(picEl) picEl.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'S'}&background=2563eb&color=fff`;
-
+    
+    // 🚨 BULLETPROOF WORKSPACE IMAGE FIX 🚨
+    let finalPhotoUrl = user.photoURL;
+    if (!finalPhotoUrl || finalPhotoUrl.includes('picture/0')) {
+        finalPhotoUrl = `https://ui-avatars.com/api/?name=${user.displayName || 'S'}&background=2563eb&color=fff`;
+    }
+    if(picEl) picEl.src = finalPhotoUrl;
     // 2. Role check karo aur zaroorat ke hisaab se UI chupao (Strict Mode)
     const role = String(window.currentUserRole).toLowerCase().trim();
     const studentBadges = document.getElementById('profile-student-badges');

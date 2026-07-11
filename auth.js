@@ -70,7 +70,13 @@ onAuthStateChanged(auth, async (user) => {
         
         let displayName = user.displayName || user.email.split('@')[0];
         document.getElementById('user-profile-name').innerText = displayName; 
-        document.getElementById('user-profile-pic').src = user.photoURL || `https://ui-avatars.com/api/?name=${displayName}&background=2563eb&color=fff`;
+        
+        // 🚨 BULLETPROOF WORKSPACE IMAGE FIX 🚨
+        let finalPhotoUrl = user.photoURL;
+        if (!finalPhotoUrl || finalPhotoUrl.includes('picture/0')) {
+            finalPhotoUrl = `https://ui-avatars.com/api/?name=${displayName}&background=2563eb&color=fff`;
+        }
+        document.getElementById('user-profile-pic').src = finalPhotoUrl;
         window.closeAuthModal();
 
         try {
