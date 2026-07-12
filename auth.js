@@ -183,6 +183,8 @@ onAuthStateChanged(auth, async (user) => {
                 
                 // 🚨 TRIGGER THE BOUNCER ENGINE 🚨
                 if(window.registerDeviceSession) window.registerDeviceSession(user);
+                // 🚀 TRIGGER NATIVE PUSH ENGINE 🚀
+                if(window.initNativePushNotifications) window.initNativePushNotifications(user);
             }
         } catch (error) { 
             console.error(error); 

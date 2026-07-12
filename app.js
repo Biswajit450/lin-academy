@@ -1894,3 +1894,63 @@ window.registerDeviceSession = async function(user) {
         console.error("Device Bouncer Error:", e);
     }
 }
+
+// ==========================================
+// 🚀 NATIVE PUSH NOTIFICATION ENGINE (FCM)
+// ==========================================
+
+window.initNativePushNotifications = async function(user) {
+    if (!user) return;
+    
+    // Agar Safari/iOS hai aur Push support nahi karta toh aage mat badho
+    if (!('Notification' in window)) {
+        console.log("This browser does not support desktop notification");
+        return;
+    }
+
+    try {
+        const { getMessaging, getToken, onMessage } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging.js");
+        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        // Messaging initialize karo (hum auth.app use kar rahe hain jo pehle se connected hai)
+        const messaging = getMessaging(auth.app);
+        
+        // 1. Permission Maango (Browser Popup)
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            console.log('Notification permission granted.');
+            
+            // 2. Token Generate karo (Aapki VAPID Key yahan use ho rahi hai)
+            const currentToken = await getToken(messaging, { 
+                vapidKey: 'BK5vcmY5J49lacgciBiKzOI52zS-uWUzwCpXh6V6JXuCYu0AShWcWbDqn6Jp5eLjZCHJ4CnIfr5NoHHwDt7WcyU' 
+            });
+            
+            if (currentToken) {
+                // 3. Token ko Firestore mein User ki profile mein save karo
+                await setDoc(doc(db, "users", user.uid), {
+                    fcmToken: currentToken
+                }, { merge: true });
+                console.log('FCM Digital Address Token saved securely!');
+            }
+        }
+
+        // ==========================================
+        // 🛠️ Phase 4 (Preview): Foreground Listener
+        // ==========================================
+        // Jab app khuli ho tab notification aaye, toh Live Toast dikhao!
+        onMessage(messaging, (payload) => {
+            console.log('Message received in foreground: ', payload);
+            if(window.showLiveToastNotification && payload.notification) {
+                window.showLiveToastNotification(payload.notification.title + " - " + payload.notification.body);
+                
+                // Bell icon par red dot bhi laga do
+                const dotEl = document.getElementById('bell-notif-indicator');
+                if(dotEl) dotEl.style.display = 'block';
+            }
+        });
+
+    } catch (error) {
+        console.error('Push Notification Setup Error:', error);
+    }
+}
