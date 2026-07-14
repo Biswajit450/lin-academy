@@ -1211,9 +1211,9 @@ window.calculateExamResult = function() {
     // 🚀 THE DATA CATCHER: Save Real Result to Firebase
     if (auth.currentUser) {
         try {
-            const attemptId = Date.now().toString();
-            // Naya folder banega: student_performance
-            const perfRef = doc(db, "student_performance", auth.currentUser.uid + "_" + attemptId);
+            // 🚀 BUG FIX: "One Student, One Rank" Logic
+            // attemptId ki jagah testId (s.vaultId) use kiya hai taaki purana score overwrite ho jaye!
+            const perfRef = doc(db, "student_performance", auth.currentUser.uid + "_" + s.vaultId);
             setDoc(perfRef, {
                 userId: auth.currentUser.uid,
                 userName: auth.currentUser.displayName || "Student", // 🚀 ADDED: Naam
