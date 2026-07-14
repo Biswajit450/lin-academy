@@ -624,21 +624,24 @@ window.renderHomepage = async function() {
                                 const d = course.design || {};
                                 let badgeHtml = course.badge ? `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm ${course.badge==='bestseller'?'bg-rose-500':course.badge==='new'?'bg-emerald-500':course.badge==='premium'?'bg-purple-500':'bg-amber-500'}">${course.badge.toUpperCase()}</div>` : '';
                                 
-                                // 🚀 NEW: Mega-Explore Premium Button Logic
+                                // 🚀 UPDATED: Mega-Explore Premium Button Logic (Dedicated Space)
                                 let exploreBtnHtml = (course.exploreHtml || course.trailerUrl) ? 
-                                    `<button onclick="window.openMegaExplore('${course.title}')" class="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-brand-blue dark:text-blue-400 text-[10px] font-bold px-3 py-1.5 rounded-full z-20 shadow-sm hover:scale-105 transition-transform flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> Explore Details</button>` : '';
+                                    `<button onclick="window.openMegaExplore('${course.title}')" class="w-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-brand-blue dark:text-blue-400 font-bold py-2 rounded-xl border border-blue-100 dark:border-blue-800/50 transition-colors shadow-sm active:scale-95 text-xs flex items-center justify-center gap-1.5 mb-2"><i class="fa-solid fa-circle-info"></i> Explore Details</button>` : '';
                                 let tWidth = d.tileSize==='small'?'w-40':d.tileSize==='medium'?'w-52':'w-64';
                                 
                                 tilesHtml += `
                                 <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
                                     ${badgeHtml}
-                                    ${exploreBtnHtml}
                                     <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
                                         <i class="fa-solid ${d.icon || 'fa-book'}"></i>
                                     </div>
                                     <h4 class="text-base font-bold mb-2 leading-snug text-slate-900 dark:text-white" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle || ''}</p>
-                                    <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                                    
+                                    <div class="mt-auto flex flex-col w-full">
+                                        ${exploreBtnHtml}
+                                        <button onclick="window.initiateCheckout('${course.title}')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                                    </div>
                                 </div>`;
                             });
 
