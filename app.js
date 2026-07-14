@@ -604,6 +604,22 @@ window.initiateCheckout = async function(courseName) {
         return;
     }
 
+    // 🚀 NEW: Universal Payment Loading Overlay
+    let loadingOverlay = document.getElementById('payment-loading-overlay');
+    if (!loadingOverlay) {
+        loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'payment-loading-overlay';
+        loadingOverlay.className = 'fixed inset-0 z-[200] flex flex-col items-center justify-center bg-slate-900/90 backdrop-blur-sm transition-opacity';
+        loadingOverlay.innerHTML = `
+            <div class="w-16 h-16 border-4 border-slate-700 border-t-brand-blue rounded-full animate-spin mb-6 shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
+            <h3 class="text-xl md:text-2xl font-extrabold text-white mb-2 tracking-wide font-serif">Initializing Secure Gateway</h3>
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest text-center px-4 animate-pulse">Please wait... Don't refresh the app</p>
+        `;
+        document.body.appendChild(loadingOverlay);
+    } else {
+        loadingOverlay.classList.remove('hidden');
+    }
+
     try {
         console.log(`Initiating secure payment for: ${courseName}...`);
 
@@ -627,11 +643,8 @@ window.initiateCheckout = async function(courseName) {
         const response = await createOrderApi({ courseTitle: courseName });
         const orderData = response.data;
 
-        // ... (Baaki ka Razorpay Options ka code waise hi rahega)
-
         // 4. Open the Real Razorpay Popup!
         const options = {
-            // 🚨 APNI LIVE KEY ID YAHAN BHI DAALIYE (e.g., rzp_live_...) 👇
             key: "rzp_live_T5Sz0KnOfFMwzp", 
             amount: orderData.amount,
             currency: orderData.currency,
@@ -646,14 +659,9 @@ window.initiateCheckout = async function(courseName) {
                 color: "#2563eb" // Lin Academy Brand Blue
             },
             handler: function (response) {
-                // Payment success hotey hi Razorpay ye function chalayega
-                // Aur background mein humara Webhook Firebase mein course unlock kar dega!
                 alert("Payment Successful! 🎉\n\nYour course is unlocking... Welcome to the premium ecosystem!");
-                
-                // 3 second baad automatic enrollments tab khol denge
                 setTimeout(() => {
                     window.showScreen('screen-enrollments');
-                    // Page reload karne se vault turant fresh data fetch kar lega
                     window.location.reload(); 
                 }, 3000);
             }
@@ -663,10 +671,15 @@ window.initiateCheckout = async function(courseName) {
         rzp.on('payment.failed', function (response){
             alert("Payment Failed or Cancelled. Please try again.");
         });
+        
+        // 🚀 NEW: Hide loading overlay right before opening Razorpay
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
         rzp.open();
 
     } catch (error) {
         console.error("Checkout Error:", error);
+        // 🚀 NEW: Hide loading overlay if an error occurs
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
         alert("Could not initiate payment. Server is verifying data... Error: " + error.message);
     }
 }
