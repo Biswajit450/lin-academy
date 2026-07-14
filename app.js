@@ -1954,3 +1954,14 @@ window.initNativePushNotifications = async function(user) {
         console.error('Push Notification Setup Error:', error);
     }
 }
+
+// ==========================================
+// 🏆 LEADERBOARD CLOSE ENGINE
+// ==========================================
+window.closeLeaderboard = function() {
+    const modal = document.getElementById('leaderboard-modal');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none'; // Safe fallback
+    }
+}
