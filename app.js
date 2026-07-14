@@ -1956,12 +1956,11 @@ window.initNativePushNotifications = async function(user) {
 }
 
 // ==========================================
-// 🏆 LEADERBOARD CLOSE ENGINE
+// 🏆 LEADERBOARD CLOSE ENGINE (FIXED ID)
 // ==========================================
 window.closeLeaderboard = function() {
-    const modal = document.getElementById('leaderboard-modal');
+    const modal = document.getElementById('exam-leaderboard-modal');
     if(modal) {
         modal.classList.add('hidden');
-        modal.style.display = 'none'; // Safe fallback
     }
 }
