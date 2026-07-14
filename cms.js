@@ -66,6 +66,8 @@ async function uploadFileToStorage(file, folderPath, fallbackPreviewId) {
 // ==========================================
 // ADMIN CMS ENGINE (PRO LEVEL)
 // ==========================================
+window.deployEditor = null; // Naya Global Variable
+
 window.switchAdminSubTab = function(tabId) {
     document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -80,7 +82,16 @@ window.switchAdminSubTab = function(tabId) {
     if(tabId === 'homecms') { 
         window.loadCMSDataIntoAdmin(); 
     } else if (tabId === 'deployer') {
-        window.loadDeployerCategories(); // Load category list when deployer is opened
+        window.loadDeployerCategories(); 
+        
+        // 🚀 NEW: Start Quill Editor for Deployer
+        if(!window.deployEditor) {
+            window.deployEditor = new window.Quill('#deploy-explore-editor', {
+                modules: { toolbar: [ ['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['image'] ] },
+                theme: 'snow',
+                placeholder: 'Type detailed course description, syllabus, and features here...'
+            });
+        }
     }
 }
 
@@ -612,11 +623,16 @@ window.renderHomepage = async function() {
                             courses.forEach(course => {
                                 const d = course.design || {};
                                 let badgeHtml = course.badge ? `<div class="absolute top-0 right-0 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm ${course.badge==='bestseller'?'bg-rose-500':course.badge==='new'?'bg-emerald-500':course.badge==='premium'?'bg-purple-500':'bg-amber-500'}">${course.badge.toUpperCase()}</div>` : '';
+                                
+                                // 🚀 NEW: Mega-Explore Premium Button Logic
+                                let exploreBtnHtml = (course.exploreHtml || course.trailerUrl) ? 
+                                    `<button onclick="window.openMegaExplore('${course.title}')" class="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-brand-blue dark:text-blue-400 text-[10px] font-bold px-3 py-1.5 rounded-full z-20 shadow-sm hover:scale-105 transition-transform flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> Explore Details</button>` : '';
                                 let tWidth = d.tileSize==='small'?'w-40':d.tileSize==='medium'?'w-52':'w-64';
                                 
                                 tilesHtml += `
                                 <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
                                     ${badgeHtml}
+                                    ${exploreBtnHtml} <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
                                     <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
                                         <i class="fa-solid ${d.icon || 'fa-book'}"></i>
                                     </div>

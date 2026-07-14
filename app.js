@@ -218,6 +218,8 @@ window.showScreen = async function(screenId) {
 // ==========================================
 // ADMIN SUB-TABS & UI UTILITIES
 // ==========================================
+window.deployEditor = null; // 🚀 Global Variable for Mega-Explore
+
 window.switchAdminSubTab = function(tabId) {
     document.querySelectorAll('.admin-subtab').forEach(tab => tab.classList.add('hidden'));
     
@@ -235,12 +237,20 @@ window.switchAdminSubTab = function(tabId) {
         activeBtn.classList.add('active', 'text-brand-blue', 'border-brand-blue');
     }
 
-    // 🚀 THE FIX: Engine ko tab click hote hi zinda karna!
     if(tabId === 'homecms' && window.loadCMSDataIntoAdmin) {
         window.loadCMSDataIntoAdmin();
     } else if (tabId === 'deployer') {
         if (window.loadDeployerCategories) window.loadDeployerCategories();
         if (window.loadDeployerInventory) window.loadDeployerInventory();
+        
+        // 🚀 NEW: Start Quill Editor for Mega-Explore
+        if(!window.deployEditor) {
+            window.deployEditor = new window.Quill('#deploy-explore-editor', {
+                modules: { toolbar: [ ['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['image'] ] },
+                theme: 'snow',
+                placeholder: 'Type detailed course description, syllabus, and features here...'
+            });
+        }
     }
 }
 
@@ -1397,7 +1407,16 @@ window.editDeployedCourse = async function(docId) {
             document.getElementById('deploy-badge').value = data.badge || '';
             document.getElementById('deploy-price').value = data.price || '';
             document.getElementById('deploy-validity').value = data.validity || '';
-            
+            // 🚀 NEW: Load Mega-Explore Data
+            if (document.getElementById('deploy-trailer-url')) {
+                document.getElementById('deploy-trailer-url').value = data.trailerUrl || '';
+            }
+            if (window.deployEditor) {
+                window.deployEditor.setContents([]); // Pehle purana saaf karo
+                if (data.exploreHtml && data.exploreHtml !== '<p><br></p>') {
+                    window.deployEditor.root.innerHTML = data.exploreHtml;
+                }
+            }
             if(data.design) {
                 document.getElementById('deploy-icon').value = data.design.icon || 'fa-book';
                 document.getElementById('deploy-icon-color').value = data.design.iconColor || '#059669';
@@ -1544,6 +1563,10 @@ window.deployMasterCourse = async function() {
         deployBtn.disabled = true;
     }
 
+    // 🚀 NEW: Read Mega-Explore Data from Editor
+    const exploreContent = window.deployEditor ? window.deployEditor.root.innerHTML : '';
+    const finalExploreHtml = (exploreContent === '<p><br></p>') ? '' : exploreContent;
+
     const courseData = {
         category: category,
         subCategory: subCategory,
@@ -1552,6 +1575,11 @@ window.deployMasterCourse = async function() {
         badge: document.getElementById('deploy-badge')?.value || '',
         price: Number(document.getElementById('deploy-price')?.value) || 0,
         validity: Number(document.getElementById('deploy-validity')?.value) || 0,
+        
+        // 🚀 NEW: Save Mega-Explore Data to Database
+        trailerUrl: document.getElementById('deploy-trailer-url')?.value.trim() || '',
+        exploreHtml: finalExploreHtml,
+        
         status: document.getElementById('deploy-status')?.value || 'live',
         design: {
             icon: document.getElementById('deploy-icon')?.value || 'fa-book',
@@ -1560,7 +1588,7 @@ window.deployMasterCourse = async function() {
             boxBg: document.getElementById('deploy-box-bg')?.value || '#ecfdf5',
             boxBorder: document.getElementById('deploy-box-border')?.value || '#a7f3d0',
             tileBorder: document.getElementById('deploy-tile-border')?.value || '#f1f5f9',
-            tileSize: document.getElementById('deploy-tile-size')?.value || 'large' // 🚀 PROPER FIX: tileSize mapped
+            tileSize: document.getElementById('deploy-tile-size')?.value || 'large' 
         },
         updatedAt: new Date().toISOString()
     };
@@ -1594,6 +1622,8 @@ window.deployMasterCourse = async function() {
         // --- END UPGRADE ---
 
         alert("Course Deployed Successfully! 🚀");
+        if (window.deployEditor) window.deployEditor.setContents([]);
+        if (document.getElementById('deploy-trailer-url')) document.getElementById('deploy-trailer-url').value = '';
         
         if (document.getElementById('deploy-category')) document.getElementById('deploy-category').value = '';
         if (document.getElementById('deploy-sub-category')) document.getElementById('deploy-sub-category').value = '';
@@ -1963,4 +1993,85 @@ window.closeLeaderboard = function() {
     if(modal) {
         modal.classList.add('hidden');
     }
+}
+
+// ==========================================
+// 🚀 MEGA-EXPLORE POPUP ENGINE (PHASE 3)
+// ==========================================
+
+window.openMegaExplore = async function(courseId) {
+    const modal = document.getElementById('mega-explore-modal');
+    if(!modal) return;
+    
+    // UI Elements Reset
+    document.getElementById('mega-title').innerText = "Loading Ecosystem...";
+    document.getElementById('mega-subtitle').innerText = "Please wait...";
+    document.getElementById('mega-rich-content').innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-brand-blue mb-2"></i><p class="text-xs text-slate-500">Decrypting course details...</p></div>';
+    document.getElementById('mega-video-container').classList.add('hidden');
+    document.getElementById('mega-video-frame').src = "";
+    document.getElementById('mega-price').innerText = "0";
+    
+    // Show Modal
+    modal.classList.remove('hidden');
+
+    try {
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDoc(doc(db, "deployed_courses", courseId));
+        
+        if (snap.exists()) {
+            const data = snap.data();
+            const d = data.design || {};
+            
+            // Populate Details
+            document.getElementById('mega-title').innerText = data.title;
+            document.getElementById('mega-subtitle').innerText = data.subtitle || "Premium Ecosystem";
+            document.getElementById('mega-price').innerText = data.price || 0;
+            document.getElementById('mega-validity').innerText = data.validity ? `${data.validity} Days Validity` : "Lifetime Access";
+            
+            // Icon Styling
+            const iconBox = document.getElementById('mega-icon-box');
+            document.getElementById('mega-icon').className = `fa-solid ${d.icon || 'fa-book'}`;
+            iconBox.style.backgroundColor = d.boxBg || '#ecfdf5';
+            iconBox.style.color = d.iconColor || '#059669';
+            iconBox.style.borderColor = d.boxBorder || '#a7f3d0';
+            
+            // Enroll Button Action
+            const enrollBtn = document.getElementById('mega-enroll-btn');
+            enrollBtn.onclick = () => {
+                window.closeMegaExplore();
+                setTimeout(() => window.initiateCheckout(data.title), 300);
+            };
+            
+            // Rich Text Content
+            document.getElementById('mega-rich-content').innerHTML = data.exploreHtml || '<p class="text-slate-500 italic">Extensive details are being updated for this course.</p>';
+            
+            // Promo Video Handling
+            if (data.trailerUrl) {
+                let vUrl = data.trailerUrl;
+                // Auto-convert youtube links to embed
+                if (vUrl.includes('youtube.com/watch?v=')) vUrl = vUrl.replace('watch?v=', 'embed/');
+                else if (vUrl.includes('youtu.be/')) vUrl = vUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+                
+                // Add autoplay rules for Bunny.net
+                if (vUrl.includes('bunny.net') || vUrl.includes('mediadelivery')) {
+                    const sep = vUrl.includes('?') ? '&' : '?';
+                    vUrl = vUrl + sep + "autoplay=true&muted=false";
+                }
+                
+                document.getElementById('mega-video-frame').src = vUrl;
+                document.getElementById('mega-video-container').classList.remove('hidden');
+            }
+        }
+    } catch(e) {
+        console.error("Mega Explore Fetch Error:", e);
+        document.getElementById('mega-rich-content').innerHTML = '<p class="text-rose-500">Error loading details. Please check connection.</p>';
+    }
+}
+
+window.closeMegaExplore = function() {
+    const modal = document.getElementById('mega-explore-modal');
+    if(modal) modal.classList.add('hidden');
+    // Force stop video playback
+    const frame = document.getElementById('mega-video-frame');
+    if (frame) frame.src = "";
 }
