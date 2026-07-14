@@ -722,13 +722,22 @@ window.showGenericViewAll = async function(title, type) {
             if(coursesSnap.empty) return grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-10">No courses found.</div>';
             
             coursesSnap.forEach(doc => {
-                const course = doc.data(); const d = course.design;
+                const course = doc.data(); const d = course.design || {};
+                
+                // 🚀 NEW: Explore Button added to View All Grid
+                let exploreBtnHtml = (course.exploreHtml || course.trailerUrl) ? 
+                    `<button onclick="window.openMegaExplore('${course.title}')" class="w-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-brand-blue dark:text-blue-400 font-bold py-2 rounded-xl border border-blue-100 dark:border-blue-800/50 transition-colors shadow-sm active:scale-95 text-xs flex items-center justify-center gap-1.5 mb-2"><i class="fa-solid fa-circle-info"></i> Explore Details</button>` : '';
+
                 grid.innerHTML += `
                     <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-transform flex flex-col relative overflow-hidden group w-full" style="border-color: ${d.tileBorder || '#f1f5f9'};">
-                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 shadow-inner" style="background-color: ${d.boxBg}; color: ${d.iconColor}; border-color: ${d.boxBorder || 'transparent'};"><i class="fa-solid ${d.icon}"></i></div>
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 shadow-inner" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};"><i class="fa-solid ${d.icon || 'fa-book'}"></i></div>
                         <h4 class="text-base font-bold mb-2 leading-snug text-slate-900 dark:text-white">${course.title}</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle}</p>
-                        <button onclick="window.initiateCheckout('${course.title}')" class="mt-auto w-full bg-slate-50 text-brand-blue font-bold py-2 rounded-xl border border-slate-200">Enroll Now</button>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle || ''}</p>
+                        
+                        <div class="mt-auto flex flex-col w-full">
+                            ${exploreBtnHtml}
+                            <button onclick="window.initiateCheckout('${course.title}')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                        </div>
                     </div>`;
             });
         } catch(e) { console.error(e); }
