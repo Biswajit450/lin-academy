@@ -243,10 +243,17 @@ window.switchAdminSubTab = function(tabId) {
         if (window.loadDeployerCategories) window.loadDeployerCategories();
         if (window.loadDeployerInventory) window.loadDeployerInventory();
         
-        // 🚀 NEW: Start Quill Editor for Mega-Explore
+        // 🚀 NEW: Upgraded Quill Editor Toolbar for Deployer
         if(!window.deployEditor) {
             window.deployEditor = new window.Quill('#deploy-explore-editor', {
-                modules: { toolbar: [ ['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['image'] ] },
+                modules: { 
+                    toolbar: [ 
+                        ['bold', 'italic', 'underline'], 
+                        [{ 'color': [] }, { 'background': [] }], // 🎨 NEW: Text & Highlight Colors 
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }], 
+                        ['blockquote', 'link', 'image'] // 📦 NEW: Highlight Boxes & Links
+                    ] 
+                },
                 theme: 'snow',
                 placeholder: 'Type detailed course description, syllabus, and features here...'
             });

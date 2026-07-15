@@ -87,6 +87,25 @@
         .dark .ql-snow .ql-fill { fill: #94a3b8; }
         .dark .ql-picker-label { color: #94a3b8; }
         .ql-editor { min-height: 80px; font-size: 0.875rem; }
+        /* 🚀 MEGA-EXPLORE RICH TEXT FIXES (Lists, Colors & Boxes) 🚀 */
+        #mega-rich-content ul, .ql-editor ul { list-style-type: disc !important; padding-left: 1.5rem !important; margin-bottom: 1rem; }
+        #mega-rich-content ol, .ql-editor ol { list-style-type: decimal !important; padding-left: 1.5rem !important; margin-bottom: 1rem; }
+        #mega-rich-content li, .ql-editor li { display: list-item !important; margin-bottom: 0.5rem; }
+        
+        /* Premium Blockquote (Boxes) Design */
+        #mega-rich-content blockquote, .ql-editor blockquote { 
+            border-left: 4px solid #2563eb !important; 
+            background: rgba(37, 99, 235, 0.05) !important; 
+            padding: 1rem !important; 
+            border-radius: 0.5rem; 
+            font-style: italic; 
+            margin: 1rem 0; 
+            color: #475569; 
+        }
+        .dark #mega-rich-content blockquote, .dark .ql-editor blockquote { 
+            background: rgba(37, 99, 235, 0.1) !important; 
+            color: #94a3b8; 
+        }
     </style>
     <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
 </head>
