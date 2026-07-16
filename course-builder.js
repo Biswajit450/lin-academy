@@ -433,7 +433,7 @@ window.publishCourse = async function() {
 }
 
 // ==========================================
-// 🚨 THE STUDENT LOCKDOWN ENGINE 🚨
+// 🚨 THE STUDENT LOCKDOWN ENGINE (WITH PROGRESS TRACKER) 🚨
 // ==========================================
 window.openCourseView = async function(courseName) {
     await window.showScreen('screen-course-view'); 
@@ -465,7 +465,6 @@ window.openCourseView = async function(courseName) {
             });
             
             // 🔒 3. Lock all input boxes and textareas so student can't type
-            // BUG FIX: Added specific 'disabled=true' for Date/Time picker!
             canvas.querySelectorAll('input, textarea').forEach(el => {
                 el.readOnly = true;
                 if(el.type === 'datetime-local') {
@@ -478,6 +477,51 @@ window.openCourseView = async function(courseName) {
             canvas.querySelectorAll('button').forEach(btn => {
                 btn.style.pointerEvents = 'auto';
             });
+
+            // 🚀 NEW: PROGRESS TRACKING RENDERER (PHASE 2) 🚀
+            if (auth.currentUser) {
+                try {
+                    const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        const courseProgress = userData.course_progress?.[courseName] || {};
+                        
+                        let totalBlocks = 0;
+                        let completedBlocks = 0;
+
+                        const actionBlocks = canvas.querySelectorAll('[id^="block-"]');
+                        
+                        actionBlocks.forEach(block => {
+                            const btn = block.querySelector('.student-action-btn');
+                            if (btn) {
+                                totalBlocks++;
+                                if (courseProgress[block.id]) {
+                                    completedBlocks++;
+                                    btn.innerHTML = '✅ Completed (Watch Again)';
+                                    btn.classList.remove('bg-brand-blue', 'bg-rose-500', 'hover:bg-blue-700', 'hover:bg-rose-600', 'border-blue-700', 'border-rose-600');
+                                    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'border-emerald-700');
+                                    
+                                    const iconBox = block.querySelector('.w-12.h-12');
+                                    if(iconBox) {
+                                        iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 text-xl shadow-inner text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800';
+                                    }
+                                }
+                            }
+                        });
+
+                        const progressPct = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0;
+                        
+                        // Yeh UI update hum next step mein HTML mein fix karenge
+                        const progressFill = document.getElementById('course-progress-fill');
+                        const progressText = document.getElementById('course-progress-text');
+                        
+                        if (progressFill) progressFill.style.width = progressPct + '%';
+                        if (progressText) progressText.innerText = progressPct + '% Completed';
+                    }
+                } catch (e) {
+                    console.error("Progress fetch error:", e);
+                }
+            }
             
         } else { 
             canvas.innerHTML = '<div class="text-center text-rose-500 py-10"><i class="fa-solid fa-triangle-exclamation text-2xl mb-3"></i><br>Course content is being updated. Please check back soon!</div>'; 
@@ -624,7 +668,7 @@ window.publishExamToFirebase = async function() {
 // ==========================================
 // CONTENT CONSUMPTION ENGINE (PREMIUM PLAYER)
 // ==========================================
-window.consumeContent = function(type, elementOrId) {
+window.consumeContent = async function(type, elementOrId) { // 🚀 Changed to async
     if(type === 'test') { 
         window.initStudentExam(elementOrId);
         return; 
@@ -641,7 +685,35 @@ window.consumeContent = function(type, elementOrId) {
         alert("Your educator hasn't provided a secure link for this resource yet."); 
         return; 
     }
-    
+
+    // 🚀 NEW: PROGRESS SAVER ENGINE (PHASE 1) 🚀
+    if (auth.currentUser && block && block.id) {
+        try {
+            const courseName = document.getElementById('student-main-title').innerText;
+            // Humne merge: true use kiya hai taaki user ka purana data delete na ho
+            await setDoc(doc(db, "users", auth.currentUser.uid), {
+                course_progress: {
+                    [courseName]: {
+                        [block.id]: true
+                    }
+                }
+            }, { merge: true });
+
+            const btn = elementOrId;
+            if (!btn.innerText.includes("Completed")) {
+                btn.innerHTML = '✅ Completed (Watch Again)';
+                btn.classList.remove('bg-brand-blue', 'bg-rose-500', 'hover:bg-blue-700', 'hover:bg-rose-600', 'border-blue-700', 'border-rose-600');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'border-emerald-700');
+                
+                const iconBox = block.querySelector('.w-12.h-12');
+                if(iconBox) iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 text-xl shadow-inner text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800';
+            }
+        } catch (e) {
+            console.error("Failed to save progress", e);
+        }
+    }
+
+    // --- (Baaki ka purana video/pdf logic same rahega) ---
     if(type === 'live') { 
         window.open(val, '_blank'); 
     } 
@@ -651,11 +723,9 @@ window.consumeContent = function(type, elementOrId) {
         
         const playerBox = document.getElementById('player-container-box');
         
-        // 📱 ROBUST MOBILE MAGIC: Auto-Fullscreen & Landscape for iPhones & Android
         if (window.innerWidth < 768) {
             try {
                 const modal = document.getElementById('content-player-modal');
-                // Apple/Safari aur Chrome dono ke liye fullscreen command
                 const reqFullscreen = modal.requestFullscreen || modal.webkitRequestFullscreen || modal.msRequestFullscreen;
                 if (reqFullscreen) {
                     reqFullscreen.call(modal).then(() => {
@@ -673,14 +743,12 @@ window.consumeContent = function(type, elementOrId) {
                 if (urlMatch && urlMatch[1]) val = urlMatch[1]; 
             }
             
-            // YouTube Logic
             if (val.includes('youtube.com/watch?v=')) {
                 val = val.replace('watch?v=', 'embed/');
             } else if (val.includes('youtu.be/')) {
                 val = val.replace('youtu.be/', 'www.youtube.com/embed/');
             }
             
-            // 🐰 NAYA BUNNY.NET ENGINE
             if (val.includes('iframe.mediadelivery.net') || val.includes('bunny.net')) {
                 const separator = val.includes('?') ? '&' : '?';
                 val = val + separator + 'autoplay=true&loop=false&muted=false&preload=true&responsive=true';
@@ -690,12 +758,11 @@ window.consumeContent = function(type, elementOrId) {
                 playerBox.classList.remove('sm:h-[85vh]');
                 playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
             }
-        } else if (type === 'pdf') { // 🚀 BUG FIX: Yahan ka extra '}' hata diya gaya hai!
+        } else if (type === 'pdf') { 
             if (playerBox) {
                 playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
                 playerBox.classList.add('sm:h-[85vh]');
             }
-            // 🚀 MAGIC PDF BYPASS: Firebase PDF links ko Google Viewer mein covert karna taaki Mobile Iframes crash na hon
             if (val.includes('firebasestorage.googleapis.com') && !val.includes('docs.google.com')) {
                 val = `https://docs.google.com/gview?url=${encodeURIComponent(val)}&embedded=true`;
             }

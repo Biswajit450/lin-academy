@@ -103,7 +103,8 @@ window.loadProfileData = async function() {
                 const performances = [];
                 perfSnap.forEach(d => performances.push(d.data()));
                 
-                window.renderProgress(data.unlocked_courses || [], performances);
+                // 🚀 NEW: Hum ab bacche ka course_progress map bhi bhej rahe hain
+                window.renderProgress(data.unlocked_courses || [], performances, data.course_progress || {});
             }
         }
     } catch (error) {
@@ -111,70 +112,120 @@ window.loadProfileData = async function() {
     }
 }
 
-window.renderProgress = function(courses, performances) {
+// ==========================================
+// 🚀 SMART PROGRESS TRACKER (COURSE + TESTS)
+// ==========================================
+window.renderProgress = async function(courses, performances, courseProgressMap = {}) {
     const container = document.getElementById('profile-progress-list');
     if(!container) return;
 
-    if(!performances || performances.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">No test data found. Attempt a Mock Test or Challenger Arena to see your live progress here!</p>';
-        return;
-    }
+    container.innerHTML = '<div class="text-center py-6"><i class="fa-solid fa-spinner fa-spin text-brand-blue mb-2 text-2xl"></i><br><span class="text-xs text-slate-400 font-bold">Calculating your journey...</span></div>';
 
-    // 🧮 Math Calculations for Dashboard
-    let totalTests = performances.length;
-    let totalObtained = 0;
-    let totalMax = 0;
-    let recentTestsHtml = '';
-    
-    // Sort logic: Naya test sabse upar dikhega
-    performances.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    performances.forEach((p, index) => {
-        totalObtained += p.score;
-        totalMax += p.maxScore;
+    // 1. 🎓 COURSE JOURNEY CALCULATION
+    let courseHtml = '';
+    if (courses.length > 0) {
+        courseHtml += '<h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> Course Journey</h4>';
         
-        // Sirf top 4 recent tests dikhayenge list mein
-        if (index < 4) {
-            let colorClass = p.percentage >= 40 ? 'bg-emerald-500' : 'bg-red-500';
-            let textClass = p.percentage >= 40 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500';
-            recentTestsHtml += `
-            <div class="mb-4 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div class="flex justify-between text-xs font-bold mb-2">
-                    <span class="text-slate-700 dark:text-slate-300 truncate w-2/3"><i class="fa-solid fa-flask text-slate-400 mr-1.5"></i>${p.testTitle}</span>
-                    <span class="${textClass}">${p.percentage.toFixed(1)}%</span>
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        // Promise.all use kar rahe hain taaki calculation super fast ho
+        await Promise.all(courses.map(async (courseName) => {
+            let pct = 0;
+            try {
+                const snap = await getDoc(doc(db, "published_courses", courseName));
+                if (snap.exists()) {
+                    const html = snap.data().canvasHtml || '';
+                    // 🧠 Logic: Canvas mein jitne "block-" IDs hain wo total syllabus hai
+                    const totalBlocks = (html.match(/id="block-/g) || []).length;
+                    const completed = courseProgressMap[courseName] ? Object.keys(courseProgressMap[courseName]).length : 0;
+                    pct = totalBlocks > 0 ? Math.round((completed / totalBlocks) * 100) : 0;
+                    if(pct > 100) pct = 100; // Cap at 100%
+                }
+            } catch(e) { console.error(e); }
+            
+            let colorClass = pct >= 100 ? 'bg-emerald-500' : (pct > 0 ? 'bg-brand-blue' : 'bg-slate-300 dark:bg-slate-700');
+            let textClass = pct >= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-blue dark:text-blue-400';
+            
+            courseHtml += `
+            <div class="mb-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-brand-blue hover:shadow-md transition-all active:scale-95 group" onclick="window.showScreen('screen-enrollments'); setTimeout(() => window.openCourseView('${courseName}'), 100);">
+                <div class="flex justify-between items-center text-xs font-bold mb-3">
+                    <span class="text-slate-800 dark:text-slate-200 truncate w-3/4"><i class="fa-solid fa-graduation-cap text-slate-400 mr-2 group-hover:text-brand-blue transition-colors"></i>${courseName}</span>
+                    <span class="${textClass}">${pct}%</span>
                 </div>
-                <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5">
-                    <div class="${colorClass} h-1.5 rounded-full" style="width: ${p.percentage}%"></div>
+                <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div class="${colorClass} h-1.5 rounded-full transition-all duration-1000 ease-out" style="width: ${pct}%"></div>
                 </div>
             </div>`;
-        }
-    });
+        }));
+    }
 
-    const overallPct = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(1) : 0;
+    // 2. ⚡ MOCK TEST (ARENA) CALCULATION
+    let recentTestsHtml = '';
+    let dashboardHtml = '';
     
-    // 🎨 The Premium UI Construction
-    const dashboardHtml = `
-        <div class="grid grid-cols-3 gap-3 mb-6">
-            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-2xl border border-blue-100 dark:border-blue-800/50 text-center shadow-sm">
-                <div class="text-xl font-extrabold text-brand-blue">${totalTests}</div>
-                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Attempts</div>
+    if(performances && performances.length > 0) {
+        let totalTests = performances.length;
+        let totalObtained = 0;
+        let totalMax = 0;
+        
+        performances.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        performances.forEach((p, index) => {
+            totalObtained += p.score;
+            totalMax += p.maxScore;
+            
+            if (index < 3) {
+                let colorClass = p.percentage >= 40 ? 'bg-emerald-500' : 'bg-rose-500';
+                let textClass = p.percentage >= 40 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+                recentTestsHtml += `
+                <div class="mb-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-emerald-200 transition-colors">
+                    <div class="flex justify-between text-xs font-bold mb-2">
+                        <span class="text-slate-700 dark:text-slate-300 truncate w-2/3"><i class="fa-solid fa-flask text-slate-400 mr-2"></i>${p.testTitle}</span>
+                        <span class="${textClass}">${p.percentage.toFixed(1)}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                        <div class="${colorClass} h-1 rounded-full transition-all duration-1000 ease-out" style="width: ${p.percentage}%"></div>
+                    </div>
+                </div>`;
+            }
+        });
+
+        const overallPct = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(1) : 0;
+        
+        dashboardHtml = `
+            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6 flex items-center gap-2">
+                <i class="fa-solid fa-bolt text-blue-500"></i> Arena Stats
+            </h4>
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-2xl border border-blue-100 dark:border-blue-800/50 text-center shadow-sm">
+                    <div class="text-lg sm:text-xl font-extrabold text-brand-blue">${totalTests}</div>
+                    <div class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Attempts</div>
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 text-center shadow-sm">
+                    <div class="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400">${overallPct}%</div>
+                    <div class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Accuracy</div>
+                </div>
+                <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-2xl border border-purple-100 dark:border-purple-800/50 text-center shadow-sm">
+                    <div class="text-lg sm:text-xl font-extrabold text-purple-600 dark:text-purple-400">${totalObtained.toFixed(1)}</div>
+                    <div class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Total Score</div>
+                </div>
             </div>
-            <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 text-center shadow-sm">
-                <div class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">${overallPct}%</div>
-                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Accuracy</div>
-            </div>
-            <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-2xl border border-purple-100 dark:border-purple-800/50 text-center shadow-sm">
-                <div class="text-xl font-extrabold text-purple-600 dark:text-purple-400">${totalObtained.toFixed(1)}</div>
-                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Total Score</div>
-            </div>
-        </div>
-        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-clock-rotate-left"></i> Recent Test History
-        </h4>
-        ${recentTestsHtml}
-    `;
-    
-    container.innerHTML = dashboardHtml;
+            ${recentTestsHtml}
+        `;
+    } else {
+        dashboardHtml = `
+            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6 flex items-center gap-2">
+                <i class="fa-solid fa-bolt text-blue-500"></i> Arena Stats
+            </h4>
+            <p class="text-xs text-slate-400 text-center py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900/30">No test data found yet.</p>
+        `;
+    }
+
+    if(courses.length === 0 && (!performances || performances.length === 0)) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900/50">Your journey starts here. Enroll in a course to see your progress!</p>';
+    } else {
+        container.innerHTML = courseHtml + dashboardHtml;
+    }
 }
 
 // ==========================================
