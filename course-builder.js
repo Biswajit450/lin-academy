@@ -4,7 +4,7 @@
 // 🚨 ADDED query, where, getDocs for Smart Roster & Firebase Storage for PDF Uploads 🚨
 import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-import { db, storage } from "./firebase-config.js";
+import { auth, db, storage } from "./firebase-config.js";
 
 // ==========================================
 // COURSE BUILDER CANVAS ENGINE
