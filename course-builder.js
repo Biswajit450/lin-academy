@@ -689,7 +689,8 @@ window.consumeContent = async function(type, elementOrId) { // 🚀 Changed to a
     // 🚀 NEW: PROGRESS SAVER ENGINE (PHASE 1) 🚀
     if (auth.currentUser && block && block.id) {
         try {
-            const courseName = document.getElementById('student-main-title').innerText;
+            // 🚨 BUG FIX: Ab hum exact Database ID padh rahe hain!
+            const courseName = document.getElementById('course-view-title').innerText;
             // Humne merge: true use kiya hai taaki user ka purana data delete na ho
             await setDoc(doc(db, "users", auth.currentUser.uid), {
                 course_progress: {
