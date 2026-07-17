@@ -2,7 +2,7 @@
 
 // 🚨 ADDED query, where, getDocs for Smart Roster 🚨
 // 🚨 ADDED query, where, getDocs for Smart Roster & Firebase Storage for PDF Uploads 🚨
-import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { auth, db, storage } from "./firebase-config.js";
 
@@ -533,11 +533,47 @@ window.openCourseView = async function(courseName) {
 }
 
 // ==========================================
-// EXAM BUILDER ENGINE
+// 🚀 EXAM BUILDER ENGINE (THE VAULT MANAGER UPGRADE)
 // ==========================================
-window.openTestModal = function() { 
+window.openTestModal = function(mode = 'course') { 
     document.getElementById('test-creator-modal').classList.remove('hidden'); 
-    // 🚀 ENGINE START: Modal khulte hi Quill Editors ko zinda karo!
+    
+    // UI Connections
+    const searchBox = document.getElementById('test-manager-search-box');
+    const btnPublish = document.getElementById('btn-publish-test');
+    const btnUpdate = document.getElementById('btn-update-test');
+    const btnDelete = document.getElementById('btn-delete-test');
+    const title = document.getElementById('test-modal-title');
+    const publishText = document.getElementById('btn-publish-text');
+    
+    // Sab kuch reset karo modal khulte hi
+    document.getElementById('editing-test-id').value = '';
+    window.draftQuestions = [];
+    document.getElementById('draft-counter').innerText = "0";
+    document.getElementById('exam-builder-form').reset();
+    if(window.questionEditor) window.questionEditor.setContents([]);
+    if(window.explanationEditor) window.explanationEditor.setContents([]);
+
+    if (mode === 'manager') {
+        // Vault Manager Mode: Standalone Test Manager
+        searchBox.classList.remove('hidden');
+        searchBox.classList.add('flex');
+        title.innerText = "Vault Manager";
+        btnUpdate.classList.add('hidden');
+        btnDelete.classList.add('hidden');
+        btnPublish.classList.remove('hidden');
+        publishText.innerText = "Save New Test to Vault";
+    } else {
+        // Course Drop Mode: Purana normal behavior
+        searchBox.classList.add('hidden');
+        searchBox.classList.remove('flex');
+        title.innerText = "Interactive Test Creator";
+        btnUpdate.classList.add('hidden');
+        btnDelete.classList.add('hidden');
+        btnPublish.classList.remove('hidden');
+        publishText.innerText = "Save & Drop to Canvas";
+    }
+
     if(window.initRichEditors) window.initRichEditors();
 }
 
@@ -548,17 +584,13 @@ window.closeTestModal = function() {
 window.draftQuestions = []; 
 
 window.addDraftQuestion = function() {
-    // 🚀 NEW: Read Question Text from Quill Editor (handle empty state)
     const qTextHtml = window.questionEditor ? window.questionEditor.root.innerHTML : '';
     const qText = (qTextHtml === '<p><br></p>') ? '' : qTextHtml; 
-
     const opt1 = document.getElementById('q-opt1').value; 
     const opt2 = document.getElementById('q-opt2').value; 
     const opt3 = document.getElementById('q-opt3').value; 
     const opt4 = document.getElementById('q-opt4').value; 
     const correctAns = parseInt(document.getElementById('q-correct').value); 
-    
-    // 🚀 NEW: Read Explanation from Quill Editor
     const expHtml = window.explanationEditor ? window.explanationEditor.root.innerHTML : '';
     const explanation = (expHtml === '<p><br></p>') ? '' : expHtml;
     
@@ -567,19 +599,11 @@ window.addDraftQuestion = function() {
         return; 
     }
     
-    window.draftQuestions.push({ 
-        question: qText, 
-        options: [opt1, opt2, opt3, opt4], 
-        correctAnswerIndex: correctAns, 
-        explanation: explanation 
-    });
-    
+    window.draftQuestions.push({ question: qText, options: [opt1, opt2, opt3, opt4], correctAnswerIndex: correctAns, explanation: explanation });
     document.getElementById('draft-counter').innerText = window.draftQuestions.length;
     
-    // 🚀 NEW: Safely Clear Quill Editors for the next question
     if(window.questionEditor) window.questionEditor.setContents([]);
     if(window.explanationEditor) window.explanationEditor.setContents([]);
-
     document.getElementById('q-opt1').value = ''; 
     document.getElementById('q-opt2').value = ''; 
     document.getElementById('q-opt3').value = ''; 
@@ -587,81 +611,175 @@ window.addDraftQuestion = function() {
 }
 
 window.publishExamToFirebase = async function() {
-    if(window.draftQuestions.length === 0) { 
-        alert("Add at least 1 question before publishing!"); 
-        return; 
-    }
-    
+    if(window.draftQuestions.length === 0) { alert("Add at least 1 question before publishing!"); return; }
     const title = document.getElementById('exam-setting-title').value; 
     const duration = parseFloat(document.getElementById('exam-setting-time').value); 
     const posMarks = parseFloat(document.getElementById('exam-setting-pos').value); 
     const negMarks = parseFloat(document.getElementById('exam-setting-neg').value); 
     const passPct = parseFloat(document.getElementById('exam-setting-pass').value);
     
-    if(!title || !duration || !posMarks) { 
-        alert("Please fill out the Global Exam Settings at the top!"); 
-        return; 
-    }
+    if(!title || !duration || !posMarks) { alert("Please fill out the Global Exam Settings at the top!"); return; }
 
     const submitBtn = event.target; 
     const originalText = submitBtn.innerHTML; 
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving to Vault...'; 
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; 
     submitBtn.disabled = true;
 
     try {
         const docRef = await addDoc(collection(db, "exams"), { 
-            settings: { 
-                testTitle: title, 
-                totalTimeInMinutes: duration, 
-                marksForCorrectAnswer: posMarks, 
-                marksForWrongAnswer: negMarks, 
-                passPercentage: passPct 
-            }, 
+            settings: { testTitle: title, totalTimeInMinutes: duration, marksForCorrectAnswer: posMarks, marksForWrongAnswer: negMarks, passPercentage: passPct }, 
             questions: window.draftQuestions, 
             createdAt: new Date().toISOString() 
         });
         
-        window.clearCanvasPlaceholder(); 
-        const blockId = 'test-' + Date.now(); 
-        const dropzone = document.getElementById('editor-canvas-dropzone');
-        
-        if(dropzone) {
-            const testHtml = `
-                <div id="${blockId}" class="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
-                    <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 text-xl border border-emerald-200 dark:border-emerald-700">
-                        <i class="fa-solid fa-clipboard-list"></i>
-                    </div>
-                    <div class="flex-grow w-full">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
-                            <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                        <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
-                        <div class="text-[10px] text-slate-500 font-medium mt-0.5">Vault ID: ${docRef.id} • ${window.draftQuestions.length} Questions</div>
-                        <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${docRef.id}')">📝 Start Mock Test</button>
-                    </div>
-                </div>`;
-                
-            dropzone.insertAdjacentHTML('beforeend', testHtml); 
-            window.autoSaveDraft();
+        // Smart Check: Agar button par Canvas likha hai, toh Drop karo. Warna sirf Save.
+        const btnText = document.getElementById('btn-publish-text').innerText;
+        if (btnText.includes('Canvas')) {
+            window.renderTestBlockToCanvas(docRef.id, title, window.draftQuestions.length);
+        } else {
+            alert(`Test Successfully Saved to Vault! \n\nVault ID: ${docRef.id}\n(Save this ID to insert it anywhere later)`);
         }
         
-        window.draftQuestions = []; 
-        document.getElementById('draft-counter').innerText = "0"; 
-        document.getElementById('exam-builder-form').reset(); 
-        // 🚀 NEW: Clean up Rich Editors completely after publishing
-        if(window.questionEditor) window.questionEditor.setContents([]);
-        if(window.explanationEditor) window.explanationEditor.setContents([]);
         window.closeTestModal();
-        
-        alert(`Test Saved! Your Vault ID is: ${docRef.id}\nYou can copy this ID and use it in the Arena Test Manager!`);
-        
     } catch (e) { 
-        console.error(e); 
-        alert("Failed to publish exam."); 
+        console.error(e); alert("Failed to publish exam."); 
     } finally { 
-        submitBtn.innerHTML = originalText; 
-        submitBtn.disabled = false; 
+        submitBtn.innerHTML = originalText; submitBtn.disabled = false; 
+    }
+}
+
+// 🚀 NEW: THE MAGIC LOAD ENGINE
+window.loadTestForEditing = async function() {
+    const vaultId = document.getElementById('test-vault-search-id').value.trim();
+    if(!vaultId) return alert("Please paste a valid Vault ID to load a test.");
+
+    const searchBtn = event.currentTarget;
+    searchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i>';
+    
+    try {
+        const snap = await getDoc(doc(db, "exams", vaultId));
+        if(snap.exists()) {
+            const data = snap.data();
+            document.getElementById('editing-test-id').value = vaultId;
+            
+            // Fill Settings
+            document.getElementById('exam-setting-title').value = data.settings.testTitle || '';
+            document.getElementById('exam-setting-time').value = data.settings.totalTimeInMinutes || '';
+            document.getElementById('exam-setting-pos').value = data.settings.marksForCorrectAnswer || '';
+            document.getElementById('exam-setting-neg').value = data.settings.marksForWrongAnswer || '';
+            document.getElementById('exam-setting-pass').value = data.settings.passPercentage || '';
+            
+            // Load Questions
+            window.draftQuestions = data.questions || [];
+            document.getElementById('draft-counter').innerText = window.draftQuestions.length;
+            
+            // Swap Action Buttons for Editing
+            document.getElementById('btn-publish-test').classList.add('hidden');
+            document.getElementById('btn-update-test').classList.remove('hidden');
+            document.getElementById('btn-delete-test').classList.remove('hidden');
+            
+            alert(`Test Loaded Successfully!\nIt contains ${window.draftQuestions.length} questions. You can add new questions or hit 'Update Vault' to save changes.`);
+        } else {
+            alert("Test not found! Please check the Vault ID.");
+        }
+    } catch(e) { 
+        console.error(e); alert("Error fetching the test."); 
+    } finally { 
+        searchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass text-[10px]"></i>'; 
+    }
+}
+
+// 🚀 NEW: UPDATE EXISTING TEST
+window.updateTestInVault = async function() {
+    const vaultId = document.getElementById('editing-test-id').value;
+    if(!vaultId) return alert("No test loaded to update!");
+    if(window.draftQuestions.length === 0) return alert("Cannot save an empty test.");
+
+    const title = document.getElementById('exam-setting-title').value; 
+    const duration = parseFloat(document.getElementById('exam-setting-time').value); 
+    const posMarks = parseFloat(document.getElementById('exam-setting-pos').value); 
+    const negMarks = parseFloat(document.getElementById('exam-setting-neg').value); 
+    const passPct = parseFloat(document.getElementById('exam-setting-pass').value);
+
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+    btn.disabled = true;
+
+    try {
+        await updateDoc(doc(db, "exams", vaultId), {
+            settings: { testTitle: title, totalTimeInMinutes: duration, marksForCorrectAnswer: posMarks, marksForWrongAnswer: negMarks, passPercentage: passPct },
+            questions: window.draftQuestions,
+            updatedAt: new Date().toISOString()
+        });
+        alert("Test successfully updated in the Vault!");
+        window.closeTestModal();
+    } catch(e) { 
+        console.error(e); alert("Failed to update test."); 
+    } finally { 
+        btn.innerHTML = originalText; btn.disabled = false; 
+    }
+}
+
+// 🚀 NEW: DELETE TEST PERMANENTLY
+window.deleteTestFromVault = async function() {
+    const vaultId = document.getElementById('editing-test-id').value;
+    if(!vaultId) return;
+    
+    if(confirm(`⚠️ WARNING: Are you sure you want to completely DELETE this test?\nIf it's deployed in any course, students will no longer be able to access it.`)) {
+        try {
+            await deleteDoc(doc(db, "exams", vaultId));
+            alert("Test permanently deleted from the Vault.");
+            window.closeTestModal();
+        } catch(e) { 
+            console.error(e); alert("Failed to delete test."); 
+        }
+    }
+}
+
+// 🚀 NEW: SMART INJECTOR LOGIC
+window.promptInsertExistingTest = async function() {
+    const vaultId = prompt("Enter the Vault ID of the Test you want to insert:");
+    if(!vaultId) return;
+
+    try {
+        const snap = await getDoc(doc(db, "exams", vaultId));
+        if(snap.exists()) {
+            const data = snap.data();
+            const qCount = (data.questions || []).length;
+            // Render to canvas directly
+            window.renderTestBlockToCanvas(vaultId, data.settings.testTitle, qCount);
+        } else {
+            alert("Test not found! Please check the Vault ID.");
+        }
+    } catch(e) { 
+        console.error(e); alert("Error fetching test."); 
+    }
+}
+
+// Helper Function: Renders HTML block on Canvas
+window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
+    window.clearCanvasPlaceholder(); 
+    const blockId = 'test-' + Date.now(); 
+    const dropzone = document.getElementById('editor-canvas-dropzone');
+    if(dropzone) {
+        const testHtml = `
+            <div id="${blockId}" class="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
+                <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 text-xl border border-emerald-200 dark:border-emerald-700">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <div class="flex-grow w-full">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
+                        <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
+                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">Vault ID: ${vaultId} • ${qCount} Questions</div>
+                    <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${vaultId}')">📝 Start Mock Test</button>
+                </div>
+            </div>`;
+        dropzone.insertAdjacentHTML('beforeend', testHtml); 
+        window.autoSaveDraft();
     }
 }
 

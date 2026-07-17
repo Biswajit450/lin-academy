@@ -277,10 +277,22 @@
         <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative hide-scrollbar">
             <button onclick="window.closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
             <div class="p-6 md:p-8">
-                <div class="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                    <div><h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> Interactive Test Creator</h3><p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p></div>
-                    <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm"><span id="draft-counter">0</span> Drafted</div>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> <span id="test-modal-title">Interactive Test Creator</span></h3>
+                        <p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <!-- 🚀 NEW: Search Bar for Vault ID -->
+                        <div id="test-manager-search-box" class="hidden relative flex-grow md:w-64">
+                            <input type="text" id="test-vault-search-id" placeholder="Paste Vault ID to load..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-10 py-1.5 text-xs font-mono focus:outline-none focus:border-emerald-500 dark:text-white">
+                            <button type="button" onclick="window.loadTestForEditing()" class="absolute right-1 top-1 w-6 h-6 bg-emerald-100 text-emerald-600 rounded flex items-center justify-center hover:bg-emerald-200 transition-colors" title="Load Test"><i class="fa-solid fa-magnifying-glass text-[10px]"></i></button>
+                        </div>
+                        <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm whitespace-nowrap"><span id="draft-counter">0</span> Drafted</div>
+                    </div>
                 </div>
+                <!-- Hidden input to store the current editing Test ID -->
+                <input type="hidden" id="editing-test-id" value="">
                 
                 <form id="exam-builder-form" class="space-y-6">
                     <div class="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative">
@@ -321,8 +333,17 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <button type="button" onclick="window.addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all">+ Add Question to Draft</button>
-                        <button type="button" onclick="window.publishExamToFirebase()" class="px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">Save & Drop to Canvas</button>
+                        <button type="button" onclick="window.addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all"><i class="fa-solid fa-plus mr-1"></i> Add Question to Draft</button>
+                        
+                        <!-- 🚀 NEW: Dynamic Action Buttons Container -->
+                        <div id="test-action-buttons" class="flex gap-2 w-full sm:w-auto">
+                            <!-- Default Create Button -->
+                            <button type="button" id="btn-publish-test" onclick="window.publishExamToFirebase()" class="w-full sm:w-auto px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> <span id="btn-publish-text">Save & Drop to Canvas</span></button>
+                            
+                            <!-- Manager Update/Delete Buttons (Hidden by default) -->
+                            <button type="button" id="btn-update-test" onclick="window.updateTestInVault()" class="hidden w-full sm:w-auto px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all items-center justify-center gap-2"><i class="fa-solid fa-satellite-dish"></i> Update Vault</button>
+                            <button type="button" id="btn-delete-test" onclick="window.deleteTestFromVault()" class="hidden px-4 bg-rose-100 hover:bg-rose-500 text-rose-600 hover:text-white font-bold py-3.5 rounded-xl shadow-sm transition-all items-center justify-center" title="Delete from Vault completely"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
                 </form>
             </div>
