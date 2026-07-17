@@ -464,7 +464,7 @@ window.editUniversalNotification = async function(notifId, encodedOldText) {
 setTimeout(() => { window.fetchUniversalNotifications(); }, 3500);
 
 // ==========================================
-// 🚀 DYNAMIC ADMIN DROPDOWN ENGINE 
+// 🚀 DYNAMIC ADMIN DROPDOWN ENGINE (RESTRICTED RBAC)
 // ==========================================
 window.loadAdminCourseDropdown = async function() {
     const selector = document.getElementById('admin-course-selector');
@@ -472,14 +472,32 @@ window.loadAdminCourseDropdown = async function() {
     const datalist = document.getElementById('admin-course-datalist');
 
     try {
+        // 🚀 NEW: Get current user's role and assigned courses directly from Database
+        const currentUserSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const currentUserData = currentUserSnap.exists() ? currentUserSnap.data() : {};
+        const role = String(currentUserData.role || 'student').toLowerCase().trim();
+        const assignedCourses = currentUserData.assigned_courses || [];
+
         const snap = await getDocs(collection(db, "deployed_courses"));
         let optionsHtml = '<option value="" disabled selected>-- Select Course --</option>';
         let datalistHtml = '';
         
-        snap.forEach(doc => {
-            const data = doc.data();
-            optionsHtml += `<option value="${data.title}">${data.title}</option>`;
-            datalistHtml += `<option value="${data.title}">`;
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            
+            // 🚀 NEW: Filter Logic (Superadmin sees all, Admin sees only assigned)
+            let canSee = false;
+            if (role === 'superadmin') {
+                canSee = true;
+            } else if (role === 'admin' && assignedCourses.includes(data.title)) {
+                canSee = true;
+            }
+
+            // Agar permission hai, tabhi dropdown mein list hoga
+            if (canSee) {
+                optionsHtml += `<option value="${data.title}">${data.title}</option>`;
+                datalistHtml += `<option value="${data.title}">`;
+            }
         });
         
         if (selector) selector.innerHTML = optionsHtml;
@@ -833,6 +851,8 @@ window.executeSmartAdminSearch = async function() {
                 document.getElementById('role-user-email').innerText = userData.email;
                 document.getElementById('role-user-select').value = String(userData.role || 'student').toLowerCase().trim();
                 editPanel.classList.remove('hidden');
+                // 🚀 NEW: Trigger checkbox load if user is already an admin
+                window.toggleAdminCourseAssignment();
             });
         } 
         // MODE B: Role Search
@@ -855,20 +875,86 @@ window.updateUserRole = async function() {
     
     const newRole = document.getElementById('role-user-select').value;
     
-    try {
-        await updateDoc(doc(db, "users", window.currentEditingUserId), {
-            role: newRole
+    // 🚀 NEW: Read checked courses
+    let assignedCoursesArray = [];
+    if (newRole === 'admin') {
+        const checkboxes = document.querySelectorAll('input[name="assign-course-cb"]:checked');
+        checkboxes.forEach(cb => {
+            assignedCoursesArray.push(cb.value);
         });
+        
+        if (assignedCoursesArray.length === 0) {
+            if(!confirm("Warning: You haven't assigned ANY courses to this Admin. They won't be able to edit anything. Proceed?")) return;
+        }
+    }
+
+    try {
+        const updateData = { role: newRole };
+        
+        // 🚀 Only save the array if the role is 'admin'
+        if (newRole === 'admin') {
+            updateData.assigned_courses = assignedCoursesArray;
+        }
+
+        await updateDoc(doc(db, "users", window.currentEditingUserId), updateData);
         
         alert(`Success! User has been granted [${newRole.toUpperCase()}] access.`);
         document.getElementById('role-edit-panel').classList.add('hidden');
-        // 🚀 BUG FIX: Yahan 'role-search-input' kar diya hai
+        document.getElementById('admin-course-assignment-container').classList.add('hidden');
         document.getElementById('role-search-input').value = ""; 
         window.currentEditingUserId = null;
         
     } catch(e) {
         console.error("Role update error", e);
         alert("Failed to update user role.");
+    }
+}
+
+// 🚀 NEW: Assigned Courses Toggle Engine
+window.toggleAdminCourseAssignment = async function() {
+    const roleSelect = document.getElementById('role-user-select').value;
+    const container = document.getElementById('admin-course-assignment-container');
+    const listDiv = document.getElementById('admin-assigned-courses-list');
+    
+    if (roleSelect === 'admin') {
+        container.classList.remove('hidden');
+        listDiv.innerHTML = '<div class="text-xs text-slate-400 p-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Fetching active courses...</div>';
+        
+        try {
+            // 1. Get all existing courses from Firebase
+            const coursesSnap = await getDocs(collection(db, "deployed_courses"));
+            
+            // 2. Get the currently editing user's data (to see pehle se kya assigned hai)
+            let assignedList = [];
+            if (window.currentEditingUserId) {
+                const userSnap = await getDoc(doc(db, "users", window.currentEditingUserId));
+                if (userSnap.exists()) {
+                    assignedList = userSnap.data().assigned_courses || [];
+                }
+            }
+
+            // 3. Build Checkboxes
+            let html = '';
+            coursesSnap.forEach(docSnap => {
+                const courseTitle = docSnap.data().title;
+                const isChecked = assignedList.includes(courseTitle) ? 'checked' : '';
+                
+                html += `
+                <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded cursor-pointer hover:border-brand-blue transition-colors">
+                    <input type="checkbox" name="assign-course-cb" value="${courseTitle}" class="w-4 h-4 text-brand-blue rounded border-slate-300 focus:ring-brand-blue" ${isChecked}>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${courseTitle}">${courseTitle}</span>
+                </label>`;
+            });
+            
+            if (html === '') html = '<div class="text-xs text-slate-500 p-2">No courses found to assign.</div>';
+            listDiv.innerHTML = html;
+            
+        } catch(e) {
+            console.error("Failed to load courses for assignment:", e);
+            listDiv.innerHTML = '<div class="text-xs text-rose-500 p-2">Failed to load courses.</div>';
+        }
+    } else {
+        container.classList.add('hidden');
     }
 }
 

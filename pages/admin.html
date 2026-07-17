@@ -202,12 +202,24 @@
                         <p class="text-xs text-slate-500" id="role-user-email">student@example.com</p>
                     </div>
                     <div class="flex items-center gap-3 w-full md:w-auto">
-                        <select id="role-user-select" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold outline-none dark:text-white">
+                        <!-- 🚀 UPGRADE: Added onchange function to trigger the magic box -->
+                        <select id="role-user-select" onchange="window.toggleAdminCourseAssignment()" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold outline-none dark:text-white">
                             <option value="student">Student</option>
                             <option value="admin">Admin</option>
                             <option value="superadmin">Super Admin</option>
                         </select>
-                        <button onclick="window.updateUserRole()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg shadow-sm transition-colors text-sm">Save Role</button>
+                        <button onclick="window.updateUserRole()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg shadow-sm transition-colors text-sm whitespace-nowrap">Save Role</button>
+                    </div>
+                </div>
+                
+                <!-- 🚀 NEW: Assigned Courses Container (Hidden by default) -->
+                <div id="admin-course-assignment-container" class="hidden mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <label class="text-[10px] font-bold text-slate-400 mb-2 block uppercase tracking-widest"><i class="fa-solid fa-lock text-emerald-500 mr-1"></i> Assign Courses to this Admin</label>
+                    <p class="text-[9px] text-slate-500 mb-3">Select the courses this educator is allowed to edit. They will not see any other courses in the Course Builder.</p>
+                    
+                    <div id="admin-assigned-courses-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto hide-scrollbar p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-inner">
+                        <!-- Checkboxes will be injected here automatically by JavaScript -->
+                        <div class="text-xs text-slate-400 p-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Fetching active courses...</div>
                     </div>
                 </div>
             </div>
