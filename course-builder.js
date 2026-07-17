@@ -117,7 +117,23 @@ window.addBlock = function(type) {
         </div>`;
     }
     
-    dropzone.insertAdjacentHTML('beforeend', blockHTML); 
+    // 🚀 NEW: Smart Insertion Logic (Top or Bottom)
+    const position = document.getElementById('admin-insert-position')?.value || 'bottom';
+    if (position === 'top') {
+        // Agar pehle se koi placeholder hai, toh seedha top par jodo
+        if (dropzone.querySelector('#canvas-placeholder')) {
+            window.clearCanvasPlaceholder();
+            dropzone.insertAdjacentHTML('afterbegin', blockHTML);
+        } else {
+            // Agar pehle se blocks hain, toh unke theek upar jodo
+            window.clearCanvasPlaceholder();
+            dropzone.insertAdjacentHTML('afterbegin', blockHTML);
+        }
+    } else {
+        window.clearCanvasPlaceholder();
+        dropzone.insertAdjacentHTML('beforeend', blockHTML); 
+    }
+    
     setTimeout(window.autoSaveDraft, 200);
 }
 
@@ -171,7 +187,15 @@ window.addDynamicFolder = function() {
                 <div class="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest pointer-events-none mt-4"><i class="fa-solid fa-download block text-lg mb-1 opacity-50"></i>Drop Content Blocks Here</div>
             </div>
         </div>`;
-    dropzone.insertAdjacentHTML('beforeend', html); 
+    // 🚀 NEW: Smart Insertion Logic (Top or Bottom)
+    const position = document.getElementById('admin-insert-position')?.value || 'bottom';
+    if (position === 'top') {
+        if (dropzone.querySelector('#canvas-placeholder')) window.clearCanvasPlaceholder();
+        dropzone.insertAdjacentHTML('afterbegin', html);
+    } else {
+        window.clearCanvasPlaceholder();
+        dropzone.insertAdjacentHTML('beforeend', html); 
+    }
     setTimeout(window.autoSaveDraft, 200);
 }
 
@@ -227,12 +251,15 @@ window.removeCol = function(btn) {
     } 
 }
 
-// Drag & Drop logic for Course Builder
+// ==========================================
+// 🚀 THE ULTIMATE DRAG & DROP ENGINE
+// ==========================================
 window.draggedElement = null;
 
 window.drag = function(ev) { 
     window.draggedElement = ev.target; 
     ev.dataTransfer.effectAllowed = "move"; 
+    // Thoda delay taaki ghost image theek dikhe
     setTimeout(() => ev.target.classList.add('opacity-50'), 0); 
 }
 
@@ -250,20 +277,39 @@ window.drop = function(ev) {
         
         let dropTarget = ev.target.closest('.folder-dropzone'); 
         
-        if(!dropTarget && ev.target.closest('[id^="folder-"]')) {
-            dropTarget = ev.target.closest('[id^="folder-"]').querySelector('.folder-dropzone');
-        }
-        
-        if(!dropTarget) {
-            dropTarget = document.getElementById('editor-canvas-dropzone'); 
-        }
-        
-        if(window.draggedElement !== dropTarget && !window.draggedElement.contains(dropTarget)) { 
+        // 1. Agar block ko kisi Folder ke andar daal rahe hain
+        if(dropTarget && !window.draggedElement.closest('.folder-dropzone')) {
             const innerText = dropTarget.querySelector('.pointer-events-none'); 
             if(innerText) innerText.style.display = 'none'; 
             dropTarget.appendChild(window.draggedElement); 
-            window.autoSaveDraft(); 
-        } 
+            window.autoSaveDraft();
+            return;
+        }
+
+        // 2. Agar canvas par upar/neeche arrange kar rahe hain (THE MAGIC)
+        let mainCanvas = document.getElementById('editor-canvas-dropzone');
+        
+        // Jiske upar mouse chhoda, us block ko identify karo
+        let targetBlock = ev.target.closest('[draggable="true"]');
+        
+        if (targetBlock && targetBlock !== window.draggedElement && targetBlock.parentElement === mainCanvas) {
+            // Mouse ki exact position calculate karo
+            const bounding = targetBlock.getBoundingClientRect();
+            const offset = bounding.y + (bounding.height / 2);
+            
+            if (ev.clientY - offset > 0) {
+                // Agar mouse block ke neeche wale hisse mein hai, toh block ke theek NEECHE jodo
+                targetBlock.insertAdjacentElement('afterend', window.draggedElement);
+            } else {
+                // Agar mouse block ke upar wale hisse mein hai, toh block ke theek UPAR jodo
+                targetBlock.insertAdjacentElement('beforebegin', window.draggedElement);
+            }
+        } else if (mainCanvas && !targetBlock) {
+            // Agar khali jagah par chhoda, toh seedha last mein chipka do
+            mainCanvas.appendChild(window.draggedElement);
+        }
+        
+        window.autoSaveDraft(); 
     } 
 }
 
@@ -778,7 +824,15 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
                     <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${vaultId}')">📝 Start Mock Test</button>
                 </div>
             </div>`;
-        dropzone.insertAdjacentHTML('beforeend', testHtml); 
+        // 🚀 NEW: Smart Insertion Logic (Top or Bottom)
+        const position = document.getElementById('admin-insert-position')?.value || 'bottom';
+        if (position === 'top') {
+            if (dropzone.querySelector('#canvas-placeholder')) window.clearCanvasPlaceholder();
+            dropzone.insertAdjacentHTML('afterbegin', testHtml);
+        } else {
+            window.clearCanvasPlaceholder();
+            dropzone.insertAdjacentHTML('beforeend', testHtml); 
+        }
         window.autoSaveDraft();
     }
 }
