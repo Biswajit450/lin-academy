@@ -2181,3 +2181,111 @@ window.closeMegaExplore = function() {
     const frame = document.getElementById('mega-video-frame');
     if (frame) frame.src = "";
 }
+
+// ============================================================================
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER)
+// ============================================================================
+
+window.startBunnyVideoUpload = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 1. UI Setup: Show the Progress Modal
+    const modal = document.getElementById('video-upload-modal');
+    const progressText = document.getElementById('video-upload-percentage');
+    const progressBar = document.getElementById('video-upload-progress-bar');
+    
+    // UI mein file ka naam truncate karke dikhayenge
+    document.getElementById('video-upload-filename').innerText = file.name;
+    modal.classList.remove('hidden');
+
+    try {
+        // 2. Request the VIP Ticket from Backend (Cloud Functions)
+        const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
+        const functions = getFunctions(auth.app);
+        const getBunnyTicket = httpsCallable(functions, 'createBunnyVideoTicket');
+        
+        // Backend ko bulate hain
+        const response = await getBunnyTicket({ title: file.name });
+        const ticket = response.data; 
+        
+        // 3. The Direct Tunnel: Create XMLHttpRequest (XHR) to track live upload progress
+        const xhr = new XMLHttpRequest();
+        const uploadUrl = `https://video.bunnycdn.com/library/${ticket.libraryId}/videos/${ticket.videoId}`;
+
+        // 🟢 Live Progress Tracker
+        xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percentComplete + '%';
+                progressText.innerText = percentComplete + '%';
+            }
+        });
+
+        // 🟢 Upload Success Handler
+        xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                modal.classList.add('hidden');
+                
+                // 4. Create the Secure Iframe Embed Link
+                const iframeUrl = `https://iframe.mediadelivery.net/embed/${ticket.libraryId}/${ticket.videoId}?autoplay=false&loop=false&muted=false&preload=true`;
+                
+                // 5. Auto-Inject into Course Builder Canvas
+                const dropzone = document.getElementById('editor-canvas-dropzone');
+                const placeholder = document.getElementById('canvas-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
+
+                const blockId = 'video_block_' + Date.now();
+                const blockHtml = `
+                    <div id="${blockId}" class="course-block relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm group">
+                        <div class="absolute -top-3 left-4 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase border border-indigo-200"><i class="fa-solid fa-vault"></i> Secure Vault Video</div>
+                        
+                        <button type="button" onclick="this.parentElement.remove(); window.autoSaveDraft();" class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash"></i></button>
+                        
+                        <div class="mt-3 rounded-lg overflow-hidden bg-slate-900 w-full aspect-video border border-slate-800">
+                            <iframe src="${iframeUrl}" class="w-full h-full border-0" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                `;
+                
+                // Canvas ke end mein block add karo
+                dropzone.insertAdjacentHTML('beforeend', blockHtml);
+                
+                // Auto-save ko trigger karo
+                if (window.autoSaveDraft) window.autoSaveDraft();
+                
+                alert("Upload Complete! 🎉\n\nYour video is safely stored in the Bunny.net Vault and automatically added to your course.");
+                event.target.value = ''; // Input ko reset karo
+
+            } else {
+                modal.classList.add('hidden');
+                alert("Upload failed. Bunny.net refused the connection.");
+                event.target.value = '';
+            }
+        });
+
+        // 🔴 Upload Error Handler
+        xhr.addEventListener("error", () => {
+            modal.classList.add('hidden');
+            alert("Network Error! Video upload failed.");
+            event.target.value = '';
+        });
+
+        // 6. Secure Headers for Bunny.net API
+        xhr.open("PUT", uploadUrl, true);
+        xhr.setRequestHeader("LibraryId", ticket.libraryId);
+        xhr.setRequestHeader("VideoId", ticket.videoId);
+        xhr.setRequestHeader("ExpirationTime", ticket.expirationTime);
+        xhr.setRequestHeader("AuthorizationSignature", ticket.signature);
+        xhr.setRequestHeader("Content-Type", "application/octet-stream"); 
+
+        // Send the file!
+        xhr.send(file);
+
+    } catch (error) {
+        console.error("Video Upload Master Error:", error);
+        modal.classList.add('hidden');
+        alert("Failed to securely connect to the vault. Error: " + error.message);
+        event.target.value = '';
+    }
+};

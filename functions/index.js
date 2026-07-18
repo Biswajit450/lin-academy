@@ -164,3 +164,75 @@ exports.razorpayWebhook = functions.https.onRequest((req, res) => {
         }
     });
 });
+
+// ============================================================================
+// API 3: BUNNY.NET VIDEO TICKET (Secure Direct Uploader)
+// ============================================================================
+// 🚨 BUNNY KEYS: Yahan apni actual Library ID aur API Key daaliye
+const BUNNY_LIBRARY_ID = "673982";
+const BUNNY_API_KEY = "287095c5-0307-472c-a1e5ba3a3501-8929-4180";
+
+exports.createBunnyVideoTicket = onCall(async (request) => {
+    // 1. Authentication Check (Koi bina login ke toh nahi aaya?)
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Please login first!");
+    }
+
+    // 2. Role Check (Sirf Admin/Superadmin hi video upload kar sakte hain)
+    const uid = request.auth.uid;
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+        throw new HttpsError("permission-denied", "User not found.");
+    }
+    
+    const role = userDoc.data().role || 'student';
+    if (role !== 'admin' && role !== 'superadmin') {
+        throw new HttpsError("permission-denied", "Access Denied: Only authorized educators can upload videos.");
+    }
+
+    const videoTitle = request.data.title || `LinAcademy_Video_${Date.now()}`;
+
+    try {
+        // 3. Talk to Bunny.net to create a Blank Video ID
+        const url = `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos`;
+        const options = {
+            method: 'POST',
+            headers: {
+                'AccessKey': BUNNY_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ title: videoTitle })
+        };
+
+        const response = await fetch(url, options);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Bunny.net API rejected the request.");
+        }
+
+        const videoId = data.guid;
+
+        // 4. Generate the Secure Upload Signature
+        // Expiration Time: 2 Hours from now (in seconds)
+        const expirationTime = Math.floor(Date.now() / 1000) + (2 * 60 * 60);
+
+        // Formula: SHA256(library_id + api_key + expiration_time + video_id)
+        const signatureString = `${BUNNY_LIBRARY_ID}${BUNNY_API_KEY}${expirationTime}${videoId}`;
+        const crypto = require("crypto"); // Using crypto for secure hashing
+        const signature = crypto.createHash('sha256').update(signatureString).digest('hex');
+
+        // 5. Give the VIP Ticket back to the App (Frontend)
+        return {
+            libraryId: BUNNY_LIBRARY_ID,
+            videoId: videoId,
+            expirationTime: expirationTime,
+            signature: signature
+        };
+
+    } catch (error) {
+        console.error("Bunny Ticket Generation Error:", error);
+        throw new HttpsError("internal", error.message);
+    }
+});
