@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.2 FINAL)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.3 FINAL)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2239,7 +2239,6 @@ window.startBunnyVideoUpload = async function(event) {
         // 🟢 Upload Success Handler
         xhr.addEventListener("load", () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                // Success: 1 second delay for smooth UX
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     
@@ -2280,17 +2279,17 @@ window.startBunnyVideoUpload = async function(event) {
         // 🔴 Error Handler
         xhr.addEventListener("error", () => {
             modal.classList.add('hidden');
-            alert("Network/CORS Error! Connection to Bunny.net was blocked.");
+            alert("Network Error! Connection to Bunny.net was blocked.");
             event.target.value = '';
         });
 
         // 6. Secure Headers Setup
         xhr.open("PUT", uploadUrl, true);
         
-        // 🚨 THE REAL FIX: Only these 4 EXACT headers are allowed. No 'Content-Type' allowed here!
+        // 🚨 THE REAL FIX: Exact header names that Bunny.net demands!
         xhr.setRequestHeader("LibraryId", ticket.libraryId);
         xhr.setRequestHeader("VideoId", ticket.videoId);
-        xhr.setRequestHeader("ExpirationTime", ticket.expirationTime);
+        xhr.setRequestHeader("AuthorizationExpire", ticket.expirationTime); // 👈 Fixed Header Name
         xhr.setRequestHeader("AuthorizationSignature", ticket.signature);
 
         // Send the raw video file
