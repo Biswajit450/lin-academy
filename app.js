@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.1)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.2 FINAL)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2227,21 +2227,12 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 🚨 4. THE REGION FIX: Apna Server Region yahan define kijiye!
-        // Options:
-        // Singapore = "sg."  (Most likely for India)
-        // New York = "ny."
-        // Los Angeles = "la."
-        // London = "uk."
-        // Default (Falkenstein) = ""
-        const BUNNY_REGION = "sg."; 
-        
-        const baseUrl = BUNNY_REGION ? `https://${BUNNY_REGION}video.bunnycdn.com` : "https://video.bunnycdn.com";
-        const uploadUrl = `${baseUrl}/tus/v2/endpoints/${ticket.libraryId}`;
+        // 4. 🚀 THE DIRECT INJECTION TUNNEL
+        // THE MAGIC FIX: Using uploadUrl directly bypasses the 'creation' POST step and avoids 404!
+        const directUploadUrl = `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}/${ticket.videoId}`;
 
-        // 5. 🚀 THE OFFICIAL TUS TUNNEL (Frontend Gate)
         const upload = new window.tus.Upload(file, {
-            endpoint: uploadUrl, // 👈 Now hitting the CORRECT Global Server!
+            uploadUrl: directUploadUrl, // 👈 Directly injecting data into the existing video ID
             retryDelays: [0, 3000, 5000, 10000, 20000],
             headers: {
                 "AuthorizationSignature": ticket.signature,
@@ -2249,14 +2240,10 @@ window.startBunnyVideoUpload = async function(event) {
                 "VideoId": ticket.videoId,
                 "LibraryId": String(ticket.libraryId)
             },
-            metadata: {
-                filename: file.name,
-                filetype: file.type
-            },
             onError: function(error) {
                 console.error("TUS Upload Failed:", error);
                 modal.classList.add('hidden');
-                alert("Upload failed. Bunny.net connection error.");
+                alert("Upload failed. Check console for details.");
                 event.target.value = '';
             },
             onProgress: function(bytesUploaded, bytesTotal) {
@@ -2270,7 +2257,7 @@ window.startBunnyVideoUpload = async function(event) {
                 }
             },
             onSuccess: function() {
-                // Success: 1.5 seconds delay for premium feel before closing modal
+                // Success: Delay for premium feel before closing modal
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     
