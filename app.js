@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.0)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.1)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2202,7 +2202,7 @@ window.startBunnyVideoUpload = async function(event) {
     modal.classList.remove('hidden');
 
     try {
-        // 2. ⚡ INJECT TUS CLIENT: Dynamically loading the official uploader in background
+        // 2. ⚡ INJECT TUS CLIENT
         if (!window.tus) {
             await new Promise((resolve, reject) => {
                 const script = document.createElement('script');
@@ -2227,9 +2227,21 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 4. 🚀 THE OFFICIAL TUS TUNNEL (Frontend Gate)
+        // 🚨 4. THE REGION FIX: Apna Server Region yahan define kijiye!
+        // Options:
+        // Singapore = "sg."  (Most likely for India)
+        // New York = "ny."
+        // Los Angeles = "la."
+        // London = "uk."
+        // Default (Falkenstein) = ""
+        const BUNNY_REGION = "sg."; 
+        
+        const baseUrl = BUNNY_REGION ? `https://${BUNNY_REGION}video.bunnycdn.com` : "https://video.bunnycdn.com";
+        const uploadUrl = `${baseUrl}/tus/v2/endpoints/${ticket.libraryId}`;
+
+        // 5. 🚀 THE OFFICIAL TUS TUNNEL (Frontend Gate)
         const upload = new window.tus.Upload(file, {
-            endpoint: `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`,
+            endpoint: uploadUrl, // 👈 Now hitting the CORRECT Global Server!
             retryDelays: [0, 3000, 5000, 10000, 20000],
             headers: {
                 "AuthorizationSignature": ticket.signature,
