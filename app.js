@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.3 FINAL)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET TUS UPLOADER - V3.4 MASTERPIECE)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2227,25 +2227,51 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 4. 🚀 THE OFFICIAL TUS TUNNEL (Clean Endpoint)
+        // 4. 🧠 THE DNS BYPASS ENGINE (Intercept & Rewrite the Upload URL)
+        const creationUrl = `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`;
+        
+        // Manually create the TUS slot to catch the redirect Location
+        const postRes = await fetch(creationUrl, {
+            method: 'POST',
+            headers: {
+                "AuthorizationSignature": ticket.signature,
+                "AuthorizationExpire": String(ticket.expirationTime),
+                "VideoId": ticket.videoId,
+                "LibraryId": String(ticket.libraryId),
+                "Tus-Resumable": "1.0.0",
+                "Upload-Length": String(file.size)
+            }
+        });
+
+        if (!postRes.ok) throw new Error("Bunny.net refused to create the video slot.");
+
+        let locationUrl = postRes.headers.get('Location');
+        if (!locationUrl) throw new Error("CORS Blocked Location Header or Server Error.");
+
+        // Handing relative URLs just in case
+        if (locationUrl.startsWith('/')) {
+            locationUrl = "https://video.bunnycdn.com" + locationUrl;
+        }
+
+        // 🚨 THE MAGIC: Force Anycast Global Domain (Removes 'sg.', 'ny.', etc.)
+        const urlObj = new URL(locationUrl);
+        urlObj.hostname = "video.bunnycdn.com"; 
+        const safeUploadUrl = urlObj.toString();
+
+        // 5. 🚀 THE OFFICIAL TUS TUNNEL (With rewritten safe URL)
         const upload = new window.tus.Upload(file, {
-            endpoint: "https://video.bunnycdn.com/tus/v2/endpoints/", // 👈 FIX 1: Exact Clean Endpoint
+            uploadUrl: safeUploadUrl, // 👈 Directly bypassing the POST creation step and DNS block!
             retryDelays: [0, 3000, 5000, 10000, 20000],
-            resume: false, // 👈 FIX 2: Stop checking for ghost uploads
             headers: {
                 "AuthorizationSignature": ticket.signature,
                 "AuthorizationExpire": String(ticket.expirationTime),
                 "VideoId": ticket.videoId,
                 "LibraryId": String(ticket.libraryId)
             },
-            metadata: {
-                filename: file.name,
-                filetype: file.type
-            },
             onError: function(error) {
                 console.error("TUS Upload Failed:", error);
                 modal.classList.add('hidden');
-                alert("Upload failed. Bunny.net connection error. Please check console.");
+                alert("Upload failed. Please check internet connection.");
                 event.target.value = '';
             },
             onProgress: function(bytesUploaded, bytesTotal) {
