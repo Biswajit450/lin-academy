@@ -169,8 +169,8 @@ exports.razorpayWebhook = functions.https.onRequest((req, res) => {
 // API 3: BUNNY.NET VIDEO TICKET (Secure Direct Uploader with Auto-Folders)
 // ============================================================================
 // 🚨 BUNNY KEYS: Yahan apni actual Library ID aur API Key daaliye
-const BUNNY_LIBRARY_ID = "673982";
-const BUNNY_API_KEY = "287095c5-0307-472c-a1e5ba3a3501-8929-4180";
+const BUNNY_LIBRARY_ID = "707624";
+const BUNNY_API_KEY = "99c354f0-6ac9-467d-95492ee51da7-eda2-42dd";
 
 exports.createBunnyVideoTicket = onCall(async (request) => {
     // 1. Authentication & Role Check

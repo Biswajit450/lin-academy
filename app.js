@@ -2227,8 +2227,8 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 🚨 4. THE EXACT OFFICIAL ENDPOINT (Ab isme Library ID 100% attached hai)
-        const exactUploadUrl = `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`;
+        // 🚨 4. THE EXACT OFFICIAL ENDPOINT (London UK Region - DNS Block Bypass)
+const exactUploadUrl = `https://uk.video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`;
 
         // 5. 🚀 START TUS UPLOAD
         const upload = new window.tus.Upload(file, {
