@@ -2183,14 +2183,14 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET TUS UPLOADER - V3.4 MASTERPIECE)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET TUS UPLOADER - V4.1 ABSOLUTE)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // 1. UI Setup: Show the Progress Modal
+    // 1. UI Setup
     const modal = document.getElementById('video-upload-modal');
     const progressText = document.getElementById('video-upload-percentage');
     const progressBar = document.getElementById('video-upload-progress-bar');
@@ -2202,7 +2202,7 @@ window.startBunnyVideoUpload = async function(event) {
     modal.classList.remove('hidden');
 
     try {
-        // 2. ⚡ INJECT TUS CLIENT
+        // 2. INJECT TUS CLIENT
         if (!window.tus) {
             await new Promise((resolve, reject) => {
                 const script = document.createElement('script');
@@ -2213,7 +2213,7 @@ window.startBunnyVideoUpload = async function(event) {
             });
         }
 
-        // 3. Request the VIP Ticket from Backend
+        // 3. GET VIP TICKET FROM BACKEND
         const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
         const functions = getFunctions(auth.app);
         const getBunnyTicket = httpsCallable(functions, 'createBunnyVideoTicket');
@@ -2227,51 +2227,28 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 4. 🧠 THE DNS BYPASS ENGINE (Intercept & Rewrite the Upload URL)
-        const creationUrl = `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`;
-        
-        // Manually create the TUS slot to catch the redirect Location
-        const postRes = await fetch(creationUrl, {
-            method: 'POST',
-            headers: {
-                "AuthorizationSignature": ticket.signature,
-                "AuthorizationExpire": String(ticket.expirationTime),
-                "VideoId": ticket.videoId,
-                "LibraryId": String(ticket.libraryId),
-                "Tus-Resumable": "1.0.0",
-                "Upload-Length": String(file.size)
-            }
-        });
+        // 🚨 4. THE EXACT OFFICIAL ENDPOINT (Ab isme Library ID 100% attached hai)
+        const exactUploadUrl = `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`;
 
-        if (!postRes.ok) throw new Error("Bunny.net refused to create the video slot.");
-
-        let locationUrl = postRes.headers.get('Location');
-        if (!locationUrl) throw new Error("CORS Blocked Location Header or Server Error.");
-
-        // Handing relative URLs just in case
-        if (locationUrl.startsWith('/')) {
-            locationUrl = "https://video.bunnycdn.com" + locationUrl;
-        }
-
-        // 🚨 THE MAGIC: Force Anycast Global Domain (Removes 'sg.', 'ny.', etc.)
-        const urlObj = new URL(locationUrl);
-        urlObj.hostname = "video.bunnycdn.com"; 
-        const safeUploadUrl = urlObj.toString();
-
-        // 5. 🚀 THE OFFICIAL TUS TUNNEL (With rewritten safe URL)
+        // 5. 🚀 START TUS UPLOAD
         const upload = new window.tus.Upload(file, {
-            uploadUrl: safeUploadUrl, // 👈 Directly bypassing the POST creation step and DNS block!
+            endpoint: exactUploadUrl, // 👈 Perfect URL
             retryDelays: [0, 3000, 5000, 10000, 20000],
+            removeFingerprintOnSuccess: true, // 👈 Cleans up memory automatically
             headers: {
                 "AuthorizationSignature": ticket.signature,
                 "AuthorizationExpire": String(ticket.expirationTime),
                 "VideoId": ticket.videoId,
                 "LibraryId": String(ticket.libraryId)
             },
+            metadata: {
+                filename: file.name,
+                filetype: file.type
+            },
             onError: function(error) {
                 console.error("TUS Upload Failed:", error);
                 modal.classList.add('hidden');
-                alert("Upload failed. Please check internet connection.");
+                alert("Upload failed. Please check your console.");
                 event.target.value = '';
             },
             onProgress: function(bytesUploaded, bytesTotal) {
@@ -2279,20 +2256,16 @@ window.startBunnyVideoUpload = async function(event) {
                 progressBar.style.width = percentComplete + '%';
                 progressText.innerText = percentComplete + '%';
                 
-                // UX MAGIC: Change text at 100%
                 if (percentComplete === 100) {
                     statusText.innerText = "Processing in Secure Vault... Almost done!";
                 }
             },
             onSuccess: function() {
-                // Success: Delay for premium feel before closing modal
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     
-                    // Create the Secure Iframe
                     const iframeUrl = `https://iframe.mediadelivery.net/embed/${ticket.libraryId}/${ticket.videoId}?autoplay=false&loop=false&muted=false&preload=true`;
                     
-                    // Auto-Inject into Course Builder
                     const dropzone = document.getElementById('editor-canvas-dropzone');
                     const placeholder = document.getElementById('canvas-placeholder');
                     if (placeholder) placeholder.style.display = 'none';
@@ -2301,9 +2274,7 @@ window.startBunnyVideoUpload = async function(event) {
                     const blockHtml = `
                         <div id="${blockId}" class="course-block relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm group">
                             <div class="absolute -top-3 left-4 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase border border-indigo-200"><i class="fa-solid fa-vault"></i> Secure Vault Video</div>
-                            
                             <button type="button" onclick="this.parentElement.remove(); window.autoSaveDraft();" class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash"></i></button>
-                            
                             <div class="mt-3 rounded-lg overflow-hidden bg-slate-900 w-full aspect-video border border-slate-800 relative">
                                 <iframe src="${iframeUrl}" class="w-full h-full border-0" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
                             </div>
@@ -2318,7 +2289,6 @@ window.startBunnyVideoUpload = async function(event) {
             }
         });
 
-        // 🟢 Start the Magic Upload!
         upload.start();
 
     } catch (error) {
