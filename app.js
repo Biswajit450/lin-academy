@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.1 FIX)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.2 FINAL)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2287,7 +2287,8 @@ window.startBunnyVideoUpload = async function(event) {
         // 6. Secure Headers Setup
         xhr.open("PUT", uploadUrl, true);
         
-        // 🚨 THE FIX: Only sending the 3 strict headers required by Bunny.net for Frontend Direct Uploads
+        // 🚨 THE REAL FIX: Only these 4 EXACT headers are allowed. No 'Content-Type' allowed here!
+        xhr.setRequestHeader("LibraryId", ticket.libraryId);
         xhr.setRequestHeader("VideoId", ticket.videoId);
         xhr.setRequestHeader("ExpirationTime", ticket.expirationTime);
         xhr.setRequestHeader("AuthorizationSignature", ticket.signature);
