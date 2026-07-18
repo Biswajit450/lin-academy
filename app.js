@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.2 FINAL)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.3 FINAL)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2227,23 +2227,25 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 4. 🚀 THE DIRECT INJECTION TUNNEL
-        // THE MAGIC FIX: Using uploadUrl directly bypasses the 'creation' POST step and avoids 404!
-        const directUploadUrl = `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}/${ticket.videoId}`;
-
+        // 4. 🚀 THE OFFICIAL TUS TUNNEL (Clean Endpoint)
         const upload = new window.tus.Upload(file, {
-            uploadUrl: directUploadUrl, // 👈 Directly injecting data into the existing video ID
+            endpoint: "https://video.bunnycdn.com/tus/v2/endpoints/", // 👈 FIX 1: Exact Clean Endpoint
             retryDelays: [0, 3000, 5000, 10000, 20000],
+            resume: false, // 👈 FIX 2: Stop checking for ghost uploads
             headers: {
                 "AuthorizationSignature": ticket.signature,
                 "AuthorizationExpire": String(ticket.expirationTime),
                 "VideoId": ticket.videoId,
                 "LibraryId": String(ticket.libraryId)
             },
+            metadata: {
+                filename: file.name,
+                filetype: file.type
+            },
             onError: function(error) {
                 console.error("TUS Upload Failed:", error);
                 modal.classList.add('hidden');
-                alert("Upload failed. Check console for details.");
+                alert("Upload failed. Bunny.net connection error. Please check console.");
                 event.target.value = '';
             },
             onProgress: function(bytesUploaded, bytesTotal) {
