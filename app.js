@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.0)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.1 FIX)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2196,7 +2196,7 @@ window.startBunnyVideoUpload = async function(event) {
     const progressBar = document.getElementById('video-upload-progress-bar');
     const statusText = document.getElementById('video-upload-filename');
     
-    // UI Setup
+    // Initial UI State
     statusText.innerText = "Uploading: " + file.name;
     progressBar.style.width = '0%';
     progressText.innerText = '0%';
@@ -2221,8 +2221,6 @@ window.startBunnyVideoUpload = async function(event) {
         // 3. The Direct Tunnel
         const xhr = new XMLHttpRequest();
         const uploadUrl = `https://video.bunnycdn.com/library/${ticket.libraryId}/videos/${ticket.videoId}`;
-        
-        let isFullyUploaded = false; // Flag to track 100% state
 
         // 🟢 Live Progress Tracker
         xhr.upload.addEventListener("progress", (e) => {
@@ -2233,18 +2231,15 @@ window.startBunnyVideoUpload = async function(event) {
                 
                 // UX MAGIC: Change text at 100%
                 if (percentComplete === 100) {
-                    isFullyUploaded = true;
                     statusText.innerText = "Processing in Secure Vault... Almost done!";
                 }
             }
         });
 
-        // 🟢 Upload Success / Load Handler (THE FALSE ALARM FIX)
+        // 🟢 Upload Success Handler
         xhr.addEventListener("load", () => {
-            // Browser strictness bypass: Agar status 2xx hai YA status 0 hai par upload 100% ho chuka hai (CORS block)
-            if ((xhr.status >= 200 && xhr.status < 300) || (xhr.status === 0 && isFullyUploaded)) {
-                
-                // Thoda pause dete hain taaki educator 100% processing dekh sake
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Success: 1 second delay for smooth UX
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     
@@ -2273,35 +2268,31 @@ window.startBunnyVideoUpload = async function(event) {
                     if (window.autoSaveDraft) window.autoSaveDraft();
                     
                     event.target.value = ''; 
-                }, 1500); // 1.5 seconds delay for premium feel
+                }, 1000); 
 
             } else {
                 modal.classList.add('hidden');
-                alert("Upload failed or interrupted.");
+                alert("Upload failed. Bunny.net responded with Status: " + xhr.status);
                 event.target.value = '';
             }
         });
 
         // 🔴 Error Handler
         xhr.addEventListener("error", () => {
-            // Double check for CORS false alarm on error event
-            if (isFullyUploaded) {
-                // Ignore error, trigger load logic manually (Handled in load event above)
-                return;
-            }
             modal.classList.add('hidden');
-            alert("Network Error! Video upload failed.");
+            alert("Network/CORS Error! Connection to Bunny.net was blocked.");
             event.target.value = '';
         });
 
-        // 6. Secure Headers
+        // 6. Secure Headers Setup
         xhr.open("PUT", uploadUrl, true);
-        xhr.setRequestHeader("LibraryId", ticket.libraryId);
+        
+        // 🚨 THE FIX: Only sending the 3 strict headers required by Bunny.net for Frontend Direct Uploads
         xhr.setRequestHeader("VideoId", ticket.videoId);
         xhr.setRequestHeader("ExpirationTime", ticket.expirationTime);
         xhr.setRequestHeader("AuthorizationSignature", ticket.signature);
-        xhr.setRequestHeader("Content-Type", "application/octet-stream"); 
 
+        // Send the raw video file
         xhr.send(file);
 
     } catch (error) {
