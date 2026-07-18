@@ -2183,7 +2183,7 @@ window.closeMegaExplore = function() {
 }
 
 // ============================================================================
-// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET VIDEO UPLOADER - V2.3 FINAL)
+// 🚀 THE SECURE DIRECT TUNNEL (BUNNY.NET OFFICIAL TUS UPLOADER - V3.0)
 // ============================================================================
 
 window.startBunnyVideoUpload = async function(event) {
@@ -2196,19 +2196,28 @@ window.startBunnyVideoUpload = async function(event) {
     const progressBar = document.getElementById('video-upload-progress-bar');
     const statusText = document.getElementById('video-upload-filename');
     
-    // Initial UI State
     statusText.innerText = "Uploading: " + file.name;
     progressBar.style.width = '0%';
     progressText.innerText = '0%';
     modal.classList.remove('hidden');
 
     try {
-        // 2. Request the VIP Ticket from Backend
+        // 2. ⚡ INJECT TUS CLIENT: Dynamically loading the official uploader in background
+        if (!window.tus) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tus-js-client@latest/dist/tus.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // 3. Request the VIP Ticket from Backend
         const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
         const functions = getFunctions(auth.app);
         const getBunnyTicket = httpsCallable(functions, 'createBunnyVideoTicket');
         
-        // The Smart Folder Logic
         const courseSelector = document.getElementById('admin-course-selector');
         const activeCourseName = (courseSelector && courseSelector.value) ? courseSelector.value : "Uncategorized_Course";
 
@@ -2218,14 +2227,28 @@ window.startBunnyVideoUpload = async function(event) {
         });
         const ticket = response.data;
         
-        // 3. The Direct Tunnel
-        const xhr = new XMLHttpRequest();
-        const uploadUrl = `https://video.bunnycdn.com/library/${ticket.libraryId}/videos/${ticket.videoId}`;
-
-        // 🟢 Live Progress Tracker
-        xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) {
-                const percentComplete = Math.round((e.loaded / e.total) * 100);
+        // 4. 🚀 THE OFFICIAL TUS TUNNEL (Frontend Gate)
+        const upload = new window.tus.Upload(file, {
+            endpoint: `https://video.bunnycdn.com/tus/v2/endpoints/${ticket.libraryId}`,
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            headers: {
+                "AuthorizationSignature": ticket.signature,
+                "AuthorizationExpire": String(ticket.expirationTime),
+                "VideoId": ticket.videoId,
+                "LibraryId": String(ticket.libraryId)
+            },
+            metadata: {
+                filename: file.name,
+                filetype: file.type
+            },
+            onError: function(error) {
+                console.error("TUS Upload Failed:", error);
+                modal.classList.add('hidden');
+                alert("Upload failed. Bunny.net connection error.");
+                event.target.value = '';
+            },
+            onProgress: function(bytesUploaded, bytesTotal) {
+                const percentComplete = Math.round((bytesUploaded / bytesTotal) * 100);
                 progressBar.style.width = percentComplete + '%';
                 progressText.innerText = percentComplete + '%';
                 
@@ -2233,19 +2256,16 @@ window.startBunnyVideoUpload = async function(event) {
                 if (percentComplete === 100) {
                     statusText.innerText = "Processing in Secure Vault... Almost done!";
                 }
-            }
-        });
-
-        // 🟢 Upload Success Handler
-        xhr.addEventListener("load", () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
+            },
+            onSuccess: function() {
+                // Success: 1.5 seconds delay for premium feel before closing modal
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     
-                    // 4. Create the Secure Iframe
+                    // Create the Secure Iframe
                     const iframeUrl = `https://iframe.mediadelivery.net/embed/${ticket.libraryId}/${ticket.videoId}?autoplay=false&loop=false&muted=false&preload=true`;
                     
-                    // 5. Auto-Inject into Course Builder
+                    // Auto-Inject into Course Builder
                     const dropzone = document.getElementById('editor-canvas-dropzone');
                     const placeholder = document.getElementById('canvas-placeholder');
                     if (placeholder) placeholder.style.display = 'none';
@@ -2267,33 +2287,12 @@ window.startBunnyVideoUpload = async function(event) {
                     if (window.autoSaveDraft) window.autoSaveDraft();
                     
                     event.target.value = ''; 
-                }, 1000); 
-
-            } else {
-                modal.classList.add('hidden');
-                alert("Upload failed. Bunny.net responded with Status: " + xhr.status);
-                event.target.value = '';
+                }, 1500);
             }
         });
 
-        // 🔴 Error Handler
-        xhr.addEventListener("error", () => {
-            modal.classList.add('hidden');
-            alert("Network Error! Connection to Bunny.net was blocked.");
-            event.target.value = '';
-        });
-
-        // 6. Secure Headers Setup
-        xhr.open("PUT", uploadUrl, true);
-        
-        // 🚨 THE REAL FIX: Exact header names that Bunny.net demands!
-        xhr.setRequestHeader("LibraryId", ticket.libraryId);
-        xhr.setRequestHeader("VideoId", ticket.videoId);
-        xhr.setRequestHeader("AuthorizationExpire", ticket.expirationTime); // 👈 Fixed Header Name
-        xhr.setRequestHeader("AuthorizationSignature", ticket.signature);
-
-        // Send the raw video file
-        xhr.send(file);
+        // 🟢 Start the Magic Upload!
+        upload.start();
 
     } catch (error) {
         console.error("Video Upload Master Error:", error);
