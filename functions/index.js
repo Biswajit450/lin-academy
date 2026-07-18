@@ -166,19 +166,18 @@ exports.razorpayWebhook = functions.https.onRequest((req, res) => {
 });
 
 // ============================================================================
-// API 3: BUNNY.NET VIDEO TICKET (Secure Direct Uploader)
+// API 3: BUNNY.NET VIDEO TICKET (Secure Direct Uploader with Auto-Folders)
 // ============================================================================
 // 🚨 BUNNY KEYS: Yahan apni actual Library ID aur API Key daaliye
 const BUNNY_LIBRARY_ID = "673982";
 const BUNNY_API_KEY = "287095c5-0307-472c-a1e5ba3a3501-8929-4180";
 
 exports.createBunnyVideoTicket = onCall(async (request) => {
-    // 1. Authentication Check (Koi bina login ke toh nahi aaya?)
+    // 1. Authentication & Role Check
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "Please login first!");
     }
-
-    // 2. Role Check (Sirf Admin/Superadmin hi video upload kar sakte hain)
+    
     const uid = request.auth.uid;
     const userDoc = await db.collection("users").doc(uid).get();
     if (!userDoc.exists) {
@@ -190,11 +189,47 @@ exports.createBunnyVideoTicket = onCall(async (request) => {
         throw new HttpsError("permission-denied", "Access Denied: Only authorized educators can upload videos.");
     }
 
+    // 2. Data from Frontend
     const videoTitle = request.data.title || `LinAcademy_Video_${Date.now()}`;
+    const courseName = request.data.courseName || "Uncategorized_Course"; // 🚀 Naya Logic
 
     try {
-        // 3. Talk to Bunny.net to create a Blank Video ID
+        let collectionId = "";
+
+        // 3. 🚀 THE SMART FOLDER ENGINE: Find or Create Collection
+        try {
+            // A. Check if folder already exists
+            const getColUrl = `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/collections?search=${encodeURIComponent(courseName)}`;
+            const getColRes = await fetch(getColUrl, { headers: { 'AccessKey': BUNNY_API_KEY, 'Accept': 'application/json' }});
+            const getColData = await getColRes.json();
+            
+            let foundCollection = getColData.items ? getColData.items.find(c => c.name === courseName) : null;
+            
+            if (foundCollection) {
+                collectionId = foundCollection.guid;
+            } else {
+                // B. Folder doesn't exist, Create a new one!
+                const createColUrl = `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/collections`;
+                const createColRes = await fetch(createColUrl, {
+                    method: 'POST',
+                    headers: { 'AccessKey': BUNNY_API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ name: courseName })
+                });
+                const createColData = await createColRes.json();
+                collectionId = createColData.guid;
+            }
+        } catch(folderErr) {
+            console.error("Folder Creation Error:", folderErr);
+            // Agar folder banne mein koi issue aaye toh error nahi denge, root me save kar lenge
+        }
+
+        // 4. Talk to Bunny.net to create a Blank Video Entry IN THE FOLDER
         const url = `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos`;
+        const bodyData = { title: videoTitle };
+        if (collectionId) {
+            bodyData.collectionId = collectionId; // Video ko is folder me daalo
+        }
+
         const options = {
             method: 'POST',
             headers: {
@@ -202,7 +237,7 @@ exports.createBunnyVideoTicket = onCall(async (request) => {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ title: videoTitle })
+            body: JSON.stringify(bodyData)
         };
 
         const response = await fetch(url, options);
@@ -214,16 +249,13 @@ exports.createBunnyVideoTicket = onCall(async (request) => {
 
         const videoId = data.guid;
 
-        // 4. Generate the Secure Upload Signature
-        // Expiration Time: 2 Hours from now (in seconds)
+        // 5. Generate the Secure Upload Signature (Valid for 2 Hours)
         const expirationTime = Math.floor(Date.now() / 1000) + (2 * 60 * 60);
-
-        // Formula: SHA256(library_id + api_key + expiration_time + video_id)
         const signatureString = `${BUNNY_LIBRARY_ID}${BUNNY_API_KEY}${expirationTime}${videoId}`;
-        const crypto = require("crypto"); // Using crypto for secure hashing
+        const crypto = require("crypto"); 
         const signature = crypto.createHash('sha256').update(signatureString).digest('hex');
 
-        // 5. Give the VIP Ticket back to the App (Frontend)
+        // 6. Give the VIP Ticket back to the App
         return {
             libraryId: BUNNY_LIBRARY_ID,
             videoId: videoId,

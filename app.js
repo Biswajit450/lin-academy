@@ -2205,9 +2205,16 @@ window.startBunnyVideoUpload = async function(event) {
         const functions = getFunctions(auth.app);
         const getBunnyTicket = httpsCallable(functions, 'createBunnyVideoTicket');
         
-        // Backend ko bulate hain
-        const response = await getBunnyTicket({ title: file.name });
-        const ticket = response.data; 
+        // 🚀 THE SMART FOLDER LOGIC: Course Builder ke dropdown se current course ka naam nikalna
+        const courseSelector = document.getElementById('admin-course-selector');
+        const activeCourseName = (courseSelector && courseSelector.value) ? courseSelector.value : "Uncategorized_Course";
+
+        // Backend ko bulate hain aur Course ka naam sath bhejte hain
+        const response = await getBunnyTicket({ 
+            title: file.name,
+            courseName: activeCourseName
+        });
+        const ticket = response.data;
         
         // 3. The Direct Tunnel: Create XMLHttpRequest (XHR) to track live upload progress
         const xhr = new XMLHttpRequest();
