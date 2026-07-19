@@ -156,6 +156,12 @@ window.addBlock = function(type) {
         dropzone.insertAdjacentHTML('beforeend', blockHTML); 
     }
     
+    // 🚀 FIX 1: Toolbar ab add karte hi immediately render ho jayega!
+    if (type === 'text') {
+        const editorDiv = document.getElementById(blockId).querySelector('.quill-editor-container');
+        window.initBlockEditor(editorDiv);
+    }
+    
     setTimeout(window.autoSaveDraft, 200);
 }
 
@@ -218,12 +224,7 @@ window.addDynamicFolder = function() {
         window.clearCanvasPlaceholder();
         dropzone.insertAdjacentHTML('beforeend', html); 
     }
-    // 🚀 NEW: Initialize Editor if it's a Text Block
-    if (type === 'text') {
-        const editorDiv = document.getElementById(blockId).querySelector('.quill-editor-container');
-        window.initBlockEditor(editorDiv);
-    }
-    
+ 
     setTimeout(window.autoSaveDraft, 200);
 }
 
@@ -557,6 +558,19 @@ window.openCourseView = async function(courseName) {
             canvas.querySelectorAll('.ql-editor').forEach(e => {
                 e.setAttribute('contenteditable', 'false'); // Type karna lock kar do
                 e.style.padding = '0';
+            });
+            // 🚀 FIX 2: Hide "Rich Text Block" Admin Header & Borders from Students
+            canvas.querySelectorAll('.text-block-container').forEach(block => {
+                // 1. Upar ka Title aur Trash button hata do
+                const adminHeader = block.querySelector('.flex.justify-between.items-center.p-3');
+                if (adminHeader) adminHeader.remove();
+                
+                // 2. Dabbe (Box) jaisa look hata do taaki text page ke sath seamlessly blend ho jaye
+                block.classList.remove('bg-white', 'dark:bg-slate-900', 'border', 'border-slate-200', 'dark:border-slate-800', 'shadow-sm', 'p-0');
+                
+                // 3. Andar ka white background bhi hata do
+                const innerBox = block.querySelector('.p-2.bg-white');
+                if (innerBox) innerBox.classList.remove('bg-white', 'p-2');
             });
             
             // 🔒 2. Lock all tables and headings so they can't be edited
