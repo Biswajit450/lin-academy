@@ -256,14 +256,36 @@ window.addHomeWidget = function(type, data = null) {
             </div>`;
     }
     else if (type === 'announcement') {
-        html += `<span class="text-[10px] font-bold text-amber-500 uppercase tracking-wider"><i class="fa-solid fa-bell mr-1"></i> Announcement</span>
+        html += `<span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider"><i class="fa-solid fa-heading mr-1"></i> Rich Text Block</span>
                  <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
         const text = data ? data.text : '';
-        html += `<input type="text" class="announcement-text w-full p-2 text-xs rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 dark:text-white outline-none focus:border-amber-500" placeholder="Type breaking news or alert..." value="${text}">`;
+        html += `<div class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+                    <div class="cms-rich-editor text-slate-800 dark:text-slate-200" style="min-height: 120px; font-family: inherit;">${text}</div>
+                 </div>`;
     }
 
     div.innerHTML = html;
     dropzone.appendChild(div);
+    // 🚀 NEW: Initialize Quill Editor for Rich Text Block
+    if (type === 'announcement') {
+        const editorDiv = div.querySelector('.cms-rich-editor');
+        if (editorDiv) {
+            new window.Quill(editorDiv, {
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'align': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link', 'clean']
+                    ]
+                },
+                theme: 'snow',
+                placeholder: 'Type your custom announcement or rich text here...'
+            });
+        }
+    }
 }
 
 window.addCarouselSlideUI = function(btn, slideData = null) {
@@ -428,8 +450,9 @@ window.saveHomeCMSData = async function() {
                 }});
             }
             else if (type === 'announcement') {
-                const text = block.querySelector('.announcement-text').value.trim();
-                if(text) sduiLayout.push({ type: 'announcement', data: { text: text }});
+                const editor = block.querySelector('.ql-editor');
+                const text = editor ? editor.innerHTML : '';
+                if(text && text !== '<p><br></p>') sduiLayout.push({ type: 'announcement', data: { text: text }});
             }
         }
 
@@ -516,8 +539,8 @@ window.renderHomepage = async function() {
         const flushGroups = () => {
             if(announcementGroup.length > 0) {
                 const notifListHtml = announcementGroup.map(text => `
-                    <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 mb-2">
-                        <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i> ${text}</p>
+                    <div class="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/50 mb-3 text-slate-800 dark:text-slate-200">
+                        ${text}
                     </div>`).join('');
                 
                 canvas.innerHTML += `
