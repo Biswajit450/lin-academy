@@ -14,6 +14,27 @@ window.clearCanvasPlaceholder = function() {
     if (placeholder) placeholder.remove(); 
 }
 
+window.initBlockEditor = function(element) {
+    if(!element) return;
+    const toolbarOptions = [
+        [{ 'header': [1, 2, 3, 4, 5, false] }], // Styles: H1 to H5 & Normal
+        ['bold', 'italic', 'underline'],        // Text Formatting
+        [{ 'color': [] }, { 'background': [] }],// Text Color & Highlight
+        [{ 'align': [] }],                      // Alignment
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }], // Lists
+        ['link', 'clean']                       // Links & Remove Formatting
+    ];
+    const quill = new window.Quill(element, {
+        modules: { toolbar: toolbarOptions },
+        theme: 'snow',
+        placeholder: 'Type your rich content here...'
+    });
+    // Auto-save whenever educator types something!
+    quill.on('text-change', function() {
+        window.autoSaveDraft();
+    });
+}
+
 window.addBlock = function(type) {
     window.clearCanvasPlaceholder();
     const dropzone = document.getElementById('editor-canvas-dropzone');
@@ -22,15 +43,16 @@ window.addBlock = function(type) {
 
     if(type === 'text') {
         blockHTML = `
-        <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-heading text-purple-400 mr-1"></i> Text Area</span>
+        <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-0 shadow-sm block-hover-effect cursor-move mb-3 text-block-container overflow-hidden" draggable="true" ondragstart="window.drag(event)">
+            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-heading text-purple-400 mr-1"></i> Rich Text Block</span>
                 <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <input type="text" placeholder="Section Heading (Optional)" class="w-full bg-transparent border-none outline-none text-xl font-bold text-slate-900 dark:text-white mb-2 placeholder-slate-300 dark:placeholder-slate-700">
-            <textarea placeholder="Type your paragraph or description here..." rows="2" class="w-full bg-transparent border-none outline-none text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 dark:placeholder-slate-700 resize-y"></textarea>
+            <div class="p-2 bg-white">
+                <div class="quill-editor-container text-slate-800" style="min-height: 120px; font-family: inherit;"></div>
+            </div>
         </div>`;
-    } else if(type === 'table') {
+    } else if(type === 'table') { // Iske aage ka code same rahega
         blockHTML = `
         <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
             <div class="flex justify-between items-center mb-2">
@@ -196,6 +218,12 @@ window.addDynamicFolder = function() {
         window.clearCanvasPlaceholder();
         dropzone.insertAdjacentHTML('beforeend', html); 
     }
+    // 🚀 NEW: Initialize Editor if it's a Text Block
+    if (type === 'text') {
+        const editorDiv = document.getElementById(blockId).querySelector('.quill-editor-container');
+        window.initBlockEditor(editorDiv);
+    }
+    
     setTimeout(window.autoSaveDraft, 200);
 }
 
@@ -445,8 +473,23 @@ window.loadDraftForAdmin = async function(courseName) {
             const data = draftSnap.data(); 
             document.getElementById('draft-main-title').value = data.mainTitle || ''; 
             document.getElementById('draft-sub-title').value = data.subTitle || ''; 
-            document.getElementById('editor-canvas-dropzone').innerHTML = data.canvasHtml || ''; 
+            
+            const dropzone = document.getElementById('editor-canvas-dropzone');
+            dropzone.innerHTML = data.canvasHtml || ''; 
+
+            // 🚀 NEW: Restore Quill Editors
+            dropzone.querySelectorAll('.text-block-container').forEach(block => {
+                const container = block.querySelector('.quill-editor-container');
+                if (container) {
+                    const rawHtml = block.querySelector('.ql-editor') ? block.querySelector('.ql-editor').innerHTML : container.innerHTML;
+                    const oldToolbar = block.querySelector('.ql-toolbar');
+                    if (oldToolbar) oldToolbar.remove(); // Clean duplicate toolbars
+                    container.innerHTML = rawHtml;
+                    window.initBlockEditor(container);
+                }
+            });
         } else { 
+            // Baaki same rahega...
             document.getElementById('draft-main-title').value = ''; 
             document.getElementById('draft-sub-title').value = ''; 
             document.getElementById('editor-canvas-dropzone').innerHTML = `<div id="canvas-placeholder" class="text-center text-slate-400 dark:text-slate-600 py-10 text-sm font-medium"><i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i><br>Select a course, then use the ribbon above to insert folders and blocks here.</div>`; 
@@ -503,6 +546,17 @@ window.openCourseView = async function(courseName) {
             canvas.querySelectorAll('[draggable]').forEach(el => {
                 el.removeAttribute('draggable');
                 el.classList.remove('cursor-move', 'block-hover-effect');
+            });
+            
+            // 🚀 NEW: Clean up Quill Editors for Students
+            canvas.querySelectorAll('.ql-toolbar').forEach(tb => tb.remove()); // Toolbar chhupa do
+            canvas.querySelectorAll('.ql-container').forEach(c => {
+                c.style.border = 'none'; // Editing borders hata do
+                c.classList.remove('ql-snow'); 
+            });
+            canvas.querySelectorAll('.ql-editor').forEach(e => {
+                e.setAttribute('contenteditable', 'false'); // Type karna lock kar do
+                e.style.padding = '0';
             });
             
             // 🔒 2. Lock all tables and headings so they can't be edited
