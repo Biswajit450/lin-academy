@@ -538,14 +538,24 @@ window.renderHomepage = async function() {
 
         const flushGroups = () => {
             if(announcementGroup.length > 0) {
+                // 🚀 FIX 1: Alignment classes ko explicitly define kiya taaki homepage par design na toote
+                const alignmentStyles = `
+                    <style>
+                        .ql-align-center { text-align: center !important; }
+                        .ql-align-right { text-align: right !important; }
+                        .ql-align-justify { text-align: justify !important; }
+                    </style>
+                `;
+
+                // 🚀 FIX 2: Hardcoded 'Announcements' heading aur blue box hata diya. Ab text clean white/dark container mein freely dikhega.
                 const notifListHtml = announcementGroup.map(text => `
-                    <div class="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/50 mb-3 text-slate-800 dark:text-slate-200">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm mb-4 w-full text-slate-800 dark:text-slate-200 overflow-hidden">
                         ${text}
                     </div>`).join('');
                 
                 canvas.innerHTML += `
-                    <section class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm w-full">
-                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-2 mb-4"><i class="fa-solid fa-bullhorn text-amber-500"></i> Announcements</h3>
+                    ${alignmentStyles}
+                    <section class="w-full">
                         ${notifListHtml}
                     </section>`;
                 announcementGroup = [];
