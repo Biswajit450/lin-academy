@@ -48,8 +48,8 @@ window.addBlock = function(type) {
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-heading text-purple-400 mr-1"></i> Rich Text Block</span>
                 <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <div class="p-2 bg-white">
-                <div class="quill-editor-container text-slate-800" style="min-height: 120px; font-family: inherit;"></div>
+            <div class="p-2">
+                <div class="quill-editor-container text-slate-800 dark:text-slate-200" style="min-height: 120px; font-family: inherit;"></div>
             </div>
         </div>`;
     } else if(type === 'table') { // Iske aage ka code same rahega
@@ -571,8 +571,8 @@ window.openCourseView = async function(courseName) {
                 el.classList.remove('cursor-move', 'block-hover-effect');
             });
             
-            // 🚀 NEW: Clean up Quill Editors for Students
-            canvas.querySelectorAll('.ql-toolbar').forEach(tb => tb.remove()); // Toolbar chhupa do
+            // 🚀 FIX: Clean up ALL Quill artifacts for Students (Toolbar + Tooltips + Clipboards)
+            canvas.querySelectorAll('.ql-toolbar, .ql-clipboard, .ql-tooltip').forEach(el => el.remove());
             canvas.querySelectorAll('.ql-container').forEach(c => {
                 c.style.border = 'none'; // Editing borders hata do
                 c.classList.remove('ql-snow'); 
