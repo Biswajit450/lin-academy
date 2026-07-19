@@ -541,7 +541,29 @@ window.openCourseView = async function(courseName) {
             document.getElementById('student-main-title').innerText = data.mainTitle || ''; 
             document.getElementById('student-sub-title').innerText = data.subTitle || ''; 
             
-            canvas.innerHTML = data.canvasHtml || ''; 
+            // 🚀 FIX: Tailwind CSS ke Reset ko override karne ke liye Custom Rich Text Styles
+            const richTextStyles = `
+                <style>
+                    /* Headings Fix */
+                    .ql-editor h1 { font-size: 2.25rem !important; font-weight: 800 !important; line-height: 1.2 !important; margin-bottom: 0.5rem !important; }
+                    .ql-editor h2 { font-size: 1.875rem !important; font-weight: 700 !important; line-height: 1.3 !important; margin-bottom: 0.5rem !important; }
+                    .ql-editor h3 { font-size: 1.5rem !important; font-weight: 700 !important; line-height: 1.4 !important; margin-bottom: 0.5rem !important; }
+                    .ql-editor h4 { font-size: 1.25rem !important; font-weight: 600 !important; line-height: 1.5 !important; margin-bottom: 0.5rem !important; }
+                    
+                    /* Lists & Links Fix */
+                    .ql-editor ul { list-style-type: disc !important; padding-left: 1.5rem !important; margin-bottom: 0.5rem !important; }
+                    .ql-editor ol { list-style-type: decimal !important; padding-left: 1.5rem !important; margin-bottom: 0.5rem !important; }
+                    .ql-editor a { color: #2563eb !important; text-decoration: underline !important; }
+                    
+                    /* Alignments Fix */
+                    .ql-align-center { text-align: center !important; }
+                    .ql-align-right { text-align: right !important; }
+                    .ql-align-justify { text-align: justify !important; }
+                </style>
+            `;
+            
+            // Puraane HTML ke theek upar yeh style tag laga do
+            canvas.innerHTML = richTextStyles + (data.canvasHtml || ''); 
             
             // 🔒 1. Disable all drag & drop completely
             canvas.querySelectorAll('[draggable]').forEach(el => {
