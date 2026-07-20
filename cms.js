@@ -538,23 +538,35 @@ window.renderHomepage = async function() {
 
         const flushGroups = () => {
             if(announcementGroup.length > 0) {
-                // 🚀 FIX 1: Alignment classes ko explicitly define kiya taaki homepage par design na toote
-                const alignmentStyles = `
+                // 🚀 FIX 1: Tailwind CSS reset override for Home Page Rich Text (Headings, Lists, Links, Alignments)
+                const richTextStyles = `
                     <style>
+                        /* Headings Fix */
+                        .cms-rich-text h1 { font-size: 2.25rem !important; font-weight: 800 !important; line-height: 1.2 !important; margin-bottom: 0.5rem !important; }
+                        .cms-rich-text h2 { font-size: 1.875rem !important; font-weight: 700 !important; line-height: 1.3 !important; margin-bottom: 0.5rem !important; }
+                        .cms-rich-text h3 { font-size: 1.5rem !important; font-weight: 700 !important; line-height: 1.4 !important; margin-bottom: 0.5rem !important; }
+                        .cms-rich-text h4 { font-size: 1.25rem !important; font-weight: 600 !important; line-height: 1.5 !important; margin-bottom: 0.5rem !important; }
+                        
+                        /* Lists & Links Fix */
+                        .cms-rich-text ul { list-style-type: disc !important; padding-left: 1.5rem !important; margin-bottom: 0.5rem !important; }
+                        .cms-rich-text ol { list-style-type: decimal !important; padding-left: 1.5rem !important; margin-bottom: 0.5rem !important; }
+                        .cms-rich-text a { color: #2563eb !important; text-decoration: underline !important; }
+                        
+                        /* Alignments Fix */
                         .ql-align-center { text-align: center !important; }
                         .ql-align-right { text-align: right !important; }
                         .ql-align-justify { text-align: justify !important; }
                     </style>
                 `;
 
-                // 🚀 FIX 2: Hardcoded 'Announcements' heading aur blue box hata diya. Ab text clean white/dark container mein freely dikhega.
+                // 🚀 FIX 2: Added 'cms-rich-text' class to target the styles correctly
                 const notifListHtml = announcementGroup.map(text => `
-                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm mb-4 w-full text-slate-800 dark:text-slate-200 overflow-hidden">
+                    <div class="cms-rich-text bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm mb-4 w-full text-slate-800 dark:text-slate-200 overflow-hidden">
                         ${text}
                     </div>`).join('');
                 
                 canvas.innerHTML += `
-                    ${alignmentStyles}
+                    ${richTextStyles}
                     <section class="w-full">
                         ${notifListHtml}
                     </section>`;
