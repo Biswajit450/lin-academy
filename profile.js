@@ -147,7 +147,7 @@ window.renderProgress = async function(courses, performances, courseProgressMap 
             let textClass = pct >= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-blue dark:text-blue-400';
             
             courseHtml += `
-            <div class="mb-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-brand-blue hover:shadow-md transition-all active:scale-95 group" onclick="window.showScreen('screen-enrollments'); setTimeout(() => window.openCourseView('${courseName}'), 100);">
+            <div class="mb-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-brand-blue hover:shadow-md transition-all active:scale-95 group" onclick="window.openCourseFromProfile('${courseName}')">
                 <div class="flex justify-between items-center text-xs font-bold mb-3">
                     <span class="text-slate-800 dark:text-slate-200 truncate w-3/4"><i class="fa-solid fa-graduation-cap text-slate-400 mr-2 group-hover:text-brand-blue transition-colors"></i>${courseName}</span>
                     <span class="${textClass}">${pct}%</span>
@@ -278,5 +278,51 @@ window.saveProfileInfo = async function() {
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
+    }
+}
+
+// ==========================================
+// 🚨 THE PROFILE BOUNCER: Check Expiry Before Opening Course
+// ==========================================
+window.openCourseFromProfile = async function(courseName) {
+    if (!auth.currentUser) return;
+    
+    // UI Feedback: Button click hone par wait dikhayein
+    const originalCursor = document.body.style.cursor;
+    document.body.style.cursor = 'wait';
+    
+    try {
+        const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            
+            // Expiry Check Logic
+            let isExpired = false;
+            if (userData.course_expiries && userData.course_expiries[courseName]) {
+                const expDate = new Date(userData.course_expiries[courseName]);
+                const now = new Date();
+                
+                if (now > expDate) {
+                    isExpired = true;
+                }
+            }
+            
+            if (isExpired) {
+                // Agar expire ho gaya hai, toh access block karo aur alert do
+                alert(`🔒 Access Denied!\nYour enrollment for "${courseName}" has expired. Please go to the Enrollments tab to renew your access.`);
+                if(window.showScreen) window.showScreen('screen-enrollments');
+            } else {
+                // Agar active hai, toh normal course view khol do
+                if(window.openCourseView) {
+                    window.openCourseView(courseName);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Profile Course Access Error:", e);
+        alert("Something went wrong. Please check your connection.");
+    } finally {
+        // Cursor wapas normal karein
+        document.body.style.cursor = originalCursor;
     }
 }
