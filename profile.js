@@ -86,10 +86,36 @@ window.loadProfileData = async function() {
             // 🚨 DYNAMIC BADGE LOGIC 🚨
             const badgeEl = document.getElementById('profile-learner-badge');
             if (badgeEl && role === "student") {
-                const courseCount = (data.unlocked_courses || []).length;
+                const courses = data.unlocked_courses || [];
+                const courseCount = courses.length;
+                
                 if (courseCount > 0) {
-                    badgeEl.innerHTML = '<i class="fa-solid fa-crown text-amber-500 mr-1"></i> Pro Learner';
-                    badgeEl.className = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-all';
+                    // 🧠 NAYA SCANNER: Check if at least ONE course is currently active
+                    let hasActiveCourse = false;
+                    const expiries = data.course_expiries || {};
+                    const now = new Date();
+                    
+                    for (const courseName of courses) {
+                        if (expiries[courseName]) {
+                            const expDate = new Date(expiries[courseName]);
+                            if (now <= expDate) {
+                                hasActiveCourse = true;
+                                break; // Ek bhi active mil gaya toh aage check karne ki zaroorat nahi
+                            }
+                        } else {
+                            // Agar database mein expiry date nahi hai, toh lifetime access mana jayega (Active)
+                            hasActiveCourse = true;
+                            break;
+                        }
+                    }
+
+                    if (hasActiveCourse) {
+                        badgeEl.innerHTML = '<i class="fa-solid fa-crown text-amber-500 mr-1"></i> Pro Learner';
+                        badgeEl.className = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-all';
+                    } else {
+                        badgeEl.innerHTML = '<i class="fa-solid fa-graduation-cap text-indigo-500 mr-1"></i> Academy Alumni';
+                        badgeEl.className = 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-all';
+                    }
                 } else {
                     badgeEl.innerHTML = '<i class="fa-solid fa-seedling text-emerald-500 mr-1"></i> New Explorer';
                     badgeEl.className = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-all';
