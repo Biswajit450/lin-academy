@@ -565,6 +565,7 @@ window.renderHomepage = async function() {
                             backdrop-filter: blur(12px); 
                             -webkit-backdrop-filter: blur(12px); 
                             border: 1px solid rgba(255, 255, 255, 0.6); 
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* 🚀 NAYA: Premium Soft Shadow */
                         }
                         .dark .glass-panel {
                             background: rgba(15, 23, 42, 0.7);
@@ -697,17 +698,24 @@ window.renderHomepage = async function() {
                                 let tileStyle = d.tileStyle || 'default'; // 🚀 NAYA: Check style
                                 
                                 if (tileStyle === 'glass') {
-                                    // 💎 NEW: RECTANGULAR GLASS TILE
-                                    let glassWidth = d.tileSize==='small'?'w-56':d.tileSize==='medium'?'w-64':'w-72';
+                                    // 💎 NEW: RECTANGULAR GLASS TILE (WITH DYNAMIC SIZING)
+                                    let gWidth = 'w-72'; let gPad = 'p-5'; let gIcon = 'w-14 h-14 text-xl'; let gTitle = 'text-lg';
+                                    
+                                    // Size Engine Logic for Glass Tile
+                                    if (d.tileSize === 'small') {
+                                        gWidth = 'w-56'; gPad = 'p-3.5'; gIcon = 'w-10 h-10 text-sm'; gTitle = 'text-sm';
+                                    } else if (d.tileSize === 'medium') {
+                                        gWidth = 'w-64'; gPad = 'p-4'; gIcon = 'w-12 h-12 text-lg'; gTitle = 'text-base';
+                                    }
                                     
                                     tilesHtml += `
-                                    <div class="snap-center shrink-0 ${glassWidth} edtech-card glass-panel p-4 rounded-3xl flex flex-row items-center gap-4 relative overflow-hidden group cursor-pointer" onclick="window.openMegaExplore('${course.title}')">
+                                    <div class="snap-center shrink-0 ${gWidth} edtech-card glass-panel ${gPad} rounded-3xl flex flex-row items-center gap-4 relative overflow-hidden group cursor-pointer" onclick="window.openMegaExplore('${course.title}')">
                                         ${badgeHtml}
-                                        <div class="w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:rotate-12 transition-transform" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border: 2px solid ${d.boxBorder || 'transparent'};">
-                                            <i class="fa-solid ${d.icon || 'fa-pencil'} text-xl"></i>
+                                        <div class="${gIcon} rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:rotate-12 transition-transform" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border: 2px solid ${d.boxBorder || 'transparent'};">
+                                            <i class="fa-solid ${d.icon || 'fa-pencil'}"></i>
                                         </div>
                                         <div class="flex-grow flex flex-col justify-center text-left">
-                                            <h4 class="text-base font-extrabold text-slate-800 dark:text-white leading-tight" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
+                                            <h4 class="${gTitle} font-extrabold text-slate-800 dark:text-white leading-tight" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
                                             <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 line-clamp-1">${course.subtitle || ''}</p>
                                         </div>
                                         <div class="shrink-0 text-slate-300 group-hover:text-brand-blue transition-colors mr-1">
