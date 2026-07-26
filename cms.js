@@ -557,19 +557,32 @@ window.renderHomepage = async function() {
                         .ql-align-right { text-align: right !important; }
                         .ql-align-justify { text-align: justify !important; }
                         
-                        /* 💎 NEW: Glassmorphism Tile Styles */
+                        /* 💎 PREMIUM 3D GLASSMORPHISM TILE STYLES */
                         .edtech-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-                        .edtech-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+                        .edtech-card:hover { transform: translateY(-6px); box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.08); }
+                        
+                        /* Light Mode: 3D Elevated Glass */
                         .glass-panel { 
-                            background: rgba(255, 255, 255, 0.85); 
-                            backdrop-filter: blur(12px); 
-                            -webkit-backdrop-filter: blur(12px); 
-                            border: 1px solid rgba(255, 255, 255, 0.6); 
-                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* 🚀 NAYA: Premium Soft Shadow */
+                            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.70) 100%); 
+                            backdrop-filter: blur(16px); 
+                            -webkit-backdrop-filter: blur(16px); 
+                            border: 1px solid rgba(255, 255, 255, 0.9); 
+                            border-bottom-color: rgba(226, 232, 240, 0.8); /* Darker bottom border for depth */
+                            box-shadow: 
+                                0 15px 35px -5px rgba(15, 23, 42, 0.12),  /* Primary drop shadow */
+                                0 5px 15px -3px rgba(15, 23, 42, 0.06),   /* Soft ambient shadow */
+                                inset 0 2px 4px rgba(255, 255, 255, 0.9); /* 3D Inner Top Highlight (Glow) */
                         }
+                        
+                        /* Dark Mode: Stealth 3D Glass */
                         .dark .glass-panel {
-                            background: rgba(15, 23, 42, 0.7);
+                            background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
                             border: 1px solid rgba(255, 255, 255, 0.1);
+                            border-top: 1px solid rgba(255, 255, 255, 0.25); /* Stronger top light reflection */
+                            box-shadow: 
+                                0 20px 40px -10px rgba(0, 0, 0, 0.75),    /* Heavy drop shadow for contrast */
+                                0 8px 16px -4px rgba(0, 0, 0, 0.5),       /* Mid ambient shadow */
+                                inset 0 1px 2px rgba(255, 255, 255, 0.08); /* Subtle inner edge glow */
                         }
                     </style>
                 `;
