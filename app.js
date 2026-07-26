@@ -1525,6 +1525,7 @@ window.editDeployedCourse = async function(docId) {
             }
             if(data.design) {
                 document.getElementById('deploy-icon').value = data.design.icon || 'fa-book';
+                if(document.getElementById('deploy-tile-style')) document.getElementById('deploy-tile-style').value = data.design.tileStyle || 'default'; // 🚀 NAYA: Load tile style
                 document.getElementById('deploy-icon-color').value = data.design.iconColor || '#059669';
                 document.getElementById('deploy-box-bg').value = data.design.boxBg || '#ecfdf5';
                 document.getElementById('deploy-box-border').value = data.design.boxBorder || '#a7f3d0';
@@ -1689,6 +1690,7 @@ window.deployMasterCourse = async function() {
         status: document.getElementById('deploy-status')?.value || 'live',
         design: {
             icon: document.getElementById('deploy-icon')?.value || 'fa-book',
+            tileStyle: document.getElementById('deploy-tile-style')?.value || 'default', // 🚀 NAYA: Save tile style
             textColorMode: document.getElementById('deploy-text-color-mode')?.value || 'default',
             iconColor: document.getElementById('deploy-icon-color')?.value || '#059669',
             boxBg: document.getElementById('deploy-box-bg')?.value || '#ecfdf5',

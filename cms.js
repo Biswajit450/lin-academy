@@ -538,7 +538,7 @@ window.renderHomepage = async function() {
 
         const flushGroups = () => {
             if(announcementGroup.length > 0) {
-                // 🚀 FIX 1: Tailwind CSS reset override for Home Page Rich Text (Headings, Lists, Links, Alignments)
+                // 🚀 FIX 1 & NEW: Tailwind CSS reset override + Glassmorphism Styles
                 const richTextStyles = `
                     <style>
                         /* Headings Fix */
@@ -556,6 +556,20 @@ window.renderHomepage = async function() {
                         .ql-align-center { text-align: center !important; }
                         .ql-align-right { text-align: right !important; }
                         .ql-align-justify { text-align: justify !important; }
+                        
+                        /* 💎 NEW: Glassmorphism Tile Styles */
+                        .edtech-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+                        .edtech-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+                        .glass-panel { 
+                            background: rgba(255, 255, 255, 0.85); 
+                            backdrop-filter: blur(12px); 
+                            -webkit-backdrop-filter: blur(12px); 
+                            border: 1px solid rgba(255, 255, 255, 0.6); 
+                        }
+                        .dark .glass-panel {
+                            background: rgba(15, 23, 42, 0.7);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                        }
                     </style>
                 `;
 
@@ -680,21 +694,43 @@ window.renderHomepage = async function() {
                                 let exploreBtnHtml = (course.exploreHtml || course.trailerUrl) ? 
                                     `<button onclick="window.openMegaExplore('${course.title}')" class="w-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-brand-blue dark:text-blue-400 font-bold py-2 rounded-xl border border-blue-100 dark:border-blue-800/50 transition-colors shadow-sm active:scale-95 text-xs flex items-center justify-center gap-1.5 mb-2"><i class="fa-solid fa-circle-info"></i> Explore Details</button>` : '';
                                 let tWidth = d.tileSize==='small'?'w-40':d.tileSize==='medium'?'w-52':'w-64';
+                                let tileStyle = d.tileStyle || 'default'; // 🚀 NAYA: Check style
                                 
-                                tilesHtml += `
-                                <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
-                                    ${badgeHtml}
-                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
-                                        <i class="fa-solid ${d.icon || 'fa-book'}"></i>
-                                    </div>
-                                    <h4 class="text-base font-bold mb-2 leading-snug text-slate-900 dark:text-white" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle || ''}</p>
+                                if (tileStyle === 'glass') {
+                                    // 💎 NEW: RECTANGULAR GLASS TILE
+                                    let glassWidth = d.tileSize==='small'?'w-56':d.tileSize==='medium'?'w-64':'w-72';
                                     
-                                    <div class="mt-auto flex flex-col w-full">
-                                        ${exploreBtnHtml}
-                                        <button onclick="window.initiateCheckout('${course.title}')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
-                                    </div>
-                                </div>`;
+                                    tilesHtml += `
+                                    <div class="snap-center shrink-0 ${glassWidth} edtech-card glass-panel p-4 rounded-3xl flex flex-row items-center gap-4 relative overflow-hidden group cursor-pointer" onclick="window.openMegaExplore('${course.title}')">
+                                        ${badgeHtml}
+                                        <div class="w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:rotate-12 transition-transform" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border: 2px solid ${d.boxBorder || 'transparent'};">
+                                            <i class="fa-solid ${d.icon || 'fa-pencil'} text-xl"></i>
+                                        </div>
+                                        <div class="flex-grow flex flex-col justify-center text-left">
+                                            <h4 class="text-base font-extrabold text-slate-800 dark:text-white leading-tight" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 line-clamp-1">${course.subtitle || ''}</p>
+                                        </div>
+                                        <div class="shrink-0 text-slate-300 group-hover:text-brand-blue transition-colors mr-1">
+                                            <i class="fa-solid fa-chevron-right text-sm"></i>
+                                        </div>
+                                    </div>`;
+                                } else {
+                                    // 📦 OLD: DEFAULT VERTICAL TILE
+                                    tilesHtml += `
+                                    <div class="snap-center shrink-0 ${tWidth} bg-white dark:bg-slate-900 rounded-3xl p-5 border-2 border-solid shadow-md hover:-translate-y-1 transition-all flex flex-col relative overflow-hidden group" style="border-color: ${d.tileBorder || '#f1f5f9'};">
+                                        ${badgeHtml}
+                                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl border-2 border-solid shadow-inner transition-transform group-hover:scale-110" style="background-color: ${d.boxBg || '#ecfdf5'}; color: ${d.iconColor || '#059669'}; border-color: ${d.boxBorder || 'transparent'};">
+                                            <i class="fa-solid ${d.icon || 'fa-book'}"></i>
+                                        </div>
+                                        <h4 class="text-base font-bold mb-2 leading-snug text-slate-900 dark:text-white" style="color: ${d.textColorMode === 'brand' ? '#2563eb' : ''}">${course.title}</h4>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-2 flex-grow">${course.subtitle || ''}</p>
+                                        
+                                        <div class="mt-auto flex flex-col w-full">
+                                            ${exploreBtnHtml}
+                                            <button onclick="window.initiateCheckout('${course.title}')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-brand-blue font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-sm active:scale-95 text-xs">Enroll Now</button>
+                                        </div>
+                                    </div>`;
+                                }
                             });
 
                             // Sub-category ka Title tabhi dikhayenge jab wo actually bani ho
