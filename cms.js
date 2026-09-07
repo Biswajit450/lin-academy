@@ -477,13 +477,14 @@ window.saveHomeCMSData = async function() {
         const logoFileInput = document.getElementById('cms-logo-upload').files[0];
         if(logoFileInput) {
             const upUrl = await uploadFileToStorage(logoFileInput, 'cms_images/logo', 'cms-logo-preview');
-            if(upUrl) globalLogoUrl = upUrl;
+            if(upUrl) { globalLogoUrl = upUrl; document.getElementById('cms-logo-upload').value = ''; }
         } else if (!globalLogoUrl || globalLogoUrl.includes('index.html')) {
             globalLogoUrl = ''; 
         }
 
         const sduiLayout = [];
-        const blocks = document.querySelectorAll('.cms-widget-block');
+        // 🚀 BUG FIX 1: Strictly scope the query to ONLY the Main Homepage Canvas
+        const blocks = document.getElementById('home-canvas-inner').querySelectorAll(':scope > .cms-widget-block');
 
         for (let block of blocks) {
             const type = block.getAttribute('data-type');
@@ -494,18 +495,14 @@ window.saveHomeCMSData = async function() {
                 const slideItems = block.querySelectorAll('.carousel-slide-item');
                 for (let item of slideItems) {
                     let imgUrl = item.querySelector('.slide-existing-photo').value;
-                    const file = item.querySelector('.slide-upload').files[0];
-                    if (file) {
-                        const upUrl = await uploadFileToStorage(file, 'cms_images/banners', item.querySelector('img').id);
-                        if (upUrl) imgUrl = upUrl;
+                    const fileInput = item.querySelector('.slide-upload');
+                    if (fileInput.files[0]) {
+                        const upUrl = await uploadFileToStorage(fileInput.files[0], 'cms_images/banners', item.querySelector('img').id);
+                        if (upUrl) { imgUrl = upUrl; fileInput.value = ''; } // 🚀 BUG FIX 3: Clear file input to stop re-uploads
                     }
-                    if (imgUrl) {
-                        slides.push({ imgUrl: imgUrl, link: item.querySelector('.slide-link').value.trim() });
-                    }
+                    if (imgUrl) slides.push({ imgUrl: imgUrl, link: item.querySelector('.slide-link').value.trim() });
                 }
-                if (slides.length > 0) {
-                    sduiLayout.push({ type: 'banner', data: { slides: slides, aspectRatio: aspectRatio } });
-                }
+                if (slides.length > 0) sduiLayout.push({ type: 'banner', data: { slides, aspectRatio } });
             }
             else if (type === 'folderRow') {
                 const folders = [];
@@ -517,19 +514,15 @@ window.saveHomeCMSData = async function() {
                     let iconUrl = item.querySelector('.folder-existing-photo').value;
                     const folderId = item.querySelector('.folder-internal-id').value;
                     const name = item.querySelector('.folder-name').value.trim();
-                    const file = item.querySelector('.folder-upload').files[0];
+                    const fileInput = item.querySelector('.folder-upload');
                     
-                    if (file) {
-                        const upUrl = await uploadFileToStorage(file, 'cms_images/folders', item.querySelector('img').id);
-                        if (upUrl) iconUrl = upUrl;
+                    if (fileInput.files[0]) {
+                        const upUrl = await uploadFileToStorage(fileInput.files[0], 'cms_images/folders', item.querySelector('img').id);
+                        if (upUrl) { iconUrl = upUrl; fileInput.value = ''; } // 🚀 BUG FIX 3
                     }
-                    if (name) {
-                        folders.push({ folderId: folderId, name: name, iconUrl: iconUrl });
-                    }
+                    if (name) folders.push({ folderId, name, iconUrl });
                 }
-                if (folders.length > 0) {
-                    sduiLayout.push({ type: 'folderRow', data: { alignment, size, folders } });
-                }
+                if (folders.length > 0) sduiLayout.push({ type: 'folderRow', data: { alignment, size, folders } });
             }
             else if (type === 'courseRow') {
                 const cat = block.querySelector('.widget-category').value.trim();
@@ -549,10 +542,10 @@ window.saveHomeCMSData = async function() {
             }
             else if (type === 'educatorRow') {
                 let photoUrl = block.querySelector('.widget-existing-photo').value;
-                const file = block.querySelector('.widget-upload').files[0];
-                if (file) {
-                    const upUrl = await uploadFileToStorage(file, 'cms_images/educators', block.querySelector('img').id);
-                    if(upUrl) photoUrl = upUrl;
+                const fileInput = block.querySelector('.widget-upload');
+                if (fileInput.files[0]) {
+                    const upUrl = await uploadFileToStorage(fileInput.files[0], 'cms_images/educators', block.querySelector('img').id);
+                    if(upUrl) { photoUrl = upUrl; fileInput.value = ''; } // 🚀 BUG FIX 3
                 }
                 sduiLayout.push({ type: 'educatorRow', data: { 
                     name: block.querySelector('.edu-name').value.trim(),
@@ -564,16 +557,11 @@ window.saveHomeCMSData = async function() {
             else if (type === 'announcement') {
                 const editor = block.querySelector('.ql-editor');
                 const text = editor ? editor.innerHTML : '';
-                if(text && text !== '<p><br></p>') sduiLayout.push({ type: 'announcement', data: { text: text }});
+                if(text && text !== '<p><br></p>') sduiLayout.push({ type: 'announcement', data: { text }});
             }
         }
 
-        const finalCmsData = {
-            appLogo: globalLogoUrl,
-            sduiLayout: sduiLayout,
-            updatedAt: new Date().toISOString()
-        };
-
+        const finalCmsData = { appLogo: globalLogoUrl, sduiLayout: sduiLayout, updatedAt: new Date().toISOString() };
         await setDoc(doc(db, "cms", "homepage"), finalCmsData, { merge: true });
         alert("Success! 🚀 Your Smart SDUI Homepage is now live.");
         window.renderHomepage(); 
@@ -1257,7 +1245,7 @@ window.saveFolderSubCanvas = async function() {
 
     const folderId = document.getElementById('sub-canvas-folder-id').value;
     const sduiLayout = [];
-    const blocks = document.getElementById('sub-canvas-inner').querySelectorAll('.cms-widget-block');
+    const blocks = document.getElementById('sub-canvas-inner').querySelectorAll(':scope > .cms-widget-block'); // 🚀 Scope Lock Applied
 
     try {
         for (let block of blocks) {
@@ -1269,10 +1257,10 @@ window.saveFolderSubCanvas = async function() {
                 const slideItems = block.querySelectorAll('.carousel-slide-item');
                 for (let item of slideItems) {
                     let imgUrl = item.querySelector('.slide-existing-photo').value;
-                    const file = item.querySelector('.slide-upload').files[0];
-                    if (file) {
-                        const upUrl = await uploadFileToStorage(file, 'cms_images/banners', item.querySelector('img').id);
-                        if (upUrl) imgUrl = upUrl;
+                    const fileInput = item.querySelector('.slide-upload');
+                    if (fileInput.files[0]) {
+                        const upUrl = await uploadFileToStorage(fileInput.files[0], 'cms_images/banners', item.querySelector('img').id);
+                        if (upUrl) { imgUrl = upUrl; fileInput.value = ''; } // 🚀 Clear Cache
                     }
                     if (imgUrl) slides.push({ imgUrl: imgUrl, link: item.querySelector('.slide-link').value.trim() });
                 }
@@ -1301,12 +1289,7 @@ window.saveFolderSubCanvas = async function() {
             }
         }
 
-        // Store isolated folder layout in Firebase
-        await setDoc(doc(db, "cms_folders", folderId), {
-            sduiLayout: sduiLayout,
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
-
+        await setDoc(doc(db, "cms_folders", folderId), { sduiLayout, updatedAt: new Date().toISOString() }, { merge: true });
         alert("VIP Room Saved! 🚀 You can close the modal now.");
         document.getElementById('folder-sub-canvas-modal').classList.add('hidden');
     } catch(e) {
