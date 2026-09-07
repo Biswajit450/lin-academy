@@ -607,25 +607,35 @@ window.loadCMSDataIntoAdmin = async function() {
 // 🚀 RENDER CMS DATA ON STUDENT HOMEPAGE 🚀
 // ==========================================
 
-window.renderHomepage = async function() {
+window.renderHomepage = async function(vipLayoutData = null) {
     try {
-        const snap = await getDoc(doc(db, "cms", "homepage"));
-        if(!snap.exists()) return;
-        const data = snap.data();
+        let data = null;
         
-        if(data.appLogo) {
-            ['app-logo-img', 'mobile-logo-img'].forEach(id => {
-                const img = document.getElementById(id);
-                if(img) { img.src = data.appLogo; img.classList.remove('hidden'); }
-            });
-            ['app-logo-text', 'mobile-logo-text'].forEach(id => {
-                const txt = document.getElementById(id);
-                if(txt) txt.classList.add('hidden');
-            });
+        if (vipLayoutData) {
+            // 🚀 VIP Room Mode: Uses direct data, bypassing Firebase fetch
+            data = { sduiLayout: vipLayoutData };
+        } else {
+            // 🏠 Main Homepage Mode: Fetches from Firebase
+            const snap = await getDoc(doc(db, "cms", "homepage"));
+            if(!snap.exists()) return;
+            data = snap.data();
+            
+            if(data.appLogo) {
+                ['app-logo-img', 'mobile-logo-img'].forEach(id => {
+                    const img = document.getElementById(id);
+                    if(img) { img.src = data.appLogo; img.classList.remove('hidden'); }
+                });
+                ['app-logo-text', 'mobile-logo-text'].forEach(id => {
+                    const txt = document.getElementById(id);
+                    if(txt) txt.classList.add('hidden');
+                });
+            }
         }
 
         const canvas = document.getElementById('dynamic-home-canvas');
         if (!canvas) return; 
+        
+        // ... ISKE NEECHE KA CODE SAME RAHEGA ...
 
         canvas.innerHTML = ''; 
         
@@ -1312,35 +1322,25 @@ window.openFolderView = async function(folderId, folderName) {
     folderCanvas.innerHTML = '<div class="text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-brand-blue mb-4"></i><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Unlocking Ecosystem...</p></div>';
     
     try {
+        // 🚀 FIX: Fetching directly from the secure 'cms_folders' collection
         const snap = await getDoc(doc(db, "cms_folders", folderId));
         
         if (snap.exists() && snap.data().sduiLayout && snap.data().sduiLayout.length > 0) {
-            // 🧠 SMART FRONT-END ID SWAP
             const realHomeCanvas = document.getElementById('dynamic-home-canvas');
             
-            // Temporary Fake Data Inject so renderHomepage draws our folder!
-            const fakeData = { sduiLayout: snap.data().sduiLayout };
-            
-            // Swap IDs
+            // Swap IDs temporarily so native renderer draws here
             if(realHomeCanvas) realHomeCanvas.id = 'dynamic-home-canvas-temp';
             folderCanvas.id = 'dynamic-home-canvas';
+            folderCanvas.innerHTML = ''; 
             
-            folderCanvas.innerHTML = ''; // Clear spinner
-            
-            // Execute render manually inside the canvas
-            const sduiScript = document.createElement('script');
-            sduiScript.textContent = `
-                window.renderHomepageOverride = ${window.renderHomepage.toString().replace('getDoc(doc(db, "cms", "homepage"))', 'Promise.resolve({ exists: () => true, data: () => ('+JSON.stringify(fakeData)+') })')};
-                window.renderHomepageOverride();
-            `;
-            document.body.appendChild(sduiScript);
-            
-            setTimeout(() => {
-                // Restore IDs safely
+            try {
+                // 🚀 DIRECT CALL: Pass VIP data to the native function
+                await window.renderHomepage(snap.data().sduiLayout);
+            } finally {
+                // Restore IDs safely no matter what happens
                 folderCanvas.id = 'folder-render-canvas';
                 if(realHomeCanvas) realHomeCanvas.id = 'dynamic-home-canvas';
-                sduiScript.remove();
-            }, 1000);
+            }
 
         } else {
             folderCanvas.innerHTML = `<div class="text-center text-slate-400 py-20 font-bold border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl w-full">This folder is currently empty.</div>`;
