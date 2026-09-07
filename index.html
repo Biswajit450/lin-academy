@@ -244,6 +244,21 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- 🚀 NEW: THE VIP FOLDER SCREEN (STUDENT FRONT-END) 🚀 -->
+                <div id="screen-folder-view" class="app-screen hidden space-y-6">
+                    <div class="flex items-center gap-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <button onclick="window.showScreen('screen-dashboard')" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-700 shrink-0"><i class="fa-solid fa-arrow-left"></i></button>
+                        <div>
+                            <h3 id="folder-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">Folder Name</h3>
+                            <p class="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mt-1">Premium Ecosystem</p>
+                        </div>
+                    </div>
+                    
+                    <div id="folder-render-canvas" class="w-full flex flex-col space-y-8 md:space-y-10 min-h-[50vh]">
+                        <!-- Dynamic Folder Content Will Load Here -->
+                    </div>
+                </div>
 
                 <div id="screen-generic-view" class="app-screen hidden space-y-6">
                     <div class="flex items-center gap-4 mb-6">

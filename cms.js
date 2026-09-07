@@ -217,6 +217,48 @@ window.addHomeWidget = function(type, data = null) {
                 ${existingSubCatsHtml}
             </div>`;
     }
+    else if (type === 'folderRow') {
+        html += `<span class="text-[10px] font-bold text-amber-500 uppercase tracking-wider"><i class="fa-solid fa-folder-tree mr-1"></i> Folder Row</span>
+                 <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
+        
+        const alignment = data ? data.alignment : 'justify-start';
+        const size = data ? data.size : 'medium';
+
+        html += `
+            <div class="grid grid-cols-2 gap-3 mb-4 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                <div>
+                    <label class="text-[9px] font-bold text-slate-500 block mb-1 uppercase tracking-wider">Row Alignment</label>
+                    <select class="folder-alignment w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded p-1.5 font-bold outline-none dark:text-white cursor-pointer">
+                        <option value="justify-start" ${alignment === 'justify-start' ? 'selected' : ''}>Left Align</option>
+                        <option value="justify-center" ${alignment === 'justify-center' ? 'selected' : ''}>Center Align</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-slate-500 block mb-1 uppercase tracking-wider">Bubble Size</label>
+                    <select class="folder-size w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded p-1.5 font-bold outline-none dark:text-white cursor-pointer">
+                        <option value="small" ${size === 'small' ? 'selected' : ''}>Small (Compact)</option>
+                        <option value="medium" ${size === 'medium' ? 'selected' : ''}>Medium (Standard)</option>
+                        <option value="large" ${size === 'large' ? 'selected' : ''}>Large (Hero)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Folders in this Row (Drag to Sort)</p>
+            <div class="folder-cards-container space-y-2 mb-3 min-h-[50px] bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800"></div>
+            
+            <button type="button" onclick="window.addFolderToRowUI(this)" class="w-full py-2.5 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold transition-colors hover:bg-amber-100 shadow-sm">
+                + Add New Folder Bubble
+            </button>`;
+        
+        setTimeout(() => {
+            const btn = div.querySelector('button[onclick="window.addFolderToRowUI(this)"]');
+            if (data && data.folders && data.folders.length > 0) {
+                data.folders.forEach(f => window.addFolderToRowUI(btn, f));
+            } else {
+                window.addFolderToRowUI(btn); 
+            }
+        }, 50);
+    }
     else if (type === 'arenaRow') {
         html += `<span class="text-[10px] font-bold text-blue-500 uppercase tracking-wider"><i class="fa-solid fa-bolt mr-1"></i> Arena Category</span>
                  <button type="button" onclick="this.closest('.cms-widget-block').remove()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
@@ -325,6 +367,52 @@ window.addCarouselSlideUI = function(btn, slideData = null) {
     container.appendChild(div);
 }
 
+window.addFolderToRowUI = function(btn, folderData = null) {
+    const container = btn.previousElementSibling;
+    const id = 'folder-' + Date.now() + Math.floor(Math.random()*1000);
+    const name = folderData ? folderData.name : '';
+    const iconUrl = folderData ? folderData.iconUrl : '';
+    const folderId = folderData ? folderData.folderId : 'fld_' + Date.now(); // Unique ID for Sub-Canvas
+
+    const div = document.createElement('div');
+    div.className = "folder-card-item flex gap-3 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 relative shadow-sm hover:border-amber-300 transition-colors cursor-move mb-2";
+    div.draggable = true;
+    div.ondragstart = window.drag;
+    div.ondrop = function(ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        if(window.draggedElement && window.draggedElement.classList.contains('folder-card-item')) {
+            const dropTarget = ev.target.closest('.folder-card-item');
+            if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+            else if (!dropTarget && container) container.appendChild(window.draggedElement);
+        }
+    };
+    div.ondragover = window.allowDrop;
+
+    div.innerHTML = `
+        <i class="fa-solid fa-grip-vertical text-slate-400 flex items-center shrink-0"></i>
+        
+        <!-- Folder Icon Upload -->
+        <div class="shrink-0 w-16 h-16 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center relative cursor-pointer overflow-hidden bg-white dark:bg-slate-900" onclick="document.getElementById('upload-${id}').click()">
+            <img id="preview-${id}" src="${iconUrl}" class="absolute inset-0 w-full h-full object-cover z-10 ${iconUrl ? '' : 'hidden'}">
+            <i class="fa-solid fa-image text-slate-300 text-xs"></i>
+        </div>
+        <input type="file" id="upload-${id}" class="folder-upload hidden" accept="image/*" onchange="window.previewImage(this, 'preview-${id}')">
+        <input type="hidden" class="folder-existing-photo" value="${iconUrl}">
+        <input type="hidden" class="folder-internal-id" value="${folderId}">
+
+        <div class="flex-grow flex flex-col justify-center gap-2">
+            <input type="text" class="folder-name w-full p-2 text-xs font-bold rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-amber-500" placeholder="Folder Name (e.g., UPSC Prelims)" value="${name}">
+            
+            <!-- VIP Room Trigger (Phase 2 Logic) -->
+            <button type="button" onclick="window.openFolderSubCanvas('${folderId}', '${name}')" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-200 dark:border-amber-800/50 dark:bg-amber-900/20 text-[10px] font-bold py-1.5 rounded transition-colors shadow-sm flex items-center justify-center gap-1">
+                <i class="fa-solid fa-pen-ruler"></i> Edit Folder Canvas
+            </button>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-rose-100 text-rose-600 rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-rose-200 shadow-sm"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    container.appendChild(div);
+}
+
 window.fetchWidgetSubCategories = async function(btn) {
     const catInput = btn.previousElementSibling.querySelector('.widget-category').value.trim();
     if(!catInput) return alert("Please enter a category name first!");
@@ -417,6 +505,30 @@ window.saveHomeCMSData = async function() {
                 }
                 if (slides.length > 0) {
                     sduiLayout.push({ type: 'banner', data: { slides: slides, aspectRatio: aspectRatio } });
+                }
+            }
+            else if (type === 'folderRow') {
+                const folders = [];
+                const alignment = block.querySelector('.folder-alignment').value;
+                const size = block.querySelector('.folder-size').value;
+                
+                const folderItems = block.querySelectorAll('.folder-card-item');
+                for (let item of folderItems) {
+                    let iconUrl = item.querySelector('.folder-existing-photo').value;
+                    const folderId = item.querySelector('.folder-internal-id').value;
+                    const name = item.querySelector('.folder-name').value.trim();
+                    const file = item.querySelector('.folder-upload').files[0];
+                    
+                    if (file) {
+                        const upUrl = await uploadFileToStorage(file, 'cms_images/folders', item.querySelector('img').id);
+                        if (upUrl) iconUrl = upUrl;
+                    }
+                    if (name) {
+                        folders.push({ folderId: folderId, name: name, iconUrl: iconUrl });
+                    }
+                }
+                if (folders.length > 0) {
+                    sduiLayout.push({ type: 'folderRow', data: { alignment, size, folders } });
                 }
             }
             else if (type === 'courseRow') {
@@ -666,6 +778,37 @@ window.renderHomepage = async function() {
                         
                         setTimeout(() => window.initCarouselAutoplay(cid), 200);
                     }
+                }
+
+                else if (item.type === 'folderRow') {
+                    const alignment = item.data.alignment || 'justify-start';
+                    const size = item.data.size || 'medium';
+                    
+                    let circleClass = 'w-16 h-16 md:w-20 md:h-20'; 
+                    let titleClass = 'text-xs md:text-sm';
+                    if (size === 'small') { circleClass = 'w-14 h-14 md:w-16 md:h-16'; titleClass = 'text-[10px] md:text-[11px]'; }
+                    if (size === 'large') { circleClass = 'w-20 h-20 md:w-24 md:h-24'; titleClass = 'text-sm md:text-base'; }
+
+                    let foldersHtml = '';
+                    item.data.folders.forEach(f => {
+                        foldersHtml += `
+                        <div onclick="window.openFolderView('${f.folderId}', '${f.name}')" class="flex flex-col items-center gap-2.5 cursor-pointer group shrink-0 w-24 md:w-28 transition-transform hover:-translate-y-1">
+                            <div class="${circleClass} rounded-full border-4 border-transparent group-hover:border-amber-400 p-0.5 transition-all duration-300 shadow-md">
+                                <div class="w-full h-full rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-inner flex items-center justify-center">
+                                    <img src="${f.iconUrl}" class="w-full h-full object-cover ${f.iconUrl ? '' : 'hidden'}">
+                                    <i class="fa-solid fa-folder text-slate-300 text-2xl ${f.iconUrl ? 'hidden' : ''}"></i>
+                                </div>
+                            </div>
+                            <span class="${titleClass} font-bold text-slate-700 dark:text-slate-300 text-center leading-tight group-hover:text-amber-500 transition-colors">${f.name}</span>
+                        </div>`;
+                    });
+
+                    canvas.innerHTML += `
+                    <section class="w-full">
+                        <div class="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 ${alignment}">
+                            ${foldersHtml}
+                        </div>
+                    </section>`;
                 }
                 
                 else if (item.type === 'courseRow') {
@@ -1035,3 +1178,192 @@ window.resetCarouselTimer = function(cid) {
         window.carouselTimers[cid] = setInterval(() => window.moveCarousel(cid, 1), 4000); // 4 Seconds Auto-Shuffle
     }
 };
+
+// ==========================================
+// 🚀 PHASE 2: FOLDER SUB-CANVAS (VIP ROOM) ENGINE
+// ==========================================
+
+window.dropSubCanvasWidget = function(ev) {
+    ev.preventDefault();
+    if(window.draggedElement && window.draggedElement.classList.contains('cms-widget-block')) {
+        const dropTarget = ev.target.closest('.cms-widget-block');
+        const list = document.getElementById('sub-canvas-inner');
+        if(dropTarget && window.draggedElement !== dropTarget) dropTarget.parentNode.insertBefore(window.draggedElement, dropTarget);
+        else if (!dropTarget && ev.target.closest('#sub-canvas-dropzone')) list.appendChild(window.draggedElement);
+    }
+}
+
+// 🧠 SMART ID-SWAP HACK: Reuses massive HomeWidget logic without breaking the app
+window.addSubCanvasWidget = function(type, data = null) {
+    const mainDropzone = document.getElementById('home-canvas-inner');
+    const mainPlaceholder = document.getElementById('home-canvas-placeholder');
+    const subDropzone = document.getElementById('sub-canvas-inner');
+    const subPlaceholder = document.getElementById('sub-canvas-placeholder');
+    
+    // Swap IDs temporarily
+    if(mainDropzone) mainDropzone.id = 'home-canvas-inner-temp';
+    if(mainPlaceholder) mainPlaceholder.id = 'home-canvas-placeholder-temp';
+    subDropzone.id = 'home-canvas-inner';
+    if(subPlaceholder) subPlaceholder.id = 'home-canvas-placeholder';
+    
+    // Call the original powerful builder
+    window.addHomeWidget(type, data);
+    
+    // Switch the drop handler for the newly created widget
+    const newWidget = document.getElementById('home-canvas-inner').lastElementChild;
+    if(newWidget) {
+        newWidget.classList.add('sub-canvas-widget');
+        newWidget.ondrop = window.dropSubCanvasWidget;
+    }
+
+    // Restore IDs safely
+    subDropzone.id = 'sub-canvas-inner';
+    if(subPlaceholder) subPlaceholder.id = 'sub-canvas-placeholder';
+    if(mainDropzone) mainDropzone.id = 'home-canvas-inner';
+    if(mainPlaceholder) mainPlaceholder.id = 'home-canvas-placeholder';
+}
+
+window.openFolderSubCanvas = async function(folderId, folderName) {
+    const modal = document.getElementById('folder-sub-canvas-modal');
+    document.getElementById('sub-canvas-title').innerText = folderName;
+    document.getElementById('sub-canvas-folder-id').value = folderId;
+    
+    const dropzone = document.getElementById('sub-canvas-inner');
+    dropzone.innerHTML = '<div class="text-center text-slate-400 py-16"><i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-brand-blue"></i><br>Unlocking VIP Room...</div>';
+    
+    modal.classList.remove('hidden');
+
+    try {
+        // Fetch specific folder layout from a clean, isolated database collection
+        const snap = await getDoc(doc(db, "cms_folders", folderId));
+        dropzone.innerHTML = '';
+        
+        if(snap.exists() && snap.data().sduiLayout && snap.data().sduiLayout.length > 0) {
+            snap.data().sduiLayout.forEach(item => window.addSubCanvasWidget(item.type, item.data));
+        } else {
+            dropzone.innerHTML = `<div id="sub-canvas-placeholder" class="text-center text-slate-400 py-16 text-xs font-bold uppercase tracking-widest"><i class="fa-solid fa-arrow-left mb-2 text-xl"></i><br>Add widgets from the left</div>`;
+        }
+    } catch(e) {
+        console.error("VIP Room Load Error", e);
+        dropzone.innerHTML = '<div class="text-rose-500 text-center py-10">Error loading folder ecosystem.</div>';
+    }
+}
+
+window.saveFolderSubCanvas = async function() {
+    const btn = document.getElementById('sub-canvas-save-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const folderId = document.getElementById('sub-canvas-folder-id').value;
+    const sduiLayout = [];
+    const blocks = document.getElementById('sub-canvas-inner').querySelectorAll('.cms-widget-block');
+
+    try {
+        for (let block of blocks) {
+            const type = block.getAttribute('data-type');
+            
+            if (type === 'banner') {
+                const slides = [];
+                const aspectRatio = block.querySelector('.banner-aspect-ratio').value;
+                const slideItems = block.querySelectorAll('.carousel-slide-item');
+                for (let item of slideItems) {
+                    let imgUrl = item.querySelector('.slide-existing-photo').value;
+                    const file = item.querySelector('.slide-upload').files[0];
+                    if (file) {
+                        const upUrl = await uploadFileToStorage(file, 'cms_images/banners', item.querySelector('img').id);
+                        if (upUrl) imgUrl = upUrl;
+                    }
+                    if (imgUrl) slides.push({ imgUrl: imgUrl, link: item.querySelector('.slide-link').value.trim() });
+                }
+                if (slides.length > 0) sduiLayout.push({ type: 'banner', data: { slides, aspectRatio } });
+            }
+            else if (type === 'courseRow') {
+                const cat = block.querySelector('.widget-category').value.trim();
+                const subCats = [];
+                block.querySelectorAll('.subcat-name').forEach(el => subCats.push(el.innerText.trim()));
+                if(cat) sduiLayout.push({ type: 'courseRow', data: { category: cat, orderedSubCats: subCats }});
+            }
+            else if (type === 'arenaRow') {
+                const catName = block.querySelector('.arena-cat-name').value.trim();
+                const tests = [];
+                block.querySelectorAll('.flex.gap-2.items-center').forEach(tItem => {
+                    const tName = tItem.querySelector('.test-name').value.trim();
+                    const tVault = tItem.querySelector('.test-vault').value.trim();
+                    if(tName && tVault) tests.push({ name: tName, vaultId: tVault, status: tItem.querySelector('.test-status').value });
+                });
+                if(catName) sduiLayout.push({ type: 'arenaRow', data: { name: catName, tests: tests }});
+            }
+            else if (type === 'announcement') {
+                const editor = block.querySelector('.ql-editor');
+                const text = editor ? editor.innerHTML : '';
+                if(text && text !== '<p><br></p>') sduiLayout.push({ type: 'announcement', data: { text: text }});
+            }
+        }
+
+        // Store isolated folder layout in Firebase
+        await setDoc(doc(db, "cms_folders", folderId), {
+            sduiLayout: sduiLayout,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        alert("VIP Room Saved! 🚀 You can close the modal now.");
+        document.getElementById('folder-sub-canvas-modal').classList.add('hidden');
+    } catch(e) {
+        console.error("Folder Save Error", e);
+        alert("Failed to save folder ecosystem.");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+}
+
+// ==========================================
+// 🚀 STUDENT FOLDER ROUTER & RENDERER
+// ==========================================
+window.openFolderView = async function(folderId, folderName) {
+    await window.showScreen('screen-folder-view');
+    document.getElementById('folder-view-title').innerText = folderName;
+    const folderCanvas = document.getElementById('folder-render-canvas');
+    
+    folderCanvas.innerHTML = '<div class="text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-brand-blue mb-4"></i><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Unlocking Ecosystem...</p></div>';
+    
+    try {
+        const snap = await getDoc(doc(db, "cms_folders", folderId));
+        
+        if (snap.exists() && snap.data().sduiLayout && snap.data().sduiLayout.length > 0) {
+            // 🧠 SMART FRONT-END ID SWAP
+            const realHomeCanvas = document.getElementById('dynamic-home-canvas');
+            
+            // Temporary Fake Data Inject so renderHomepage draws our folder!
+            const fakeData = { sduiLayout: snap.data().sduiLayout };
+            
+            // Swap IDs
+            if(realHomeCanvas) realHomeCanvas.id = 'dynamic-home-canvas-temp';
+            folderCanvas.id = 'dynamic-home-canvas';
+            
+            folderCanvas.innerHTML = ''; // Clear spinner
+            
+            // Execute render manually inside the canvas
+            const sduiScript = document.createElement('script');
+            sduiScript.textContent = `
+                window.renderHomepageOverride = ${window.renderHomepage.toString().replace('getDoc(doc(db, "cms", "homepage"))', 'Promise.resolve({ exists: () => true, data: () => ('+JSON.stringify(fakeData)+') })')};
+                window.renderHomepageOverride();
+            `;
+            document.body.appendChild(sduiScript);
+            
+            setTimeout(() => {
+                // Restore IDs safely
+                folderCanvas.id = 'folder-render-canvas';
+                if(realHomeCanvas) realHomeCanvas.id = 'dynamic-home-canvas';
+                sduiScript.remove();
+            }, 1000);
+
+        } else {
+            folderCanvas.innerHTML = `<div class="text-center text-slate-400 py-20 font-bold border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl w-full">This folder is currently empty.</div>`;
+        }
+    } catch(e) {
+        console.error("Folder Render Error", e);
+        folderCanvas.innerHTML = '<div class="text-rose-500 text-center py-20 font-bold">Failed to load folder contents.</div>';
+    }
+}
