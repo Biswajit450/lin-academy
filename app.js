@@ -2183,3 +2183,129 @@ window.closeMegaExplore = function() {
     const frame = document.getElementById('mega-video-frame');
     if (frame) frame.src = "";
 }
+
+// ==========================================
+// 🚀 SPOTLIGHT SEARCH ENGINE (MAC-OS STYLE)
+// ==========================================
+window.cachedSearchIndex = [];
+window.searchDebounceTimer = null;
+
+// 1. Build Secure Local Index (Zero-Cost Cache)
+window.buildSearchIndex = async function() {
+    try {
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "deployed_courses"));
+        window.cachedSearchIndex = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            window.cachedSearchIndex.push({
+                id: doc.id,
+                title: data.title || '',
+                category: data.category || 'Course',
+                icon: data.design?.icon || 'fa-book',
+                iconColor: data.design?.iconColor || '#2563eb',
+                bg: data.design?.boxBg || '#eff6ff'
+            });
+        });
+        console.log("Spotlight Index Built: ", window.cachedSearchIndex.length, "Courses securely loaded in memory.");
+    } catch(e) {
+        console.error("Search Index Error:", e);
+    }
+};
+
+// 2. Modal Controls
+window.openSearchModal = function() {
+    const modal = document.getElementById('search-modal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        // Delay focus slightly so transition can complete
+        setTimeout(() => document.getElementById('spotlight-search-input').focus(), 100);
+        
+        // Failsafe: Agar index khali hai toh fetch kar lo
+        if(window.cachedSearchIndex.length === 0) window.buildSearchIndex();
+    }
+};
+
+window.closeSearchModal = function() {
+    const modal = document.getElementById('search-modal');
+    if(modal) {
+        modal.classList.add('hidden');
+        document.getElementById('spotlight-search-input').value = '';
+        document.getElementById('spotlight-results').innerHTML = `
+            <div class="text-center py-12 text-slate-400 flex flex-col items-center">
+                <i class="fa-solid fa-wand-magic-sparkles text-3xl mb-3 opacity-30"></i>
+                <p class="text-[10px] font-bold uppercase tracking-widest">Type to start magical search</p>
+            </div>`;
+    }
+};
+
+// 3. The Reflex (Keyboard Shortcuts: Ctrl+K / Cmd+K and Esc)
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const modal = document.getElementById('search-modal');
+        if(modal && modal.classList.contains('hidden')) {
+            window.openSearchModal();
+        } else {
+            window.closeSearchModal();
+        }
+    }
+    if (e.key === 'Escape') {
+        window.closeSearchModal();
+    }
+});
+
+// 4. Fuzzy Search with Debounce (Cost & Performance Saver)
+window.handleSpotlightSearch = function(event) {
+    clearTimeout(window.searchDebounceTimer);
+    const query = event.target.value.toLowerCase().trim();
+    const resultsBox = document.getElementById('spotlight-results');
+
+    if(query.length < 2) {
+        resultsBox.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">Keep typing...</div>';
+        return;
+    }
+
+    resultsBox.innerHTML = '<div class="text-center py-8 text-brand-blue"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i></div>';
+
+    // Wait 300ms after user stops typing before searching
+    window.searchDebounceTimer = setTimeout(() => {
+        const results = window.cachedSearchIndex.filter(item => 
+            item.title.toLowerCase().includes(query) || 
+            item.category.toLowerCase().includes(query)
+        );
+
+        if(results.length === 0) {
+            resultsBox.innerHTML = `
+                <div class="text-center py-10 text-slate-400">
+                    <i class="fa-solid fa-ghost text-2xl mb-2 opacity-50"></i>
+                    <p class="text-sm font-bold text-slate-600 dark:text-slate-300">No matching courses found</p>
+                    <p class="text-[10px] uppercase">Try a different keyword</p>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        results.forEach(item => {
+            // Live Typo Highlighting Magic
+            const regex = new RegExp(`(${query})`, "gi");
+            const highlightedTitle = item.title.replace(regex, `<span class="text-brand-blue font-extrabold bg-blue-50 dark:bg-blue-900/40 px-0.5 rounded">$1</span>`);
+            
+            html += `
+            <div onclick="window.closeSearchModal(); window.openMegaExplore('${item.id}')" class="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-brand-blue dark:hover:border-blue-500 cursor-pointer transition-all hover:shadow-md group mb-1">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 transition-transform group-hover:scale-105" style="background-color: ${item.bg}; color: ${item.iconColor};">
+                    <i class="fa-solid ${item.icon} text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white transition-colors group-hover:text-brand-blue">${highlightedTitle}</h4>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${item.category}</p>
+                </div>
+                <i class="fa-solid fa-chevron-right ml-auto text-slate-300 group-hover:text-brand-blue text-xs transition-transform group-hover:translate-x-1"></i>
+            </div>`;
+        });
+        resultsBox.innerHTML = html;
+    }, 300);
+};
+
+// Initialize Secure Index in background 4 seconds after app starts (so it doesn't block loading)
+setTimeout(() => { window.buildSearchIndex(); }, 4000);
