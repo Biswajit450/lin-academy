@@ -175,6 +175,16 @@
             </div>
 
             <div class="flex items-center gap-3 ml-auto md:ml-0">
+                <!-- 🚀 NAYA: Smart Search Trigger -->
+                <button onclick="window.openSearchModal()" class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full md:rounded-xl px-0 md:px-4 py-0 md:py-2 w-9 h-9 md:w-64 md:h-10 text-slate-400 hover:border-brand-blue dark:hover:border-blue-500 transition-colors shadow-sm justify-center md:justify-between group">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass text-sm group-hover:text-brand-blue transition-colors"></i>
+                        <span class="hidden md:inline text-xs font-medium">Search courses...</span>
+                    </div>
+                    <span class="hidden md:flex items-center gap-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-inner">
+                        <i class="fa-brands fa-windows"></i>/⌘ K
+                    </span>
+                </button>
                 <button onclick="window.toggleDarkMode()" class="w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-blue transition-colors duration-300 border border-slate-100 dark:border-slate-700">
                     <i class="fa-solid fa-moon dark:hidden"></i>
                     <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
@@ -414,6 +424,32 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+    <!-- 🚀 NAYA: SPOTLIGHT SEARCH MODAL 🚀 -->
+    <div id="search-modal" class="fixed inset-0 z-[110] hidden flex items-start justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md transition-opacity pt-20 md:pt-32 px-4">
+        <div class="bg-white/90 dark:bg-slate-900/90 glass-panel w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all flex flex-col max-h-[70vh]">
+            
+            <!-- Search Input Area -->
+            <div class="relative flex items-center p-4 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50">
+                <i class="fa-solid fa-magnifying-glass text-xl text-brand-blue absolute left-6"></i>
+                <input type="text" id="spotlight-search-input" oninput="window.handleSpotlightSearch(event)" class="w-full bg-transparent border-none outline-none pl-12 pr-12 py-2 text-lg md:text-xl font-bold text-slate-900 dark:text-white placeholder-slate-400" placeholder="Search for courses, tests or educators..." autocomplete="off" spellcheck="false">
+                <button onclick="window.closeSearchModal()" class="absolute right-4 w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors text-xs font-bold">ESC</button>
+            </div>
+            
+            <!-- Search Results Area -->
+            <div id="spotlight-results" class="flex-grow overflow-y-auto hide-scrollbar p-2 flex flex-col gap-1">
+                <div class="text-center py-12 text-slate-400 flex flex-col items-center">
+                    <i class="fa-solid fa-wand-magic-sparkles text-3xl mb-3 opacity-30"></i>
+                    <p class="text-[10px] font-bold uppercase tracking-widest">Type to start magical search</p>
+                </div>
+            </div>
+            
+            <!-- Security Footer -->
+            <div class="px-4 py-2 bg-slate-50/50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 text-[9px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center">
+                <span><i class="fa-solid fa-shield-halved mr-1 text-emerald-500"></i> Secure Local Index</span>
+                <span class="hidden md:inline">Powered by Lin Academy Engine</span>
             </div>
         </div>
     </div>
