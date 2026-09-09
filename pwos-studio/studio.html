@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWOS Studio - Live Whiteboard</title>
+    
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Fabric.js Core Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { blue: '#2563eb' } } } } }
+    </script>
+    
+    <!-- PDF.js Core Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+    <!-- PDF Export Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background-color: #f8fafc; 
+            touch-action: none; 
+            -ms-touch-action: none;
+        }
+        .canvas-container {
+            touch-action: none !important;
+            -ms-touch-action: none !important;
+        }
+        .glass-toolbar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        /* Dark mode toolbar override */
+        .dark .glass-toolbar {
+            background: rgba(30, 41, 59, 0.85);
+            border-color: rgba(51, 65, 85, 0.8);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex overflow-hidden bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+
+    <!-- LEFT: The Infinite Canvas Area -->
+    <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden">
+
+        <!-- 🚀 UPGRADED: Slate Command Center -->
+        <div class="absolute top-4 left-4 z-50">
+            <button id="btn-menu" class="w-12 h-12 glass-toolbar dark:bg-slate-800/90 rounded-xl shadow-lg text-slate-600 dark:text-slate-300 hover:text-brand-blue flex items-center justify-center transition">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <div id="command-menu" class="hidden absolute top-14 left-0 w-72 glass-toolbar dark:bg-slate-800/95 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-3 flex-col gap-1 overflow-hidden transition-all">
+                
+                <!-- Rename Section -->
+                <div class="px-4 pb-2">
+                    <input type="text" id="menu-rename-input" value="Untitled_Lecture" class="w-full bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-sm font-bold px-3 py-2 rounded-lg outline-none border border-transparent focus:border-brand-blue transition" title="Rename File">
+                </div>
+                <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                
+                <!-- File Management -->
+                <button id="menu-save" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-up w-5 text-center text-brand-blue"></i> Save to Vault</button>
+                <button id="menu-save-as" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition flex items-center gap-3"><i class="fa-regular fa-copy w-5 text-center text-slate-400"></i> Save As...</button>
+                <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                
+                <!-- Export Engine -->
+                <button id="menu-export-annotated" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition flex items-center gap-3"><i class="fa-solid fa-file-pdf w-5 text-center text-rose-500"></i> Download Annotated PDF</button>
+                <button id="menu-export-original" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition flex items-center gap-3"><i class="fa-regular fa-file-pdf w-5 text-center text-slate-400"></i> Download Original PDF</button>
+                <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                
+                <!-- Ecosystem -->
+                <button id="menu-share" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium transition flex items-center gap-3"><i class="fa-solid fa-link w-5 text-center text-emerald-500"></i> Share Live Link</button>
+                <button id="menu-delete" class="w-full text-left px-4 py-2 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-sm font-bold transition flex items-center gap-3"><i class="fa-solid fa-trash-can w-5 text-center"></i> Delete File</button>
+            </div>
+        </div>
+        
+        <!-- Top Floating Toolbar -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 glass-toolbar px-6 py-3 rounded-full flex gap-4 items-center z-10 transition-all shadow-lg">
+            
+            <!-- 🔴 Screen Recorder Button -->
+            <button id="btn-record" class="text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Start HD Recording"><i class="fa-solid fa-circle text-rose-500"></i></button>
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+
+            <!-- Slide / PDF Import -->
+            <button id="btn-upload" class="text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Upload Slide or PDF"><i class="fa-solid fa-file-pdf"></i></button>
+            <input type="file" id="slide-upload" accept="image/*,application/pdf" class="hidden">
+            
+            <!-- Advanced PDF Navigation -->
+            <div id="pdf-nav" class="hidden items-center bg-indigo-50/80 dark:bg-indigo-900/50 rounded-full px-2 py-1 mx-1 border border-indigo-100 dark:border-indigo-800">
+                <button id="btn-close-pdf" class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition p-1.5 rounded-full w-8 h-8 flex items-center justify-center mr-1" title="Close Presentation"><i class="fa-solid fa-xmark"></i></button>
+                <button id="btn-prev-page" class="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800 transition p-1.5 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-sm"></i></button>
+                <span id="page-indicator" class="text-xs font-bold text-indigo-800 dark:text-indigo-300 px-3 tracking-wide">1 / 1</span>
+                <button id="btn-next-page" class="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800 transition p-1.5 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-chevron-right text-sm"></i></button>
+                <button id="btn-add-blank" class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition p-1.5 rounded-full w-8 h-8 flex items-center justify-center ml-1" title="Add Blank Slide"><i class="fa-solid fa-plus text-sm"></i></button>
+            </div>
+            
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <button id="btn-pan" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Pan Tool"><i class="fa-solid fa-hand"></i></button>
+            <button id="btn-draw" class="text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Pen Tool"><i class="fa-solid fa-pen"></i></button>
+            <button id="btn-eraser" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Stroke Eraser"><i class="fa-solid fa-eraser"></i></button>
+
+            <!-- 🚀 NEW: Highlighter & Laser Pointer -->
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <button id="btn-highlight" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Highlighter"><i class="fa-solid fa-highlighter"></i></button>
+            <button id="btn-laser" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Laser Pointer"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+
+            <button id="btn-text" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Add Text"><i class="fa-solid fa-t"></i></button>
+
+            <!-- 🚀 NEW: Educator Toolkit / Shapes Button -->
+            <button id="btn-shapes" class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Asset Library"><i class="fa-solid fa-shapes"></i></button>
+
+            <button id="btn-select" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center tool-btn" title="Select Tool"><i class="fa-solid fa-arrow-pointer"></i></button>
+            
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <input type="color" id="pen-color" value="#0f172a" class="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent">
+            <input type="range" id="pen-width" min="1" max="25" value="3" class="w-24 accent-brand-blue cursor-pointer">
+            
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <button id="btn-undo" class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
+            <button id="btn-redo" class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Redo"><i class="fa-solid fa-rotate-right"></i></button>
+            
+            <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <button id="btn-clear" class="text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Clear Board"><i class="fa-solid fa-trash"></i></button>
+        </div>
+
+        <canvas id="studio-canvas"></canvas>
+        <!-- 🚀 NEW: Floating Text Format Toolbar -->
+        <div id="text-format-toolbar" class="hidden absolute top-20 left-1/2 -translate-x-1/2 glass-toolbar dark:bg-slate-800/90 dark:border-slate-700 px-4 py-2 rounded-xl flex gap-2 items-center z-40 shadow-xl transition-all">
+            <button id="fmt-bold" class="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition" title="Bold">B</button>
+            <button id="fmt-italic" class="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 italic transition" title="Italic">I</button>
+            <button id="fmt-underline" class="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 underline transition" title="Underline">U</button>
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <input type="number" id="fmt-size" class="w-12 h-8 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-center text-sm outline-none border border-transparent focus:border-brand-blue transition" value="24" min="10" max="120" title="Font Size">
+            <input type="color" id="fmt-color" class="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" title="Text Color" value="#0f172a">
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <button id="fmt-math" class="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition" title="Math Symbols"><i class="fa-solid fa-square-root-variable"></i></button>
+            
+            <!-- 🚀 NEW: Delete Text Button -->
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            <button id="fmt-delete" class="w-8 h-8 rounded hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-500 transition" title="Delete Text"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+
+        <!-- 🚀 NEW: Math Symbols Grid (Context Menu) -->
+        <div id="math-symbols-grid" class="hidden absolute bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 rounded-lg shadow-xl z-50 grid grid-cols-4 gap-1">
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">α</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">β</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">θ</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">π</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">∞</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">∑</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">√</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">≈</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">±</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">°</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">²</button>
+            <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">³</button>
+        </div>
+        <!-- 🚀 PRO: Educator Asset Library -->
+        <div id="asset-library-menu" class="hidden absolute top-20 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-2xl z-50 w-80 transition-all">
+            <!-- Math & Geometry -->
+            <div class="mb-4">
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Geometry & Graphs</span>
+                <div class="grid grid-cols-5 gap-2">
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="rect" title="Rectangle"><i class="fa-regular fa-square"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="circle" title="Circle"><i class="fa-regular fa-circle"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="triangle" title="Triangle"><i class="fa-solid fa-caret-up"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="line" title="Straight Line"><i class="fa-solid fa-slash"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="axis" title="Coordinate Axis"><i class="fa-solid fa-chart-line"></i></button>
+                </div>
+            </div>
+            
+            <!-- Science Kits -->
+            <div>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Physics & Chemistry</span>
+                <div class="grid grid-cols-5 gap-2">
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="benzene" title="Benzene Ring"><i class="fa-solid fa-hexagon-nodes"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="resistor" title="Resistor"><i class="fa-solid fa-wave-square"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="battery" title="Battery"><i class="fa-solid fa-battery-half"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="beaker" title="Beaker/Flask"><i class="fa-solid fa-flask"></i></button>
+                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="cube" title="3D Cube"><i class="fa-solid fa-cube"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Toggle Panel Button -->
+        <button id="btn-toggle-panel" class="absolute bottom-6 right-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-xl hover:bg-brand-blue dark:hover:bg-brand-blue hover:text-white transition w-14 h-14 rounded-2xl flex items-center justify-center z-50">
+            <i class="fa-solid fa-expand text-2xl"></i>
+        </button>
+    </div>
+
+    <!-- RIGHT: Live Interaction Panel -->
+    <div id="right-panel" class="w-[400px] shrink-0 h-full bg-white dark:bg-slate-900 flex shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] dark:shadow-none z-20 transition-colors duration-300">
+        <div class="flex-1 flex flex-col h-full border-l border-slate-200 dark:border-slate-700">
+            
+            <!-- 📷 WebRTC Container with Live Video Tag -->
+            <div id="webcam-placeholder" class="h-[200px] shrink-0 bg-slate-900 dark:bg-black relative">
+                <div id="webcam-container" class="h-full w-full bg-slate-900 dark:bg-black flex flex-col items-center justify-center text-slate-500 select-none overflow-hidden group">
+                    
+                    <!-- Offline Placeholder UI -->
+                    <div id="cam-offline-ui" class="flex flex-col items-center">
+                        <i class="fa-solid fa-video text-4xl mb-3 hover:text-brand-blue cursor-pointer transition" id="btn-start-cam" title="Turn on Camera"></i>
+                        <span class="text-sm font-medium tracking-wide">Click to Start Camera</span>
+                    </div>
+
+                    <!-- Live Video Element -->
+                    <video id="live-video" class="hidden w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline muted></video>
+                    
+                    <div class="absolute top-3 left-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider hidden" id="live-badge">Live</div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50">
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
+                    <span class="font-bold text-slate-700 dark:text-slate-200">Live Chat</span>
+                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded-full"><i class="fa-solid fa-circle text-[8px] mr-1"></i> 0</span>
+                </div>
+                <div class="flex-1 p-4 overflow-y-auto flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-sm text-center">
+                    <i class="fa-regular fa-comments text-3xl mb-2"></i>
+                    <p>Live messages will appear here.</p>
+                </div>
+                <div class="h-16 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 flex items-center gap-2">
+                    <button class="text-slate-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 p-2 transition"><i class="fa-regular fa-face-smile text-lg"></i></button>
+                    <input type="text" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg px-3 text-sm outline-none border border-transparent focus:border-brand-blue transition" disabled>
+                    <button class="bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 w-10 h-10 rounded-lg flex items-center justify-center"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inner Right: Tools -->
+        <div class="w-14 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-4">
+            <!-- 🌙 Dark Mode Toggle Button -->
+            <button id="btn-theme" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition" title="Toggle Dark Mode"><i class="fa-solid fa-moon text-lg"></i></button>
+            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            
+            <!-- 🚀 NEW: Presenter Notes Button -->
+            <button id="btn-presenter-notes" class="w-10 h-10 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" title="Private Presenter Notes"><i class="fa-solid fa-clipboard-list text-lg"></i></button>
+            
+            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition"><i class="fa-solid fa-square-poll-vertical text-lg"></i></button>
+            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition"><i class="fa-solid fa-hand text-lg"></i></button>
+            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition"><i class="fa-solid fa-comment-slash text-lg"></i></button>
+            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-gear text-lg"></i></button>
+        </div>
+    </div>
+
+    <!-- 🚀 NEW: Presenter's Teleprompter (Draggable Notes) -->
+    <div id="presenter-notes-widget" class="hidden absolute top-24 right-80 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col transition-opacity">
+        <div id="notes-drag-handle" class="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center cursor-grab active:cursor-grabbing">
+            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-eye-slash text-emerald-500"></i> Private Notes (Slide <span id="notes-slide-num">1</span>)
+            </span>
+            <button id="btn-close-notes" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="p-4 bg-amber-50/50 dark:bg-amber-900/10 flex-1">
+            <textarea id="notes-textarea" class="w-full h-56 bg-transparent text-slate-700 dark:text-slate-300 text-sm outline-none resize-none placeholder-slate-400 dark:placeholder-slate-500 font-medium leading-relaxed" placeholder="Type your private hints, formulas, or lecture script here..."></textarea>
+        </div>
+    </div>
+
+    <!-- SCRIPT ALWAYS AT THE VERY BOTTOM -->
+    <script src="board-engine.js"></script>
+</body>
+</html>

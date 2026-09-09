@@ -143,6 +143,10 @@
             <button id="nav-desk-dashboard" onclick="window.showScreen('screen-dashboard')" class="flex flex-col items-center gap-1 transition-all duration-300"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-bold">Home</span></button>
             <button id="nav-desk-enrollments" onclick="window.showScreen('screen-enrollments')" class="flex flex-col items-center gap-1 transition-all duration-300"><i class="fa-solid fa-layer-group text-xl"></i><span class="text-[10px] font-bold">Enrollments</span></button>
             <button id="nav-desk-admin" onclick="window.showScreen('screen-admin')" class="hidden flex-col items-center gap-1 transition-all duration-300"><i class="fa-solid fa-wand-magic-sparkles text-xl"></i><span class="text-[10px] font-bold">Admin</span></button>
+            
+            <!-- 🚀 NEW: Vault Tab (Admin/Superadmin Only) -->
+            <button id="nav-desk-vault" onclick="window.showScreen('screen-vault')" class="hidden flex-col items-center gap-1 transition-all duration-300"><i class="fa-solid fa-vault text-xl"></i><span class="text-[10px] font-bold">Vault</span></button>
+            
             <button id="nav-desk-profile" onclick="window.showScreen('screen-profile')" class="flex flex-col items-center gap-1 transition-all duration-300"><i class="fa-solid fa-user text-xl"></i><span class="text-[10px] font-bold">Profile</span></button>
         </div>
         
@@ -266,6 +270,62 @@
                         <div><h3 id="generic-view-title" class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif">View All</h3></div>
                     </div>
                     <div id="generic-view-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                </div>
+
+                <!-- 🚀 NEW: THE VAULT SCREEN 🚀 -->
+                <div id="screen-vault" class="app-screen hidden space-y-6 h-[85vh] relative">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div>
+                            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-3"><i class="fa-solid fa-vault text-cyan-500"></i> My Vault</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wider">Educator Workspace & Drive</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recents Grid -->
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Recent Files</h4>
+                        <div id="vault-recents-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <!-- Files will be injected here via IndexedDB -->
+                            <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                                <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
+                                <p class="text-xs font-bold uppercase">Vault is Empty</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Creator Node (+) -->
+                    <button onclick="document.getElementById('vault-app-drawer').classList.remove('hidden')" class="absolute bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl shadow-lg shadow-cyan-500/40 flex items-center justify-center text-2xl transition-transform hover:scale-105 active:scale-95 z-40">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    
+                    <!-- App Drawer Modal (Create New) -->
+                    <div id="vault-app-drawer" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md transition-opacity">
+                        <div class="bg-white/90 dark:bg-slate-900/90 glass-panel w-full max-w-lg mx-4 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden relative p-8">
+                            <button onclick="document.getElementById('vault-app-drawer').classList.add('hidden')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                            <h3 class="text-xl font-extrabold text-slate-900 dark:text-white font-serif mb-6 text-center">Create New</h3>
+                            <div class="grid grid-cols-3 gap-4">
+                                <!-- Slate App Trigger -->
+                                <button onclick="window.launchPWOSStudio()" class="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all group">
+                                    <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-110 transition-transform"><i class="fa-solid fa-pen-nib"></i></div>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Slate</span>
+                                </button>
+                                <!-- Future Apps Placeholders -->
+                                <button class="flex flex-col items-center gap-3 p-4 rounded-2xl opacity-50 cursor-not-allowed">
+                                    <div class="w-14 h-14 bg-slate-200 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 text-2xl"><i class="fa-solid fa-spell-check"></i></div>
+                                    <span class="text-xs font-bold text-slate-400">Quiz Maker</span>
+                                </button>
+                                <button class="flex flex-col items-center gap-3 p-4 rounded-2xl opacity-50 cursor-not-allowed">
+                                    <div class="w-14 h-14 bg-slate-200 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 text-2xl"><i class="fa-solid fa-file-lines"></i></div>
+                                    <span class="text-xs font-bold text-slate-400">Doc</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🚀 NAYA: PWOS STUDIO IFRAME CONTAINER (Native App Feel) -->
+                <div id="pwos-studio-container" class="fixed inset-0 z-[200] hidden bg-slate-900 flex-col transition-transform translate-y-full duration-500 ease-in-out">
+                    <iframe id="pwos-studio-frame" src="" class="w-full h-full border-none" allow="camera; microphone; fullscreen; display-capture"></iframe>
                 </div>
 
             </div>

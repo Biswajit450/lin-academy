@@ -86,31 +86,32 @@ window.initRichEditors = function() {
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
-        { id: 'dashboard', color: 'text-blue-500' },     // Home = Blue
-        { id: 'enrollments', color: 'text-emerald-500' }, // Enroll = Green
-        { id: 'admin', color: 'text-rose-500' },          // Admin = Red
-        { id: 'profile', color: 'text-amber-500' }        // Profile = Yellow
+        { id: 'dashboard', color: 'text-blue-500' },     
+        { id: 'enrollments', color: 'text-emerald-500' }, 
+        { id: 'admin', color: 'text-rose-500' },          
+        { id: 'profile', color: 'text-amber-500' },       
+        { id: 'vault', color: 'text-cyan-500' } // 🚀 NEW: Vault color added
     ];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
-        if(deskBtn && mobBtn) {
+        if(deskBtn || mobBtn) { // Changed && to || so it works even if mobile tab is missing
             // 1. Purane sabhi colors aur glows ko saaf karo
-            ['text-blue-500', 'text-emerald-500', 'text-rose-500', 'text-amber-500', 'opacity-40', 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
-                deskBtn.classList.remove(cls);
-                mobBtn.classList.remove(cls);
+            ['text-blue-500', 'text-emerald-500', 'text-rose-500', 'text-amber-500', 'text-cyan-500', 'opacity-40', 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
+                if(deskBtn) deskBtn.classList.remove(cls);
+                if(mobBtn) mobBtn.classList.remove(cls);
             });
             
             // 2. Agar yeh tab ACTIVE hai (Glow & Bright Mode)
             if(`screen-${nav.id}` === activeScreenId) {
-                deskBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
-                mobBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
+                if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
+                if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
             } else {
                 // 3. Agar yeh tab INACTIVE hai (Dim Mode)
-                deskBtn.classList.add(nav.color, 'opacity-40');
-                mobBtn.classList.add(nav.color, 'opacity-40');
+                if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-40');
+                if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-40');
             }
         }
     });
@@ -2309,3 +2310,147 @@ window.handleSpotlightSearch = function(event) {
 
 // Initialize Secure Index in background 4 seconds after app starts (so it doesn't block loading)
 setTimeout(() => { window.buildSearchIndex(); }, 4000);
+
+// ==========================================
+// 🚀 PWOS VAULT & LOCAL STORAGE ENGINE
+// ==========================================
+const dbName = "PWOS_Vault";
+let localDB;
+
+// 1. Initialize Browser's IndexedDB (Offline Storage)
+const request = indexedDB.open(dbName, 1);
+request.onupgradeneeded = (event) => {
+    localDB = event.target.result;
+    const objectStore = localDB.createObjectStore("slateFiles", { keyPath: "id" });
+    objectStore.createIndex("timestamp", "timestamp", { unique: false });
+};
+request.onsuccess = (event) => {
+    localDB = event.target.result;
+    // Load files into grid silently if user is admin
+    if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin' || window.currentUserRole === 'educator') {
+        window.loadVaultFiles();
+    }
+};
+
+// 2. Launch Slate inside iframe
+window.launchPWOSStudio = function(existingFileId = null) {
+    document.getElementById('vault-app-drawer').classList.add('hidden');
+    const container = document.getElementById('pwos-studio-container');
+    const frame = document.getElementById('pwos-studio-frame');
+    
+    // Set src to your studio file
+    // Note: 'pwos-studio' folder must be exactly inside your root where index.html is
+    let url = 'pwos-studio/studio.html';
+    if(existingFileId) url += `?fileId=${existingFileId}`;
+    
+    frame.src = url;
+    
+    container.classList.remove('hidden');
+    // Slight delay for smooth slide-up transition
+    setTimeout(() => {
+        container.classList.remove('translate-y-full');
+    }, 50);
+}
+
+// 3. Receive/Send Messages from/to iframe
+window.addEventListener('message', (event) => {
+    // Save request from Slate
+    if (event.data && event.data.type === 'SAVE_SLATE_FILE') {
+        const fileData = event.data.payload; 
+        const transaction = localDB.transaction(["slateFiles"], "readwrite");
+        const store = transaction.objectStore("slateFiles");
+        store.put(fileData);
+        transaction.oncomplete = () => {
+            console.log("File saved to Local DB");
+            window.loadVaultFiles(); 
+            window.closePWOSStudio(); 
+        };
+    }
+    
+    // Close request from Slate
+    if (event.data && event.data.type === 'CLOSE_SLATE') {
+        window.closePWOSStudio();
+    }
+
+    // Load request from Slate (when opening an existing file)
+    if (event.data && event.data.type === 'LOAD_SLATE_FILE') {
+        const fileId = event.data.id;
+        const transaction = localDB.transaction(["slateFiles"], "readonly");
+        const store = transaction.objectStore("slateFiles");
+        const req = store.get(fileId);
+        
+        req.onsuccess = (e) => {
+            const fileData = e.target.result;
+            if(fileData) {
+                // Send the data back down to the iframe
+                document.getElementById('pwos-studio-frame').contentWindow.postMessage({
+                    type: 'SLATE_DATA_LOADED',
+                    payload: fileData
+                }, '*');
+            }
+        };
+    }
+});
+
+// 4. Render Local Files in Vault Dashboard
+window.loadVaultFiles = function() {
+    if(!localDB) return;
+    const grid = document.getElementById('vault-recents-grid');
+    if(!grid) return;
+    
+    const transaction = localDB.transaction(["slateFiles"], "readonly");
+    const store = transaction.objectStore("slateFiles");
+    const req = store.getAll();
+    
+    req.onsuccess = (event) => {
+        const files = event.target.result;
+        
+        if(files.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                    <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
+                    <p class="text-xs font-bold uppercase tracking-wider">Vault is Empty</p>
+                </div>`;
+            return;
+        }
+
+        // Sort by newest first
+        files.sort((a, b) => b.timestamp - a.timestamp);
+        
+        let html = '';
+        files.forEach(f => {
+            const date = new Date(f.timestamp).toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+            // Using a generic image if thumbnail isn't sent yet
+            const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Slate+Canvas';
+            
+            html += `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer relative flex flex-col">
+                    <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-xs"></i></button>
+                    
+                    <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="window.launchPWOSStudio('${f.id}')">
+                        <img src="${thumb}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                            <span class="text-white text-[10px] font-bold bg-cyan-600 px-2 py-1 rounded">.slate</span>
+                        </div>
+                    </div>
+                    <div class="p-4" onclick="window.launchPWOSStudio('${f.id}')">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
+                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${date}</p>
+                    </div>
+                </div>
+            `;
+        });
+        grid.innerHTML = html;
+    };
+}
+
+// 5. Delete File from DB
+window.deleteVaultFile = function(id) {
+    if(!confirm("Move this file to trash?")) return;
+    const request = localDB.transaction(["slateFiles"], "readwrite")
+                          .objectStore("slateFiles")
+                          .delete(id);
+    request.onsuccess = () => {
+        window.loadVaultFiles();
+    };
+}

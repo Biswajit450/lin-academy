@@ -126,6 +126,7 @@ onAuthStateChanged(auth, async (user) => {
                 
                 const navBtn = document.getElementById('nav-desk-admin'); // 🚀 NEW DESKTOP ID
                 const mobileNavBtn = document.getElementById('nav-mob-admin'); // 🚀 NEW MOBILE ID
+                const vaultBtn = document.getElementById('nav-desk-vault'); // 🚀 NEW VAULT ID
                 const navSpan = navBtn ? navBtn.querySelector('span') : null;
                 const mobileNavSpan = mobileNavBtn ? mobileNavBtn.querySelector('span') : null;
                 
@@ -141,6 +142,7 @@ onAuthStateChanged(auth, async (user) => {
                 if (role === "admin" || role === "educator" || role === "superadmin") {
                     if (navBtn) { navBtn.classList.remove('hidden'); navBtn.classList.add('flex'); }
                     if (mobileNavBtn) { mobileNavBtn.classList.remove('hidden'); mobileNavBtn.classList.add('flex'); }
+                    if (vaultBtn) { vaultBtn.classList.remove('hidden'); vaultBtn.classList.add('flex'); } // 🚀 SHOW VAULT TABS
                     
                     if (studentBadges) studentBadges.classList.add('hidden');
                     if (progressSection) progressSection.classList.add('hidden');
@@ -198,8 +200,10 @@ onAuthStateChanged(auth, async (user) => {
         // 🚀 SAFELY HIDING NEW ADMIN BUTTONS ON LOGOUT
         const dAdmin = document.getElementById('nav-desk-admin');
         const mAdmin = document.getElementById('nav-mob-admin');
+        const dVault = document.getElementById('nav-desk-vault'); // 🚀 HIDE VAULT ON LOGOUT
         if(dAdmin) dAdmin.classList.add('hidden'); 
         if(mAdmin) mAdmin.classList.add('hidden');
+        if(dVault) dVault.classList.add('hidden');
         
         if(window.renderEnrollments) window.renderEnrollments([], "student");
         
