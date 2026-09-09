@@ -2312,99 +2312,115 @@ window.handleSpotlightSearch = function(event) {
 setTimeout(() => { window.buildSearchIndex(); }, 4000);
 
 // ==========================================
-// 🚀 PWOS VAULT & LOCAL STORAGE ENGINE
+// 🚀 PWOS VAULT & CLOUD STORAGE ENGINE (FIREBASE)
 // ==========================================
-const dbName = "PWOS_Vault";
-let localDB;
 
-// 1. Initialize Browser's IndexedDB (Offline Storage)
-const request = indexedDB.open(dbName, 1);
-request.onupgradeneeded = (event) => {
-    localDB = event.target.result;
-    const objectStore = localDB.createObjectStore("slateFiles", { keyPath: "id" });
-    objectStore.createIndex("timestamp", "timestamp", { unique: false });
-};
-request.onsuccess = (event) => {
-    localDB = event.target.result;
-    // Load files into grid silently if user is admin
-    if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin' || window.currentUserRole === 'educator') {
-        window.loadVaultFiles();
-    }
-};
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin' || window.currentUserRole === 'educator') {
+            window.loadVaultFiles();
+        }
+    }, 2000);
+});
 
-// 2. Launch Slate inside iframe
 window.launchPWOSStudio = function(existingFileId = null) {
     document.getElementById('vault-app-drawer').classList.add('hidden');
     const container = document.getElementById('pwos-studio-container');
     const frame = document.getElementById('pwos-studio-frame');
     
-    // Set src to your studio file
-    // Note: 'pwos-studio' folder must be exactly inside your root where index.html is
     let url = 'pwos-studio/studio.html';
     if(existingFileId) url += `?fileId=${existingFileId}`;
     
     frame.src = url;
-    
     container.classList.remove('hidden');
-    // Slight delay for smooth slide-up transition
-    setTimeout(() => {
-        container.classList.remove('translate-y-full');
-    }, 50);
+    setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
 }
 
-// 3. Receive/Send Messages from/to iframe
-window.addEventListener('message', (event) => {
-    // Save request from Slate
+// THE FIREBASE SYNC ROUTER
+window.addEventListener('message', async (event) => {
+    if (!auth.currentUser) return;
+    const uid = auth.currentUser.uid;
+    
+    // A. SAVE OR UPDATE REQUEST FROM SLATE
     if (event.data && event.data.type === 'SAVE_SLATE_FILE') {
         const fileData = event.data.payload; 
-        const transaction = localDB.transaction(["slateFiles"], "readwrite");
-        const store = transaction.objectStore("slateFiles");
-        store.put(fileData);
-        transaction.oncomplete = () => {
-            console.log("File saved to Local DB");
+        try {
+            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            
+            // 1. Create/Update User Identity Folder in Console
+            await setDoc(doc(db, "PWOS_Vault", uid), {
+                ownerName: auth.currentUser.displayName || "Educator",
+                ownerEmail: auth.currentUser.email,
+                lastActive: new Date().toISOString()
+            }, { merge: true });
+            
+            // 2. Save File inside their personal 'projects' sub-collection
+            await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileData.id), {
+                id: fileData.id,
+                name: fileData.name,
+                jsonContent: fileData.jsonContent,
+                thumbnail: fileData.thumbnail,
+                timestamp: new Date().toISOString()
+            }, { merge: true });
+            
+            console.log("File securely synced to User's Cloud Vault.");
             window.loadVaultFiles(); 
             window.closePWOSStudio(); 
-        };
+        } catch(e) {
+            console.error("Cloud Save Error:", e);
+            alert("Failed to save to cloud. Check permissions.");
+        }
     }
     
-    // Close request from Slate
+    // B. CLOSE REQUEST FROM SLATE
     if (event.data && event.data.type === 'CLOSE_SLATE') {
         window.closePWOSStudio();
     }
 
-    // Load request from Slate (when opening an existing file)
+    // C. LOAD REQUEST FROM SLATE
     if (event.data && event.data.type === 'LOAD_SLATE_FILE') {
         const fileId = event.data.id;
-        const transaction = localDB.transaction(["slateFiles"], "readonly");
-        const store = transaction.objectStore("slateFiles");
-        const req = store.get(fileId);
-        
-        req.onsuccess = (e) => {
-            const fileData = e.target.result;
-            if(fileData) {
-                // Send the data back down to the iframe
+        try {
+            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            const snap = await getDoc(doc(db, "PWOS_Vault", uid, "projects", fileId));
+            
+            if(snap.exists()) {
                 document.getElementById('pwos-studio-frame').contentWindow.postMessage({
                     type: 'SLATE_DATA_LOADED',
-                    payload: fileData
+                    payload: snap.data()
                 }, '*');
             }
-        };
+        } catch(e) { console.error("Cloud Fetch Error:", e); }
     }
 });
 
-// 4. Render Local Files in Vault Dashboard
-window.loadVaultFiles = function() {
-    if(!localDB) return;
+// Close iframe animation (The "Back" visual effect)
+window.closePWOSStudio = function() {
+    const container = document.getElementById('pwos-studio-container');
+    container.classList.add('translate-y-full');
+    setTimeout(() => {
+        container.classList.add('hidden');
+        document.getElementById('pwos-studio-frame').src = ''; 
+    }, 500);
+}
+
+// Render Cloud Files in Vault Dashboard
+window.loadVaultFiles = async function() {
     const grid = document.getElementById('vault-recents-grid');
-    if(!grid) return;
+    if(!grid || !auth.currentUser) return;
+    const uid = auth.currentUser.uid;
     
-    const transaction = localDB.transaction(["slateFiles"], "readonly");
-    const store = transaction.objectStore("slateFiles");
-    const req = store.getAll();
-    
-    req.onsuccess = (event) => {
-        const files = event.target.result;
+    grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-cyan-500 text-2xl"></i><br><span class="text-xs text-slate-400 font-bold">Syncing Vault...</span></div>';
+
+    try {
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         
+        // Fetch files from the user's specific sub-collection
+        const snap = await getDocs(collection(db, "PWOS_Vault", uid, "projects"));
+        
+        let files = [];
+        snap.forEach(doc => files.push(doc.data()));
+
         if(files.length === 0) {
             grid.innerHTML = `
                 <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
@@ -2414,13 +2430,12 @@ window.loadVaultFiles = function() {
             return;
         }
 
-        // Sort by newest first
-        files.sort((a, b) => b.timestamp - a.timestamp);
+        files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         let html = '';
         files.forEach(f => {
-            const date = new Date(f.timestamp).toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-            // Using a generic image if thumbnail isn't sent yet
+            const dateObj = new Date(f.timestamp);
+            const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
             const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Slate+Canvas';
             
             html += `
@@ -2430,27 +2445,31 @@ window.loadVaultFiles = function() {
                     <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="window.launchPWOSStudio('${f.id}')">
                         <img src="${thumb}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                            <span class="text-white text-[10px] font-bold bg-cyan-600 px-2 py-1 rounded">.slate</span>
+                            <span class="text-white text-[10px] font-bold bg-cyan-600 px-2 py-1 rounded shadow-sm"><i class="fa-solid fa-cloud text-[8px] mr-1"></i>.slate</span>
                         </div>
                     </div>
                     <div class="p-4" onclick="window.launchPWOSStudio('${f.id}')">
                         <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
-                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${date}</p>
+                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
                     </div>
                 </div>
             `;
         });
         grid.innerHTML = html;
-    };
+    } catch(e) {
+        console.error("Vault fetch error", e);
+        grid.innerHTML = '<div class="col-span-full text-center text-rose-500 font-bold py-10">Failed to sync cloud files.</div>';
+    }
 }
 
-// 5. Delete File from DB
-window.deleteVaultFile = function(id) {
-    if(!confirm("Move this file to trash?")) return;
-    const request = localDB.transaction(["slateFiles"], "readwrite")
-                          .objectStore("slateFiles")
-                          .delete(id);
-    request.onsuccess = () => {
+window.deleteVaultFile = async function(id) {
+    if(!confirm("Permanently delete this file from the Cloud Vault?")) return;
+    try {
+        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        // Delete specifically from the user's sub-collection
+        await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id));
         window.loadVaultFiles();
-    };
+    } catch(e) {
+        alert("Failed to delete from cloud.");
+    }
 }
