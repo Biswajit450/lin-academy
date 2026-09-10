@@ -2644,6 +2644,42 @@ window.closeScrapBinModal = function() {
     }, 300);
 }
 
+window.restoreFromBin = async function(id) {
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        // Remove trashed flags
+        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
+            trashed: false,
+            trashedAt: null
+        });
+        window.loadScrapBinFiles(); // Refresh Modal
+        window.loadVaultFiles();    // Refresh Background Vault
+    } catch(e) { alert("Failed to restore."); }
+}
+
+// ==========================================
+// 🚀 STORAGE DELETION HELPER
+// ==========================================
+// Secret function to delete the orphaned PDF from Cloud Storage
+window.nukeCloudStorageAsset = async function(pdfUrl) {
+    if (!pdfUrl) return;
+    try {
+        const { ref, deleteObject } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
+        // Extract the raw file path from the long Firebase Storage URL
+        const decodedUrl = decodeURIComponent(pdfUrl);
+        const urlObj = new URL(decodedUrl);
+        let filePath = urlObj.pathname.split('/o/')[1];
+        if(filePath) {
+            filePath = filePath.split('?')[0]; // Remove query params
+            const fileRef = ref(storage, filePath);
+            await deleteObject(fileRef);
+            console.log("Cloud Asset destroyed successfully:", filePath);
+        }
+    } catch(e) {
+        console.error("Failed to clean up Cloud Storage:", e);
+    }
+}
+
 window.loadScrapBinFiles = async function() {
     const grid = document.getElementById('scrap-bin-grid');
     if(!grid || !auth.currentUser) return;
@@ -2669,6 +2705,16 @@ window.loadScrapBinFiles = async function() {
                 
                 if (diffDays > EVAPORATE_DAYS) {
                     // Evaporate (Perm-Delete) silently
+                    
+                    // 1. Delete PDF from Storage if it exists
+                    if (data.metaContent) {
+                        try {
+                            const meta = JSON.parse(data.metaContent);
+                            if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+                        } catch(e){}
+                    }
+                    
+                    // 2. Delete from Firestore
                     await deleteDoc(doc(db, "PWOS_Vault", uid, "projects", data.id));
                     console.log(`Auto-Evaporated file: ${data.id}`);
                 } else {
@@ -2692,13 +2738,17 @@ window.loadScrapBinFiles = async function() {
         let html = '';
         trashedFiles.forEach(f => {
             const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Deleted';
+            
+            // Pass the entire metadata to the delete function so we can find the PDF URL
+            const safeMeta = f.metaContent ? encodeURIComponent(f.metaContent) : '';
+
             html += `
                 <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 relative opacity-80 hover:opacity-100 transition-opacity">
                     <div class="w-full aspect-video bg-slate-200 dark:bg-slate-900 rounded-xl overflow-hidden mb-3 relative grayscale hover:grayscale-0 transition-all">
                         <img src="${thumb}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
                             <button onclick="window.restoreFromBin('${f.id}')" class="w-8 h-8 rounded-full bg-emerald-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Restore to Vault"><i class="fa-solid fa-arrow-rotate-left"></i></button>
-                            <button onclick="window.permanentDeleteFile('${f.id}')" class="w-8 h-8 rounded-full bg-rose-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Delete Forever"><i class="fa-solid fa-fire"></i></button>
+                            <button onclick="window.permanentDeleteFile('${f.id}', '${safeMeta}')" class="w-8 h-8 rounded-full bg-rose-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Delete Forever"><i class="fa-solid fa-fire"></i></button>
                         </div>
                     </div>
                     <h4 class="font-bold text-xs text-slate-700 dark:text-slate-300 truncate">${f.name}</h4>
@@ -2714,28 +2764,26 @@ window.loadScrapBinFiles = async function() {
     }
 }
 
-window.restoreFromBin = async function(id) {
-    try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        // Remove trashed flags
-        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
-            trashed: false,
-            trashedAt: null
-        });
-        window.loadScrapBinFiles(); // Refresh Modal
-        window.loadVaultFiles();    // Refresh Background Vault
-    } catch(e) { alert("Failed to restore."); }
-}
-
-window.permanentDeleteFile = async function(id) {
+window.permanentDeleteFile = async function(id, encodedMeta) {
     if(!confirm("Destroy this file permanently? This cannot be undone.")) return;
     
     const shredSfx = document.getElementById('sfx-shredder');
     if(shredSfx) { shredSfx.currentTime = 0; shredSfx.play().catch(e=>console.log(e)); }
 
     try {
+        // 1. Delete PDF from Storage
+        if (encodedMeta) {
+            try {
+                const metaContent = decodeURIComponent(encodedMeta);
+                const meta = JSON.parse(metaContent);
+                if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+            } catch(e){}
+        }
+
+        // 2. Delete from Firestore
         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id));
+        
         window.loadScrapBinFiles();
     } catch(e) { alert("Failed to delete."); }
 }
@@ -2753,6 +2801,15 @@ window.emptyScrapBin = async function() {
         for (const docSnap of snap.docs) {
             const data = docSnap.data();
             if (data.trashed) {
+                // 1. Delete PDF from Storage
+                if (data.metaContent) {
+                    try {
+                        const meta = JSON.parse(data.metaContent);
+                        if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+                    } catch(e){}
+                }
+
+                // 2. Delete from Firestore
                 await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", docSnap.id));
             }
         }
