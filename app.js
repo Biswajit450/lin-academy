@@ -2436,7 +2436,7 @@ window.closePWOSStudio = function() {
     }, 500);
 }
 
-// Render Cloud Files in Vault Dashboard
+// Render Cloud Files in Vault Dashboard (Filter out Trashed items)
 window.loadVaultFiles = async function() {
     const grid = document.getElementById('vault-recents-grid');
     if(!grid || !auth.currentUser) return;
@@ -2446,12 +2446,14 @@ window.loadVaultFiles = async function() {
 
     try {
         const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        
-        // Fetch files from the user's specific sub-collection
         const snap = await getDocs(collection(db, "PWOS_Vault", uid, "projects"));
         
         let files = [];
-        snap.forEach(doc => files.push(doc.data()));
+        snap.forEach(doc => {
+            const data = doc.data();
+            // 🚀 SMART FILTER: Only show files that are NOT trashed
+            if (!data.trashed) files.push(data);
+        });
 
         if(files.length === 0) {
             grid.innerHTML = `
@@ -2471,7 +2473,7 @@ window.loadVaultFiles = async function() {
             const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Slate+Canvas';
             
             html += `
-                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer relative flex flex-col">
+                <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer relative flex flex-col">
                     <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-xs"></i></button>
                     
                     <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="window.launchPWOSStudio('${f.id}')">
@@ -2494,14 +2496,241 @@ window.loadVaultFiles = async function() {
     }
 }
 
+// Send File to Scrap Bin (Soft Delete with Fly Animation)
 window.deleteVaultFile = async function(id) {
-    if(!confirm("Permanently delete this file from the Cloud Vault?")) return;
+    if(!confirm("Move this file to the Scrap Bin?")) return;
+    
+    // 1. Play Crumple Sound
+    const crumpleSfx = document.getElementById('sfx-crumple');
+    if(crumpleSfx) { crumpleSfx.currentTime = 0; crumpleSfx.play().catch(e=>console.log(e)); }
+
+    // 2. Trigger "Fly to Bin" Animation
+    const card = document.getElementById(`vault-card-${id}`);
+    const binBtn = document.getElementById('scrap-bin-btn');
+    
+    if (card && binBtn) {
+        const cardRect = card.getBoundingClientRect();
+        const binRect = binBtn.getBoundingClientRect();
+        
+        const deltaX = binRect.left - cardRect.left;
+        const deltaY = binRect.top - cardRect.top;
+        
+        card.style.setProperty('--fly-x', `${deltaX}px`);
+        card.style.setProperty('--fly-y', `${deltaY}px`);
+        card.classList.add('animate-fly-to-bin');
+        
+        // Make the bin "gulp"
+        setTimeout(() => {
+            binBtn.classList.add('animate-gulp');
+            setTimeout(() => binBtn.classList.remove('animate-gulp'), 400);
+        }, 400);
+    }
+
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        // Soft delete: Flag it as trashed
+        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
+            trashed: true,
+            trashedAt: new Date().toISOString()
+        });
+        
+        setTimeout(() => window.loadVaultFiles(), 500); // Reload after animation finishes
+    } catch(e) {
+        alert("Failed to move to Scrap Bin.");
+    }
+}
+
+// ==========================================
+// 🚀 SCRAP BIN ENGINE (UI, SOUNDS & AUTO-EVAPORATOR)
+// ==========================================
+
+window.openScrapBinContext = function(e) {
+    const ctx = document.getElementById('scrap-bin-context');
+    if (!ctx) return;
+    
+    // Play subtle drawer click
+    const drawerSfx = document.getElementById('sfx-drawer');
+    if(drawerSfx) { drawerSfx.currentTime = 0; drawerSfx.play().catch(err=>console.log(err)); }
+
+    ctx.classList.remove('hidden');
+    
+    // Position near cursor but bounded by screen
+    let x = e.clientX;
+    let y = e.clientY - 100; // Shift up slightly
+    
+    ctx.style.left = `${x}px`;
+    ctx.style.top = `${y}px`;
+    
+    setTimeout(() => {
+        ctx.classList.remove('opacity-0', 'scale-95');
+    }, 10);
+}
+
+window.closeScrapBinContext = function() {
+    const ctx = document.getElementById('scrap-bin-context');
+    if(ctx) {
+        ctx.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => ctx.classList.add('hidden'), 200);
+    }
+}
+
+// Auto-close context menu on outside click
+document.addEventListener('click', (e) => {
+    const ctx = document.getElementById('scrap-bin-context');
+    if(ctx && !ctx.contains(e.target)) {
+        window.closeScrapBinContext();
+    }
+});
+
+window.openScrapBinModal = async function() {
+    window.closeScrapBinContext();
+    
+    // Animate Lid
+    const lid = document.getElementById('scrap-bin-lid');
+    if(lid) {
+        lid.classList.add('animate-lid-bounce');
+        setTimeout(() => lid.classList.remove('animate-lid-bounce'), 300);
+    }
+
+    // Play Drawer Sound
+    const drawerSfx = document.getElementById('sfx-drawer');
+    if(drawerSfx) { drawerSfx.currentTime = 0; drawerSfx.play().catch(e=>console.log(e)); }
+
+    const modal = document.getElementById('scrap-bin-modal');
+    const box = document.getElementById('scrap-bin-box');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        box.classList.remove('scale-95');
+    }, 10);
+
+    // Fetch and Auto-Evaporate logic
+    await window.loadScrapBinFiles();
+}
+
+window.closeScrapBinModal = function() {
+    const modal = document.getElementById('scrap-bin-modal');
+    const box = document.getElementById('scrap-bin-box');
+    
+    box.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+window.loadScrapBinFiles = async function() {
+    const grid = document.getElementById('scrap-bin-grid');
+    if(!grid || !auth.currentUser) return;
+    const uid = auth.currentUser.uid;
+    
+    grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-emerald-500 text-xl"></i></div>';
+
+    try {
+        const { collection, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "PWOS_Vault", uid, "projects"));
+        
+        let trashedFiles = [];
+        const now = new Date();
+        const EVAPORATE_DAYS = 30;
+
+        // 🧠 The 30-Day Auto Evaporator Scanner
+        for (const docSnap of snap.docs) {
+            const data = docSnap.data();
+            if (data.trashed && data.trashedAt) {
+                const trashedDate = new Date(data.trashedAt);
+                const diffTime = Math.abs(now - trashedDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays > EVAPORATE_DAYS) {
+                    // Evaporate (Perm-Delete) silently
+                    await deleteDoc(doc(db, "PWOS_Vault", uid, "projects", data.id));
+                    console.log(`Auto-Evaporated file: ${data.id}`);
+                } else {
+                    data.daysLeft = EVAPORATE_DAYS - diffDays;
+                    trashedFiles.push(data);
+                }
+            }
+        }
+
+        if(trashedFiles.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full text-center py-16 text-slate-400">
+                    <i class="fa-solid fa-leaf text-4xl mb-3 opacity-30 text-emerald-500"></i>
+                    <p class="text-[10px] font-bold uppercase tracking-widest">Bin is completely clean</p>
+                </div>`;
+            return;
+        }
+
+        trashedFiles.sort((a, b) => new Date(b.trashedAt) - new Date(a.trashedAt));
+        
+        let html = '';
+        trashedFiles.forEach(f => {
+            const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Deleted';
+            html += `
+                <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 relative opacity-80 hover:opacity-100 transition-opacity">
+                    <div class="w-full aspect-video bg-slate-200 dark:bg-slate-900 rounded-xl overflow-hidden mb-3 relative grayscale hover:grayscale-0 transition-all">
+                        <img src="${thumb}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
+                            <button onclick="window.restoreFromBin('${f.id}')" class="w-8 h-8 rounded-full bg-emerald-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Restore to Vault"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                            <button onclick="window.permanentDeleteFile('${f.id}')" class="w-8 h-8 rounded-full bg-rose-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Delete Forever"><i class="fa-solid fa-fire"></i></button>
+                        </div>
+                    </div>
+                    <h4 class="font-bold text-xs text-slate-700 dark:text-slate-300 truncate">${f.name}</h4>
+                    <p class="text-[9px] text-rose-500 mt-1 font-bold uppercase tracking-wider">${f.daysLeft} days until evaporation</p>
+                </div>
+            `;
+        });
+        grid.innerHTML = html;
+
+    } catch(e) {
+        console.error("Bin fetch error", e);
+        grid.innerHTML = '<div class="col-span-full text-center text-rose-500 text-sm font-bold">Failed to load Bin.</div>';
+    }
+}
+
+window.restoreFromBin = async function(id) {
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        // Remove trashed flags
+        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
+            trashed: false,
+            trashedAt: null
+        });
+        window.loadScrapBinFiles(); // Refresh Modal
+        window.loadVaultFiles();    // Refresh Background Vault
+    } catch(e) { alert("Failed to restore."); }
+}
+
+window.permanentDeleteFile = async function(id) {
+    if(!confirm("Destroy this file permanently? This cannot be undone.")) return;
+    
+    const shredSfx = document.getElementById('sfx-shredder');
+    if(shredSfx) { shredSfx.currentTime = 0; shredSfx.play().catch(e=>console.log(e)); }
+
     try {
         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        // Delete specifically from the user's sub-collection
         await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id));
-        window.loadVaultFiles();
-    } catch(e) {
-        alert("Failed to delete from cloud.");
-    }
+        window.loadScrapBinFiles();
+    } catch(e) { alert("Failed to delete."); }
+}
+
+window.emptyScrapBin = async function() {
+    if(!confirm("Are you sure you want to evaporate ALL files in the Scrap Bin? This is permanent!")) return;
+    
+    const shredSfx = document.getElementById('sfx-shredder');
+    if(shredSfx) { shredSfx.currentTime = 0; shredSfx.play().catch(e=>console.log(e)); }
+
+    try {
+        const { collection, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "PWOS_Vault", auth.currentUser.uid, "projects"));
+        
+        for (const docSnap of snap.docs) {
+            const data = docSnap.data();
+            if (data.trashed) {
+                await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", docSnap.id));
+            }
+        }
+        
+        window.closeScrapBinContext();
+        window.loadScrapBinFiles();
+    } catch(e) { alert("Failed to empty Bin."); }
 }

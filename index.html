@@ -127,6 +127,25 @@
             background: rgba(37, 99, 235, 0.1) !important; 
             color: #94a3b8; 
         }
+        /* 🚀 SCRAP BIN ANIMATIONS 🚀 */
+        @keyframes gulp {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .animate-gulp { animation: gulp 0.4s ease-in-out; }
+        
+        @keyframes file-fly {
+            0% { transform: scale(1) translate(0, 0); opacity: 1; }
+            100% { transform: scale(0.1) translate(var(--fly-x), var(--fly-y)); opacity: 0; }
+        }
+        .animate-fly-to-bin { animation: file-fly 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; position: relative; z-index: 50; }
+        
+        @keyframes lid-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-lid-bounce { animation: lid-bounce 0.3s ease-in-out; }
     </style>
     <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
 </head>
@@ -289,6 +308,56 @@
                             <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
                                 <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
                                 <p class="text-xs font-bold uppercase">Vault is Empty</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🚀 SCRAP BIN SOUND EFFECTS 🚀 -->
+                    <audio id="sfx-crumple" src="https://assets.mixkit.co/active_storage/sfx/2049/2049-preview.mp3" preload="auto"></audio>
+                    <audio id="sfx-drawer" src="https://assets.mixkit.co/active_storage/sfx/2381/2381-preview.mp3" preload="auto"></audio>
+                    <audio id="sfx-shredder" src="https://assets.mixkit.co/active_storage/sfx/180/180-preview.mp3" preload="auto"></audio>
+
+                    <!-- Floating Scrap Bin Icon (Bottom Left) -->
+                    <div class="absolute bottom-8 left-8 flex flex-col items-center group z-40">
+                        <button id="scrap-bin-btn" oncontextmenu="window.openScrapBinContext(event); return false;" onclick="window.openScrapBinModal()" class="w-14 h-14 bg-slate-100 dark:bg-slate-800/80 backdrop-blur border-2 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-slate-500 hover:text-emerald-500 rounded-2xl shadow-lg flex flex-col items-center justify-center text-2xl transition-all duration-300 relative overflow-hidden">
+                            <!-- Separate lid icon for the bounce animation -->
+                            <i id="scrap-bin-lid" class="fa-solid fa-trash-can-arrow-up text-[10px] absolute top-3 transition-transform"></i>
+                            <i class="fa-solid fa-trash-can mt-2"></i>
+                        </button>
+                        <span class="text-[10px] font-bold text-slate-500 mt-2 uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Scrap Bin</span>
+                    </div>
+
+                    <!-- Custom Glassmorphism Context Menu (Hidden by default) -->
+                    <div id="scrap-bin-context" class="fixed hidden z-[150] w-48 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden transform scale-95 opacity-0 transition-all duration-200 origin-bottom-left">
+                        <div class="flex flex-col py-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <button onclick="window.openScrapBinModal(); window.closeScrapBinContext();" class="px-4 py-2.5 text-left hover:bg-brand-blue hover:text-white transition-colors flex items-center gap-3"><i class="fa-solid fa-folder-open text-xs"></i> Open Bin</button>
+                            <div class="h-px w-full bg-slate-200 dark:bg-slate-800 my-1"></div>
+                            <button onclick="window.emptyScrapBin(); window.closeScrapBinContext();" class="px-4 py-2.5 text-left hover:bg-rose-500 hover:text-white text-rose-500 transition-colors flex items-center gap-3"><i class="fa-solid fa-fire text-xs"></i> Empty Scrap Bin</button>
+                        </div>
+                    </div>
+
+                    <!-- Scrap Bin Modal overlay -->
+                    <div id="scrap-bin-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md transition-opacity">
+                        <div class="bg-white/95 dark:bg-slate-900/95 w-full max-w-4xl mx-4 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden relative p-6 h-[80vh] flex flex-col transform scale-95 transition-transform duration-300" id="scrap-bin-box">
+                            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+                                <div>
+                                    <h3 class="text-2xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-3"><i class="fa-solid fa-recycle text-emerald-500"></i> Scrap Bin</h3>
+                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1 font-bold">Files automatically evaporate after 30 days.</p>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button onclick="window.emptyScrapBin()" class="bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm"><i class="fa-solid fa-fire mr-1"></i> Empty All</button>
+                                    <button onclick="window.closeScrapBinModal()" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                            
+                            <!-- Bin Grid -->
+                            <div class="flex-grow overflow-y-auto hide-scrollbar">
+                                <div id="scrap-bin-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="col-span-full text-center py-16 text-slate-400">
+                                        <i class="fa-solid fa-leaf text-4xl mb-3 opacity-30 text-emerald-500"></i>
+                                        <p class="text-xs font-bold uppercase tracking-widest">Bin is completely clean</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
