@@ -2424,6 +2424,33 @@ window.addEventListener('message', async (event) => {
             window.toggleDarkMode(event.data.theme);
         }
     }
+
+    // E. 🚀 UPLOAD PDF TO FIREBASE STORAGE (CLOUD DRIVE)
+    if (event.data && event.data.type === 'UPLOAD_PDF') {
+        const { file, fileName } = event.data.payload;
+        try {
+            const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
+            
+            // Storage Path: User ki ID ke andar secure folder banega
+            const filePath = `PWOS_Vault/${uid}/pdf_assets/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+            const storageRef = ref(storage, filePath);
+            
+            // Upload processing...
+            await uploadBytes(storageRef, file);
+            const downloadUrl = await getDownloadURL(storageRef);
+            
+            // URL wapas Slate ko bhej do
+            document.getElementById('pwos-studio-frame').contentWindow.postMessage({
+                type: 'PDF_UPLOAD_SUCCESS',
+                url: downloadUrl
+            }, '*');
+            
+            console.log("PDF successfully secured in Firebase Storage!");
+        } catch(e) {
+            console.error("PDF Cloud Upload Error:", e);
+            alert("Failed to upload PDF to Cloud Storage.");
+        }
+    }
 });
 
 // Close iframe animation (The "Back" visual effect)

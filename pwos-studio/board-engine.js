@@ -227,13 +227,16 @@ window.addEventListener('keydown', (e) => {
 // BACKGROUND SLIDE, PDF ENGINE & INK CONTROLS
 // =====================================
 let pdfDoc = null;
+let currentPdfUrl = null; // 🚀 NEW: Cloud URL Memory
 let currentSlide = 1;
 let totalSlides = 0;
-let slideMap = {}; // Tracks if a slide is a PDF page or a Blank Page
-let pageInkMemory = {}; // 🧠 Bug-Free Memory
+let slideMap = {}; 
+let pageInkMemory = {}; 
 
 const pdfNav = document.getElementById('pdf-nav');
 const pageIndicator = document.getElementById('page-indicator');
+
+// ... (keep saveCurrentPageInk and restorePageInk as they are) ...
 
 function saveCurrentPageInk() {
     if (totalSlides === 0) return;
@@ -315,27 +318,55 @@ document.getElementById('slide-upload').addEventListener('change', function(e) {
     if (!file) return;
 
     if (file.type === 'application/pdf') {
-        const fileReader = new FileReader();
-        fileReader.onload = function() {
-            const typedarray = new Uint8Array(this.result);
-            pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-                pdfDoc = pdf;
-                totalSlides = pdf.numPages;
-                currentSlide = 1;
-                slideMap = {};
-                pageInkMemory = {}; 
-                
-                // Map original PDF pages
-                for(let i = 1; i <= totalSlides; i++) {
-                    slideMap[i] = { type: 'pdf', pdfPageIndex: i };
-                }
-                
-                pdfNav.classList.remove('hidden');
-                pdfNav.classList.add('flex');
-                renderSlide(currentSlide);
-            });
-        };
-        fileReader.readAsArrayBuffer(file);
+        pageIndicator.textContent = "Uploading to Cloud Storage...";
+        pdfNav.classList.remove('hidden');
+        pdfNav.classList.add('flex');
+
+        // 🚀 Send raw file to app.js for Firebase Upload
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'UPLOAD_PDF',
+                payload: { file: file, fileName: file.name }
+            }, '*');
+        }
+    }
+});
+
+// 🚀 Receive Cloud URL and Render PDF
+window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'PDF_UPLOAD_SUCCESS') {
+        currentPdfUrl = event.data.url;
+        pageIndicator.textContent = "Loading Cloud PDF...";
+        
+        pdfjsLib.getDocument(currentPdfUrl).promise.then(pdf => {
+            pdfDoc = pdf;
+            totalSlides = pdf.numPages;
+            currentSlide = 1;
+            slideMap = {};
+            pageInkMemory = {}; 
+            
+            for(let i = 1; i <= totalSlides; i++) {
+                slideMap[i] = { type: 'pdf', pdfPageIndex: i };
+            }
+            renderSlide(currentSlide);
+        }).catch(e => {
+            pageIndicator.textContent = "Failed to load PDF";
+        });
+    }
+});
+
+document.getElementById('btn-close-pdf').addEventListener('click', () => {
+    if(confirm("Close presentation? All slide ink will be lost.")) {
+        pdfDoc = null;
+        currentPdfUrl = null; // 🚀 Reset Cloud URL
+        totalSlides = 0;
+        currentSlide = 1;
+        slideMap = {};
+        pageInkMemory = {};
+        pdfNav.classList.replace('flex', 'hidden');
+        canvas.clear();
+        canvas.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
+        document.getElementById('slide-upload').value = ''; 
     }
 });
 
@@ -1054,12 +1085,44 @@ window.addEventListener('message', (event) => {
             currentFileName = fileData.name;
             renameInput.value = currentFileName;
             
+            // 🚀 THE BUG FIX: Restore the Brain (Notes, PDF URL, Slides)!
+            if (fileData.metaContent) {
+                try {
+                    const meta = JSON.parse(fileData.metaContent);
+                    currentSlide = meta.currentSlide || 1;
+                    totalSlides = meta.totalSlides || 0;
+                    slideMap = meta.slideMap || {};
+                    pageInkMemory = meta.pageInkMemory || {};
+                    slideNotesMemory = meta.slideNotesMemory || {};
+                    currentPdfUrl = meta.pdfUrl || null; // 🚀 Extract Cloud URL
+
+                    if (totalSlides > 0) {
+                        document.getElementById('pdf-nav').classList.remove('hidden');
+                        document.getElementById('pdf-nav').classList.add('flex');
+                        document.getElementById('page-indicator').textContent = `${currentSlide} / ${totalSlides}`;
+                        syncNotesUI(); 
+                        
+                        // 🚀 RE-LOAD CLOUD PDF IF EXISTS
+                        if (currentPdfUrl) {
+                            pdfjsLib.getDocument(currentPdfUrl).promise.then(pdf => {
+                                pdfDoc = pdf;
+                                renderSlide(currentSlide);
+                            }).catch(e => {
+                                console.error("Cloud PDF Error", e);
+                                renderSlide(currentSlide); // Fallback to safety net
+                            });
+                        } else {
+                            renderSlide(currentSlide);
+                        }
+                    }
+                } catch(e) { console.error("Error parsing metaContent", e); }
+            }
+            
             // Turn off history tracking while loading to prevent history bugs
             isHistoryTracking = false; 
             canvas.loadFromJSON(fileData.jsonContent, function() {
                 canvas.renderAll();
                 isHistoryTracking = true;
-                // Rebuild slide Map if needed
                 canvasHistory = [JSON.stringify(canvas.toJSON(['isSlide']))];
                 historyIndex = 0;
             });
@@ -1084,14 +1147,28 @@ renameInput.addEventListener('input', (e) => {
 document.getElementById('menu-save').addEventListener('click', () => {
     cmdMenu.classList.replace('flex', 'hidden');
     
+    // 🚀 NEW: Save current page ink before generating payload
+    if (totalSlides > 0) saveCurrentPageInk();
+    
     // Create a low-res thumbnail for the Vault Grid
     const thumbnail = canvas.toDataURL({ format: 'jpeg', quality: 0.3, multiplier: 0.2 });
     const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
+
+    // 🚀 THE BUG FIX: Pack the entire "Brain" including PDF URL!
+    const metaContent = JSON.stringify({
+        currentSlide: currentSlide,
+        totalSlides: totalSlides,
+        slideMap: slideMap,
+        pageInkMemory: pageInkMemory,
+        slideNotesMemory: slideNotesMemory,
+        pdfUrl: currentPdfUrl 
+    });
 
     const filePayload = {
         id: currentFileId,
         name: currentFileName,
         jsonContent: jsonContent,
+        metaContent: metaContent, // <--- Added to payload
         thumbnail: thumbnail,
         timestamp: Date.now()
     };
@@ -1103,7 +1180,6 @@ document.getElementById('menu-save').addEventListener('click', () => {
             payload: filePayload
         }, '*');
     } else {
-        // Fallback if opened directly in browser without Vault
         const blob = new Blob([jsonContent], {type: "application/json"});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
