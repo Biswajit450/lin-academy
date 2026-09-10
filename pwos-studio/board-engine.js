@@ -486,39 +486,69 @@ window.addEventListener('mouseup', () => {
 // DARK MODE, WEBRTC & LOCAL HD RECORDER
 // =====================================
 
-// 1. Dark Mode Toggle for PWOS Integration
+// 1. Dark Mode Toggle & Bidirectional PWOS Sync
 const btnTheme = document.getElementById('btn-theme');
-btnTheme.addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-    const isDark = document.documentElement.classList.contains('dark');
+
+window.applySlateTheme = function(forceTheme, broadcast = false) {
+    let isDark;
+    if (forceTheme) {
+        if (forceTheme === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        isDark = (forceTheme === 'dark');
+    } else {
+        document.documentElement.classList.toggle('dark');
+        isDark = document.documentElement.classList.contains('dark');
+    }
+
+    const currentTheme = isDark ? 'dark' : 'light';
     btnTheme.innerHTML = isDark ? '<i class="fa-solid fa-sun text-lg"></i>' : '<i class="fa-solid fa-moon text-lg"></i>';
     
-    // Update background
+    // Update Canvas background
     canvas.backgroundColor = isDark ? '#0f172a' : '#ffffff';
     
-    // 🚀 THE FIX: Smart Ink Toggle (Only swap default colors, preserve custom colors like Red)
+    // Smart Ink Toggle
     const currentColor = canvas.freeDrawingBrush.color.toLowerCase();
-    
     if (isDark && currentColor === '#0f172a') {
-        // Light mode default -> Dark mode default
         canvas.freeDrawingBrush.color = '#ffffff';
         document.getElementById('pen-color').value = '#ffffff';
     } else if (!isDark && currentColor === '#ffffff') {
-        // Dark mode default -> Light mode default
         canvas.freeDrawingBrush.color = '#0f172a';
         document.getElementById('pen-color').value = '#0f172a';
     }
-    // If the color is Red (#ff0000) or anything else, it does NOT change!
 
-    // Update blank slide rectangles if they exist on the current page
+    // Update blank slide rectangles
     canvas.getObjects().forEach(obj => {
         if (obj.isSlide && obj.type === 'rect') {
             obj.set('fill', isDark ? '#1e293b' : '#ffffff');
         }
     });
-
     canvas.renderAll();
+
+    // Broadcast to Parent PWOS if initiated from inside Slate
+    if (broadcast && window.parent !== window) {
+        window.parent.postMessage({ type: 'SYNC_THEME', theme: currentTheme }, '*');
+    }
+};
+
+// Click Listener for the Theme Button
+btnTheme.addEventListener('click', () => {
+    window.applySlateTheme(null, true); // true = broadcast to parent
 });
+
+// Listen for Theme Sync from Parent PWOS
+window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SYNC_THEME') {
+        const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        if (currentTheme !== event.data.theme) {
+            window.applySlateTheme(event.data.theme, false); // false = don't bounce back
+        }
+    }
+});
+
+// Initial Load Check (Fallback memory)
+if (localStorage.getItem('theme') === 'dark') {
+    window.applySlateTheme('dark', false);
+}
 
 // 2. WebRTC Camera Initialization
 let localStream = null;

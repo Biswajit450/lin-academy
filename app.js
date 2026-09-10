@@ -262,9 +262,26 @@ window.switchAdminSubTab = function(tabId) {
     }
 }
 
-window.toggleDarkMode = function() { 
-    document.documentElement.classList.toggle('dark'); 
-    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); 
+// ==========================================
+// 🚀 THEME SYNC ENGINE (PWOS <-> SLATE)
+// ==========================================
+window.toggleDarkMode = function(forceTheme = null) { 
+    // Agar command bahar se (Slate) aayi hai toh force apply karo
+    if (forceTheme) {
+        if (forceTheme === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+    } else {
+        document.documentElement.classList.toggle('dark'); 
+    }
+    
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    localStorage.setItem('theme', currentTheme); 
+    
+    // Slate (Iframe) ko signal bhejo
+    const slateFrame = document.getElementById('pwos-studio-frame');
+    if (slateFrame && slateFrame.contentWindow) {
+        slateFrame.contentWindow.postMessage({ type: 'SYNC_THEME', theme: currentTheme }, '*');
+    }
 }
 
 // ==========================================
@@ -2334,6 +2351,12 @@ window.launchPWOSStudio = function(existingFileId = null) {
     frame.src = url;
     container.classList.remove('hidden');
     setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
+    
+    // 🚀 NEW: Slate ko open hote hi current theme bata do
+    setTimeout(() => {
+        const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        frame.contentWindow.postMessage({ type: 'SYNC_THEME', theme: currentTheme }, '*');
+    }, 800); // Thoda delay taaki iframe poora load ho jaye
 }
 
 // THE FIREBASE SYNC ROUTER
@@ -2391,6 +2414,15 @@ window.addEventListener('message', async (event) => {
                 }, '*');
             }
         } catch(e) { console.error("Cloud Fetch Error:", e); }
+    }
+
+    // D. THEME SYNC FROM SLATE
+    if (event.data && event.data.type === 'SYNC_THEME') {
+        // Bina loop banaye PWOS ka theme update karo
+        const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        if (currentTheme !== event.data.theme) {
+            window.toggleDarkMode(event.data.theme);
+        }
     }
 });
 
