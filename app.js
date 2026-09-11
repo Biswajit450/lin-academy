@@ -2382,6 +2382,7 @@ window.addEventListener('message', async (event) => {
                 id: fileData.id,
                 name: fileData.name,
                 jsonContent: fileData.jsonContent,
+                metaContent: fileData.metaContent || "{}", // 🚀 THE MISSING LINK: Saving the Brain!
                 thumbnail: fileData.thumbnail,
                 timestamp: new Date().toISOString()
             }, { merge: true });

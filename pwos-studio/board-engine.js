@@ -404,56 +404,6 @@ document.getElementById('btn-add-blank').addEventListener('click', () => {
     saveCurrentPageInk();
     totalSlides++;
     
-    for(let i = totalSlides; i > currentSlide + 1; i--) {
-        slideMap[i] = slideMap[i - 1];
-        pageInkMemory[i] = pageInkMemory[i - 1];
-    }
-    
-    currentSlide++;
-    slideMap[currentSlide] = { type: 'blank' };
-    pageInkMemory[currentSlide] = [];
-    
-    renderSlide(currentSlide);
-});
-
-document.getElementById('btn-close-pdf').addEventListener('click', () => {
-    if(confirm("Close presentation? All slide ink will be lost.")) {
-        // 🚀 ORPHAN CLEANUP: Presentation band ki toh Cloud PDF bhi delete karo
-        if (currentPdfUrl && window.parent !== window) {
-            window.parent.postMessage({ type: 'DELETE_ORPHAN_PDF', url: currentPdfUrl }, '*');
-        }
-        pdfDoc = null;
-        currentPdfUrl = null; 
-        totalSlides = 0;
-        currentSlide = 1;
-        slideMap = {};
-        pageInkMemory = {};
-        pdfNav.classList.replace('flex', 'hidden');
-        canvas.clear();
-        canvas.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
-        document.getElementById('slide-upload').value = ''; 
-    }
-});
-
-// 🚀 Dynamic Slide Controls
-document.getElementById('btn-prev-page').addEventListener('click', () => {
-    if (currentSlide <= 1) return;
-    saveCurrentPageInk();
-    currentSlide--;
-    renderSlide(currentSlide);
-});
-
-document.getElementById('btn-next-page').addEventListener('click', () => {
-    if (currentSlide >= totalSlides) return;
-    saveCurrentPageInk();
-    currentSlide++;
-    renderSlide(currentSlide);
-});
-
-document.getElementById('btn-add-blank').addEventListener('click', () => {
-    saveCurrentPageInk();
-    totalSlides++;
-    
     // Shift all subsequent slides mapping forward
     for(let i = totalSlides; i > currentSlide + 1; i--) {
         slideMap[i] = slideMap[i - 1];
