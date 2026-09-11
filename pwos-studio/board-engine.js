@@ -391,6 +391,7 @@ document.getElementById('btn-prev-page').addEventListener('click', () => {
     saveCurrentPageInk();
     currentSlide--;
     renderSlide(currentSlide);
+    if (typeof syncNotesUI === "function") syncNotesUI(); // 🚀 FIX: Wake up Notes!
 });
 
 document.getElementById('btn-next-page').addEventListener('click', () => {
@@ -398,6 +399,7 @@ document.getElementById('btn-next-page').addEventListener('click', () => {
     saveCurrentPageInk();
     currentSlide++;
     renderSlide(currentSlide);
+    if (typeof syncNotesUI === "function") syncNotesUI(); // 🚀 FIX: Wake up Notes!
 });
 
 document.getElementById('btn-add-blank').addEventListener('click', () => {
@@ -416,6 +418,7 @@ document.getElementById('btn-add-blank').addEventListener('click', () => {
     pageInkMemory[currentSlide] = [];
     
     renderSlide(currentSlide);
+    if (typeof syncNotesUI === "function") syncNotesUI(); // 🚀 FIX: Wake up Notes!
 });
 
 document.getElementById('btn-close-pdf').addEventListener('click', () => {
