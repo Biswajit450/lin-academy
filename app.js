@@ -2451,6 +2451,13 @@ window.addEventListener('message', async (event) => {
             alert("Failed to upload PDF to Cloud Storage.");
         }
     }
+
+    // F. ORPHAN PDF CLEANUP FROM SLATE
+    if (event.data && event.data.type === 'DELETE_ORPHAN_PDF') {
+        if (window.nukeCloudStorageAsset) {
+            window.nukeCloudStorageAsset(event.data.url);
+        }
+    }
 });
 
 // Close iframe animation (The "Back" visual effect)
