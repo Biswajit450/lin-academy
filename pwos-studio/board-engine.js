@@ -230,13 +230,11 @@ let pdfDoc = null;
 let currentPdfUrl = null; // 🚀 NEW: Cloud URL Memory
 let currentSlide = 1;
 let totalSlides = 0;
-let slideMap = {}; 
-let pageInkMemory = {}; 
+let slideMap = {}; // Tracks if a slide is a PDF page or a Blank Page
+let pageInkMemory = {}; // 🧠 Bug-Free Memory
 
 const pdfNav = document.getElementById('pdf-nav');
 const pageIndicator = document.getElementById('page-indicator');
-
-// ... (keep saveCurrentPageInk and restorePageInk as they are) ...
 
 function saveCurrentPageInk() {
     if (totalSlides === 0) return;
@@ -258,11 +256,38 @@ function renderSlide(slideNum) {
     
     canvas.clear();
     
-    // 🚀 THE FIX: Check current theme before setting slide background
     const isDark = document.documentElement.classList.contains('dark');
     canvas.backgroundColor = isDark ? '#0f172a' : '#ffffff';
 
     if (slideData.type === 'pdf') {
+        // 🚀 SAFETY NET: If PDF background is missing from memory
+        if (!pdfDoc) {
+            const blankWidth = wrapper.clientWidth * 0.8;
+            const blankHeight = blankWidth * (9/16);
+            const rect = new fabric.Rect({
+                width: blankWidth, height: blankHeight,
+                left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
+                originX: 'center', originY: 'center',
+                fill: isDark ? '#1e293b' : '#ffffff',
+                stroke: '#cbd5e1', strokeWidth: 2,
+                selectable: false, evented: false, isSlide: true
+            });
+            const warningText = new fabric.Text("Loading Cloud PDF...\nPlease wait or check connection.", {
+                left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
+                originX: 'center', originY: 'center', fontSize: 18,
+                fill: '#94a3b8', selectable: false, evented: false, textAlign: 'center'
+            });
+            canvas.add(rect, warningText);
+            canvas.sendToBack(warningText);
+            canvas.sendToBack(rect);
+            
+            restorePageInk();
+            if (typeof syncNotesUI === "function") syncNotesUI();
+            
+            canvasHistory = []; historyIndex = -1; saveHistory(); 
+            return;
+        }
+
         pdfDoc.getPage(slideData.pdfPageIndex).then(page => {
             const viewport = page.getViewport({ scale: 2.0 });
             const tempCanvas = document.createElement('canvas');
@@ -296,7 +321,7 @@ function renderSlide(slideNum) {
             width: blankWidth, height: blankHeight,
             left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
             originX: 'center', originY: 'center',
-            fill: isDark ? '#1e293b' : '#ffffff', // Adapts blank slide box to dark mode
+            fill: isDark ? '#1e293b' : '#ffffff',
             stroke: '#cbd5e1', strokeWidth: 2,
             selectable: false, evented: false, isSlide: true
         });
@@ -307,7 +332,7 @@ function renderSlide(slideNum) {
         canvasHistory = [];
         historyIndex = -1;
         saveHistory(); 
-        syncNotesUI();
+        if (typeof syncNotesUI === "function") syncNotesUI();
     }
 }
 
@@ -318,6 +343,11 @@ document.getElementById('slide-upload').addEventListener('change', function(e) {
     if (!file) return;
 
     if (file.type === 'application/pdf') {
+        // 🚀 ORPHAN CLEANUP: Nayi PDF aayi toh purani cloud se uda do
+        if (currentPdfUrl && window.parent !== window) {
+            window.parent.postMessage({ type: 'DELETE_ORPHAN_PDF', url: currentPdfUrl }, '*');
+        }
+
         pageIndicator.textContent = "Uploading to Cloud Storage...";
         pdfNav.classList.remove('hidden');
         pdfNav.classList.add('flex');
@@ -355,10 +385,45 @@ window.addEventListener('message', (event) => {
     }
 });
 
+// 🚀 Dynamic Slide Controls
+document.getElementById('btn-prev-page').addEventListener('click', () => {
+    if (currentSlide <= 1) return;
+    saveCurrentPageInk();
+    currentSlide--;
+    renderSlide(currentSlide);
+});
+
+document.getElementById('btn-next-page').addEventListener('click', () => {
+    if (currentSlide >= totalSlides) return;
+    saveCurrentPageInk();
+    currentSlide++;
+    renderSlide(currentSlide);
+});
+
+document.getElementById('btn-add-blank').addEventListener('click', () => {
+    saveCurrentPageInk();
+    totalSlides++;
+    
+    for(let i = totalSlides; i > currentSlide + 1; i--) {
+        slideMap[i] = slideMap[i - 1];
+        pageInkMemory[i] = pageInkMemory[i - 1];
+    }
+    
+    currentSlide++;
+    slideMap[currentSlide] = { type: 'blank' };
+    pageInkMemory[currentSlide] = [];
+    
+    renderSlide(currentSlide);
+});
+
 document.getElementById('btn-close-pdf').addEventListener('click', () => {
     if(confirm("Close presentation? All slide ink will be lost.")) {
+        // 🚀 ORPHAN CLEANUP: Presentation band ki toh Cloud PDF bhi delete karo
+        if (currentPdfUrl && window.parent !== window) {
+            window.parent.postMessage({ type: 'DELETE_ORPHAN_PDF', url: currentPdfUrl }, '*');
+        }
         pdfDoc = null;
-        currentPdfUrl = null; // 🚀 Reset Cloud URL
+        currentPdfUrl = null; 
         totalSlides = 0;
         currentSlide = 1;
         slideMap = {};
@@ -1063,17 +1128,14 @@ const btnMenu = document.getElementById('btn-menu');
 const cmdMenu = document.getElementById('command-menu');
 const renameInput = document.getElementById('menu-rename-input');
 
-// Unique ID for the current session (generated on first load)
 let currentFileId = 'slate_' + Date.now();
 let currentFileName = "Untitled_Lecture";
 
-// Check if Vault sent an existing File ID via URL parameters
 const urlParams = new URLSearchParams(window.location.search);
 const existingFileId = urlParams.get('fileId');
 
 if (existingFileId) {
     currentFileId = existingFileId;
-    // Request the Vault (parent window) to send the data for this ID
     window.parent.postMessage({ type: 'LOAD_SLATE_FILE', id: existingFileId }, '*');
 }
 
@@ -1100,7 +1162,7 @@ window.addEventListener('message', (event) => {
                         document.getElementById('pdf-nav').classList.remove('hidden');
                         document.getElementById('pdf-nav').classList.add('flex');
                         document.getElementById('page-indicator').textContent = `${currentSlide} / ${totalSlides}`;
-                        syncNotesUI(); 
+                        if (typeof syncNotesUI === "function") syncNotesUI(); 
                         
                         // 🚀 RE-LOAD CLOUD PDF IF EXISTS
                         if (currentPdfUrl) {
@@ -1109,7 +1171,7 @@ window.addEventListener('message', (event) => {
                                 renderSlide(currentSlide);
                             }).catch(e => {
                                 console.error("Cloud PDF Error", e);
-                                renderSlide(currentSlide); // Fallback to safety net
+                                renderSlide(currentSlide); 
                             });
                         } else {
                             renderSlide(currentSlide);
@@ -1118,7 +1180,6 @@ window.addEventListener('message', (event) => {
                 } catch(e) { console.error("Error parsing metaContent", e); }
             }
             
-            // Turn off history tracking while loading to prevent history bugs
             isHistoryTracking = false; 
             canvas.loadFromJSON(fileData.jsonContent, function() {
                 canvas.renderAll();
@@ -1130,7 +1191,6 @@ window.addEventListener('message', (event) => {
     }
 });
 
-// Toggle Menu
 btnMenu.addEventListener('click', () => {
     cmdMenu.classList.contains('hidden') ? cmdMenu.classList.replace('hidden', 'flex') : cmdMenu.classList.replace('flex', 'hidden');
 });
@@ -1138,7 +1198,6 @@ document.addEventListener('click', (e) => {
     if (!btnMenu.contains(e.target) && !cmdMenu.contains(e.target)) cmdMenu.classList.replace('flex', 'hidden');
 });
 
-// Live Rename Sync
 renameInput.addEventListener('input', (e) => {
     currentFileName = e.target.value.trim() || "Untitled_Lecture";
 });
@@ -1150,7 +1209,6 @@ document.getElementById('menu-save').addEventListener('click', () => {
     // 🚀 NEW: Save current page ink before generating payload
     if (totalSlides > 0) saveCurrentPageInk();
     
-    // Create a low-res thumbnail for the Vault Grid
     const thumbnail = canvas.toDataURL({ format: 'jpeg', quality: 0.3, multiplier: 0.2 });
     const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
 
@@ -1168,12 +1226,11 @@ document.getElementById('menu-save').addEventListener('click', () => {
         id: currentFileId,
         name: currentFileName,
         jsonContent: jsonContent,
-        metaContent: metaContent, // <--- Added to payload
+        metaContent: metaContent, 
         thumbnail: thumbnail,
         timestamp: Date.now()
     };
 
-    // If running inside the Vault iframe, send it up!
     if (window.parent !== window) {
         window.parent.postMessage({
             type: 'SAVE_SLATE_FILE',
@@ -1190,13 +1247,13 @@ document.getElementById('menu-save').addEventListener('click', () => {
     }
 });
 
-// 2. Save As (Creates a new ID and saves)
+// 2. Save As 
 document.getElementById('menu-save-as').addEventListener('click', () => {
     const newName = prompt("Enter new file name:", currentFileName);
     if (newName) {
         currentFileName = newName;
         renameInput.value = currentFileName;
-        currentFileId = 'slate_' + Date.now(); // Generate new ID
+        currentFileId = 'slate_' + Date.now(); 
         document.getElementById('menu-save').click(); 
     }
 });
@@ -1211,7 +1268,7 @@ document.getElementById('menu-export-annotated').addEventListener('click', () =>
     cmdMenu.classList.replace('flex', 'hidden');
 });
 
-// 4. Export Original PDF (Placeholder)
+// 4. Export Original PDF 
 document.getElementById('menu-export-original').addEventListener('click', () => {
     if (pdfDoc) {
         alert(`Original PDF extraction will be connected to the Vault backend.`);
@@ -1221,7 +1278,7 @@ document.getElementById('menu-export-original').addEventListener('click', () => 
     cmdMenu.classList.replace('flex', 'hidden');
 });
 
-// 5. Share Link (Placeholder)
+// 5. Share Link 
 document.getElementById('menu-share').addEventListener('click', () => {
     alert(`Live Session Link for ${currentFileName} copied to clipboard!`);
     cmdMenu.classList.replace('flex', 'hidden');
@@ -1230,6 +1287,11 @@ document.getElementById('menu-share').addEventListener('click', () => {
 // 6. Delete / Close File (Tells Vault to close the iframe)
 document.getElementById('menu-delete').addEventListener('click', () => {
     if(confirm(`Close this session without saving?`)) {
+        // 🚀 ORPHAN CLEANUP: Bina save kiye back gaye, toh PDF cloud se delete kar do
+        if (currentPdfUrl && window.parent !== window) {
+            window.parent.postMessage({ type: 'DELETE_ORPHAN_PDF', url: currentPdfUrl }, '*');
+        }
+        
         if (window.parent !== window) {
             window.parent.postMessage({ type: 'CLOSE_SLATE' }, '*');
         } else {
