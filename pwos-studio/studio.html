@@ -39,7 +39,11 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
+        } /* 🚀 Yeh bracket close karna zaroori tha! */
+        
+        /* Hide scrollbar for Touch Swipe */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         /* Dark mode toolbar override */
         .dark .glass-toolbar {
             background: rgba(30, 41, 59, 0.85);
@@ -81,8 +85,9 @@
             </div>
         </div>
         
-        <!-- Top Floating Toolbar -->
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 glass-toolbar px-6 py-3 rounded-full flex gap-4 items-center z-10 transition-all shadow-lg">
+        <!-- Top Floating Toolbar (Tablet Swipe Optimized) -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 glass-toolbar px-6 py-3 rounded-full flex gap-4 items-center z-10 transition-all shadow-lg overflow-x-auto whitespace-nowrap scrollbar-hide max-w-[95%]">
+
             
             <!-- 🔴 Screen Recorder Button -->
             <button id="btn-record" class="text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Start HD Recording"><i class="fa-solid fa-circle text-rose-500"></i></button>

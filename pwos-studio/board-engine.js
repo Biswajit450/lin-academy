@@ -509,27 +509,41 @@ toggleBtn.addEventListener('click', () => {
     }, 50);
 });
 
-// Dragging Logic
-webcamContainer.addEventListener('mousedown', (e) => {
+// Dragging Logic (HYBRID: Mouse + Touch)
+function startDragCam(e) {
     if (!isFullscreen) return; 
     isDraggingCam = true;
-    camOffsetX = e.clientX - webcamContainer.getBoundingClientRect().left;
-    camOffsetY = e.clientY - webcamContainer.getBoundingClientRect().top;
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    camOffsetX = clientX - webcamContainer.getBoundingClientRect().left;
+    camOffsetY = clientY - webcamContainer.getBoundingClientRect().top;
     webcamContainer.classList.replace('cursor-grab', 'cursor-grabbing');
-});
+}
 
-window.addEventListener('mousemove', (e) => {
+function dragCam(e) {
     if (!isDraggingCam) return;
-    webcamContainer.style.left = (e.clientX - camOffsetX) + 'px';
-    webcamContainer.style.top = (e.clientY - camOffsetY) + 'px';
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    webcamContainer.style.left = (clientX - camOffsetX) + 'px';
+    webcamContainer.style.top = (clientY - camOffsetY) + 'px';
     webcamContainer.style.right = 'auto'; 
-});
+}
 
-window.addEventListener('mouseup', () => {
+function endDragCam() {
     if (!isDraggingCam) return;
     isDraggingCam = false;
     webcamContainer.classList.replace('cursor-grabbing', 'cursor-grab');
-});
+}
+
+// Mouse Listeners
+webcamContainer.addEventListener('mousedown', startDragCam);
+window.addEventListener('mousemove', dragCam);
+window.addEventListener('mouseup', endDragCam);
+
+// Touch Listeners
+webcamContainer.addEventListener('touchstart', startDragCam, { passive: true });
+window.addEventListener('touchmove', dragCam, { passive: true });
+window.addEventListener('touchend', endDragCam);
 
 // =====================================
 // DARK MODE, WEBRTC & LOCAL HD RECORDER
@@ -1289,23 +1303,37 @@ function syncNotesUI() {
     notesTextarea.value = slideNotesMemory[currentSlide] || "";
 }
 
-// 3. Draggable Window Logic
+// 3. Draggable Window Logic (HYBRID: Mouse + Touch)
 let isDraggingNotes = false;
 let notesOffsetX = 0, notesOffsetY = 0;
 
-notesDragHandle.addEventListener('mousedown', (e) => {
+function startDragNotes(e) {
     isDraggingNotes = true;
-    notesOffsetX = e.clientX - notesWidget.getBoundingClientRect().left;
-    notesOffsetY = e.clientY - notesWidget.getBoundingClientRect().top;
-});
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    notesOffsetX = clientX - notesWidget.getBoundingClientRect().left;
+    notesOffsetY = clientY - notesWidget.getBoundingClientRect().top;
+}
 
-window.addEventListener('mousemove', (e) => {
+function dragNotes(e) {
     if (!isDraggingNotes) return;
-    notesWidget.style.left = (e.clientX - notesOffsetX) + 'px';
-    notesWidget.style.top = (e.clientY - notesOffsetY) + 'px';
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    notesWidget.style.left = (clientX - notesOffsetX) + 'px';
+    notesWidget.style.top = (clientY - notesOffsetY) + 'px';
     notesWidget.style.right = 'auto'; 
-});
+}
 
-window.addEventListener('mouseup', () => {
+function endDragNotes() {
     isDraggingNotes = false;
-});
+}
+
+// Mouse Listeners
+notesDragHandle.addEventListener('mousedown', startDragNotes);
+window.addEventListener('mousemove', dragNotes);
+window.addEventListener('mouseup', endDragNotes);
+
+// Touch Listeners
+notesDragHandle.addEventListener('touchstart', startDragNotes, { passive: true });
+window.addEventListener('touchmove', dragNotes, { passive: true });
+window.addEventListener('touchend', endDragNotes);
