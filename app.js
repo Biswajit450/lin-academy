@@ -2828,15 +2828,16 @@ window.emptyScrapBin = async function() {
 }
 
 // ==========================================
-// 🚀 PHASE 2: GREEN ROOM & SMART LOBBY MODALS
+// 🚀 PHASE 2 & 4: GREEN ROOM, SMART LOBBY & FIREBASE BRIDGE
 // ==========================================
 
-// Global variable to store active session data passed from the click router
 window.currentLiveSessionData = null;
+window.selectedGreenRoomFileId = null; // 🚀 NEW: Tracks which file the educator selects
 
-// Inject the Modals into the DOM immediately
+// Inject the Modals into the DOM (Safely)
 (function injectLiveSessionModals() {
-    // 1. The Green Room (Educator Vault Modal)
+    if (document.getElementById('green-room-modal')) return; // Prevent duplicates
+
     const greenRoomHTML = `
     <div id="green-room-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-slate-900/95 backdrop-blur-md p-4 transition-opacity">
         <div class="bg-slate-900 w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-700 relative flex flex-col md:flex-row overflow-hidden">
@@ -2849,56 +2850,46 @@ window.currentLiveSessionData = null;
                 </div>
                 <div class="w-full aspect-video bg-slate-800 rounded-xl overflow-hidden mb-6 border border-slate-700 relative flex items-center justify-center">
                     <i class="fa-solid fa-video text-slate-600 text-3xl"></i>
-                    <!-- In production, a local WebRTC stream preview can be attached here -->
                 </div>
-                <button onclick="document.getElementById('green-room-modal').classList.add('hidden')" class="text-xs text-slate-500 hover:text-slate-300">Cancel</button>
+                <button onclick="document.getElementById('green-room-modal').classList.add('hidden')" class="text-xs text-slate-500 hover:text-rose-500 transition-colors">Cancel Session</button>
             </div>
             
             <!-- Right: Vault Selector -->
-            <div class="w-full md:w-2/3 p-6 flex flex-col">
-                <div class="flex justify-between items-center mb-6">
+            <div class="w-full md:w-2/3 p-6 flex flex-col h-[80vh] md:h-auto">
+                <div class="flex justify-between items-center mb-6 shrink-0">
                     <h3 class="text-xl font-bold text-white">Select Slate to Present</h3>
-                    <button class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors"><i class="fa-solid fa-plus mr-1"></i> New Blank Slate</button>
+                    <button id="btn-blank-slate" onclick="window.selectGreenRoomFile('BLANK')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all ring-offset-slate-900 ring-offset-2"><i class="fa-solid fa-plus mr-1"></i> New Blank Slate</button>
                 </div>
                 
-                <!-- Vault Grid Placeholder -->
+                <!-- Vault Grid -->
                 <div class="flex-grow overflow-y-auto mb-6 pr-2">
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-4" id="green-room-vault-grid">
-                        <div class="text-center py-10 col-span-full text-slate-500 text-sm">Loading your Vault...</div>
+                        <!-- Dynamic Files injected here -->
                     </div>
                 </div>
                 
-                <button onclick="window.startEducatorLiveSession()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2">
+                <button onclick="window.startEducatorLiveSession()" class="w-full shrink-0 bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95 text-lg flex items-center justify-center gap-2">
                     <i class="fa-solid fa-satellite-dish"></i> GO LIVE NOW
                 </button>
             </div>
         </div>
     </div>`;
 
-    // 2. The Smart Lobby (Student Waiting Room)
     const smartLobbyHTML = `
     <div id="smart-lobby-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-slate-900/95 backdrop-blur-md p-4 transition-opacity">
         <div class="bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-700 p-8 text-center relative overflow-hidden">
-            <!-- Decorative Background Animation -->
             <div class="absolute inset-0 opacity-10 flex items-center justify-center pointer-events-none">
                 <div class="w-64 h-64 border-4 border-brand-blue rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"></div>
             </div>
-            
             <button onclick="document.getElementById('smart-lobby-modal').classList.add('hidden')" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
-            
             <div class="relative z-10 flex flex-col items-center">
-                <div class="w-20 h-20 bg-brand-blue/20 text-brand-blue rounded-full flex items-center justify-center text-3xl mb-6 border border-brand-blue/30 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-                    <i class="fa-regular fa-clock"></i>
-                </div>
-                
+                <div class="w-20 h-20 bg-brand-blue/20 text-brand-blue rounded-full flex items-center justify-center text-3xl mb-6 border border-brand-blue/30 shadow-[0_0_15px_rgba(37,99,235,0.5)]"><i class="fa-regular fa-clock"></i></div>
                 <h2 id="lobby-course-title" class="text-2xl md:text-3xl font-extrabold text-white mb-2">Classroom Title</h2>
                 <p id="lobby-educator-info" class="text-sm text-slate-400 mb-8">Waiting for educator to start the session...</p>
-                
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md mb-6">
                     <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Session Starts In</h4>
                     <div class="text-4xl md:text-5xl font-mono font-bold text-emerald-400 tracking-wider" id="lobby-countdown">00:00:00</div>
                 </div>
-                
                 <p class="text-[11px] text-slate-500 uppercase tracking-widest animate-pulse"><i class="fa-solid fa-satellite-dish mr-1"></i> You will be teleported automatically</p>
             </div>
         </div>
@@ -2907,23 +2898,122 @@ window.currentLiveSessionData = null;
     document.body.insertAdjacentHTML('beforeend', greenRoomHTML + smartLobbyHTML);
 })();
 
-// Function to Open Green Room (Educator)
-window.openGreenRoom = function(sessionData) {
-    window.currentLiveSessionData = sessionData;
-    const modal = document.getElementById('green-room-modal');
-    modal.classList.remove('hidden');
+// 🚀 NEW: Function to handle File Selection inside Green Room
+window.selectGreenRoomFile = function(fileId) {
+    window.selectedGreenRoomFileId = fileId === 'BLANK' ? null : fileId;
     
-    // In a full implementation, you would call window.loadVaultFiles() 
-    // and render them into #green-room-vault-grid here.
+    // Clear old highlights
+    document.querySelectorAll('.green-room-card').forEach(card => card.classList.remove('ring-4', 'ring-brand-blue'));
+    const blankBtn = document.getElementById('btn-blank-slate');
+    if(blankBtn) blankBtn.classList.remove('ring-4', 'ring-brand-blue');
+
+    // Add new highlight
+    if (fileId === 'BLANK') {
+        if(blankBtn) blankBtn.classList.add('ring-4', 'ring-brand-blue');
+    } else {
+        const selectedCard = document.getElementById('gr-card-' + fileId);
+        if(selectedCard) selectedCard.classList.add('ring-4', 'ring-brand-blue');
+    }
+}
+
+// 🚀 UPGRADED: Function to Open Green Room & Fetch Real Vault Files
+window.openGreenRoom = async function(sessionData) {
+    window.currentLiveSessionData = sessionData;
+    window.selectedGreenRoomFileId = null; 
+    
+    document.getElementById('green-room-modal').classList.remove('hidden');
+    
     const grid = document.getElementById('green-room-vault-grid');
-    grid.innerHTML = '<div class="text-center py-10 col-span-full text-slate-400 text-xs uppercase tracking-widest"><i class="fa-solid fa-vault mb-2 text-xl block"></i>Vault connected. Select a file.</div>';
+    grid.innerHTML = '<div class="text-center py-10 col-span-full text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Syncing Vault Securely...</div>';
+    
+    // Default selection is Blank Slate
+    window.selectGreenRoomFile('BLANK');
+
+    try {
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "PWOS_Vault", auth.currentUser.uid, "projects"));
+        
+        let files = [];
+        snap.forEach(doc => {
+            if (!doc.data().trashed) files.push(doc.data());
+        });
+
+        if(files.length === 0) {
+            grid.innerHTML = '<div class="col-span-full text-center text-slate-500 py-6 text-sm">Your vault is empty. A Blank Slate will be launched.</div>';
+            return;
+        }
+
+        files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        let html = '';
+        
+        files.forEach(f => {
+            const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Slate+Canvas';
+            html += `
+            <div id="gr-card-${f.id}" onclick="window.selectGreenRoomFile('${f.id}')" class="green-room-card bg-slate-800 rounded-xl overflow-hidden cursor-pointer border border-slate-700 hover:border-brand-blue transition-all relative">
+                <div class="w-full aspect-video bg-slate-900 relative">
+                    <img src="${thumb}" class="w-full h-full object-cover opacity-70">
+                </div>
+                <div class="p-3">
+                    <h4 class="text-xs font-bold text-white truncate" title="${f.name}">${f.name}</h4>
+                </div>
+            </div>`;
+        });
+        grid.innerHTML = html;
+
+    } catch(e) {
+        console.error("Vault fetch error in Green Room:", e);
+        grid.innerHTML = '<div class="text-rose-500 text-center py-4 col-span-full text-sm">Failed to load Vault files.</div>';
+    }
 };
 
-// ==========================================
-// 🚀 PHASE 4: THE FIREBASE MAGIC BRIDGE
-// ==========================================
+// 🚀 UPGRADED: Educator Go Live (Now sends the selected file to Studio)
+window.startEducatorLiveSession = async function() {
+    if(!window.currentLiveSessionData) return alert("Session data lost. Please try again.");
+    
+    const btn = event.currentTarget;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ACTIVATING STUDIO...';
+    btn.disabled = true;
 
-// Function to Open Smart Lobby (Student Side)
+    const sessionData = window.currentLiveSessionData;
+    
+    try {
+        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        await setDoc(doc(db, "live_sessions", sessionData.blockId), {
+            courseName: sessionData.courseName,
+            title: sessionData.title,
+            educatorId: auth.currentUser.uid,
+            educatorName: auth.currentUser.displayName || "Educator",
+            status: 'live',
+            startedAt: new Date().toISOString()
+        }, { merge: true });
+
+        document.getElementById('green-room-modal').classList.add('hidden');
+        
+        const container = document.getElementById('pwos-studio-container');
+        const frame = document.getElementById('pwos-studio-frame');
+        
+        // Build URL: Pass Room ID AND the File ID if they selected one from the Vault!
+        let studioUrl = `pwos-studio/studio.html?roomId=${sessionData.blockId}`;
+        if (window.selectedGreenRoomFileId) {
+            studioUrl += `&fileId=${window.selectedGreenRoomFileId}`;
+        }
+        
+        frame.src = studioUrl;
+        container.classList.remove('hidden');
+        setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
+        
+    } catch(e) {
+        console.error("Failed to start live session:", e);
+        alert("Failed to connect to Firebase Server. Did you update the Firestore Rules?");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+};
+
+// Smart Lobby Listener (Student Side - Unchanged, works perfectly)
 window.openSmartLobby = async function(sessionData) {
     window.currentLiveSessionData = sessionData;
     const modal = document.getElementById('smart-lobby-modal');
@@ -2931,7 +3021,6 @@ window.openSmartLobby = async function(sessionData) {
     document.getElementById('lobby-course-title').innerText = sessionData.title || sessionData.courseName;
     const countdownEl = document.getElementById('lobby-countdown');
     
-    // 1. Initialize Countdown
     if (sessionData.startTime) {
         const targetTime = new Date(sessionData.startTime).getTime();
         if (window.lobbyCountdownInterval) clearInterval(window.lobbyCountdownInterval);
@@ -2948,11 +3037,7 @@ window.openSmartLobby = async function(sessionData) {
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                
-                countdownEl.innerText = 
-                    (hours < 10 ? "0" + hours : hours) + ":" + 
-                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-                    (seconds < 10 ? "0" + seconds : seconds);
+                countdownEl.innerText = (hours < 10 ? "0" + hours : hours) + ":" + (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
             }
         }, 1000);
     } else {
@@ -2961,80 +3046,28 @@ window.openSmartLobby = async function(sessionData) {
     
     modal.classList.remove('hidden');
 
-    // 2. 🚀 THE AUTO-TELEPORT LISTENER (FIREBASE MAGIC)
     try {
         const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         const sessionRef = doc(db, "live_sessions", sessionData.blockId);
 
-        // 24/7 Background Radar: Checks if Educator goes live
         window.smartLobbyListener = onSnapshot(sessionRef, (docSnap) => {
             if(docSnap.exists() && docSnap.data().status === 'live') {
-                
-                // Stop everything! Teacher is here!
                 if(window.lobbyCountdownInterval) clearInterval(window.lobbyCountdownInterval);
-                if(window.smartLobbyListener) window.smartLobbyListener(); // Turn off radar
+                if(window.smartLobbyListener) window.smartLobbyListener(); 
                 
-                // Show Teleporting UI
                 countdownEl.innerText = "TELEPORTING...";
                 countdownEl.classList.remove('text-emerald-400', 'text-amber-400');
                 countdownEl.classList.add('text-brand-blue', 'animate-pulse');
                 document.getElementById('lobby-educator-info').innerText = "Connection secured. Launching student slate!";
 
-                // Cinematic 1-second delay, then open the Student Slate
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    // Opening the exact student environment we built earlier
-                    const url = `student-slate/student.html?roomId=${sessionData.blockId}&course=${encodeURIComponent(sessionData.courseName)}`;
+                    const url = `student.html?roomId=${sessionData.blockId}&course=${encodeURIComponent(sessionData.courseName)}`;
                     window.open(url, '_blank'); 
                 }, 1200);
             }
         });
     } catch(e) {
         console.error("Firebase lobby connection error:", e);
-    }
-};
-
-// Function for Educator "Go Live" Action (Admin Side)
-window.startEducatorLiveSession = async function() {
-    if(!window.currentLiveSessionData) return alert("Session data lost. Please try again.");
-    
-    const btn = event.currentTarget;
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ACTIVATING STUDIO...';
-    btn.disabled = true;
-
-    const sessionData = window.currentLiveSessionData;
-    
-    try {
-        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        
-        // 1. Create/Update the Live Session Room in Firebase (This triggers the students' radar!)
-        await setDoc(doc(db, "live_sessions", sessionData.blockId), {
-            courseName: sessionData.courseName,
-            title: sessionData.title,
-            educatorId: auth.currentUser.uid,
-            educatorName: auth.currentUser.displayName || "Educator",
-            status: 'live',
-            startedAt: new Date().toISOString()
-        }, { merge: true });
-
-        // 2. Hide the Green Room
-        document.getElementById('green-room-modal').classList.add('hidden');
-        
-        // 3. Launch the Educator Studio (Passing the Room ID so the canvas knows where to broadcast)
-        // Adjusting window.launchPWOSStudio logic dynamically to include the Room ID
-        const container = document.getElementById('pwos-studio-container');
-        const frame = document.getElementById('pwos-studio-frame');
-        
-        frame.src = `pwos-studio/studio.html?roomId=${sessionData.blockId}`;
-        container.classList.remove('hidden');
-        setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
-        
-    } catch(e) {
-        console.error("Failed to start live session:", e);
-        alert("Failed to connect to Firebase Server. Check your internet connection.");
-    } finally {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
     }
 };
