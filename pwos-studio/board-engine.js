@@ -164,8 +164,23 @@ function saveHistory() {
     }
     
     // Snapshot the board including our custom 'isSlide' tag
-    canvasHistory.push(JSON.stringify(canvas.toJSON(['isSlide'])));
+    const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
+    canvasHistory.push(jsonContent);
     historyIndex++;
+
+    // 🚀 NEW: LIVE SYNC BROADCASTER (Sends data to app.js instantly!)
+    if (window.parent !== window) {
+        const metaContent = JSON.stringify({
+            currentSlide: currentSlide,
+            totalSlides: totalSlides,
+            pdfUrl: currentPdfUrl
+        });
+
+        window.parent.postMessage({
+            type: 'SYNC_BOARD_STATE',
+            payload: { jsonContent: jsonContent, metaContent: metaContent }
+        }, '*');
+    }
 }
 
 // Initial Blank State

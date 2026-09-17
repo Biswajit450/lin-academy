@@ -147,57 +147,63 @@ let camOffsetX = 0, camOffsetY = 0;
 
 btnTogglePanel.addEventListener('click', () => {
     isPanelHidden = !isPanelHidden;
+    const isMobile = window.innerWidth < 640; // 🚀 Detect Mobile Screen
     
     if (isPanelHidden) {
-        // 1. Hide the Chat Section
+        // 1. Hide Chat
         chatSection.style.display = 'none';
         
-        // 2. Shrink Right Panel to just the Toolbar Width
+        // 2. Shrink Panel
         rightPanel.classList.remove('w-full', 'sm:w-[350px]', 'md:w-[400px]');
         rightPanel.classList.add('w-14');
         
-        // 3. Change icon to 'Message'
         togglePanelIcon.classList.replace('fa-arrow-right-to-bracket', 'fa-message');
         
-        // 4. Pop Webcam out to become draggable
+        // 3. Floating Webcam
         document.body.appendChild(webcamContainer);
-        webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none';
-        webcamContainer.style.width = '240px'; 
-        webcamContainer.style.height = '160px'; 
-        webcamContainer.style.top = '20px'; 
-        webcamContainer.style.right = '80px'; 
+        webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none transition-all';
+        
+        // 🚀 THE FIX: Chhota camera for Mobile, Bada camera for Desktop
+        if (isMobile) {
+            webcamContainer.style.width = '120px'; 
+            webcamContainer.style.height = '90px'; 
+            webcamContainer.style.top = '10px'; 
+            webcamContainer.style.right = '65px'; // Just beside the toolbar
+        } else {
+            webcamContainer.style.width = '240px'; 
+            webcamContainer.style.height = '160px'; 
+            webcamContainer.style.top = '20px'; 
+            webcamContainer.style.right = '80px'; 
+        }
         webcamContainer.style.left = 'auto';
 
     } else {
-        // 1. Show the Chat Section
+        // Show Chat & Reset
         chatSection.style.display = 'flex';
-        
-        // 2. Expand Right Panel back to Original Size
         rightPanel.classList.remove('w-14');
         rightPanel.classList.add('w-full', 'sm:w-[350px]', 'md:w-[400px]');
-        
-        // 3. Change icon back to 'Collapse'
         togglePanelIcon.classList.replace('fa-message', 'fa-arrow-right-to-bracket');
         
-        // 4. Snap Webcam back into placeholder
         webcamPlaceholder.appendChild(webcamContainer);
         webcamContainer.className = 'h-full w-full flex flex-col items-center justify-center text-slate-500 select-none relative';
         webcamContainer.removeAttribute('style'); 
     }
 
-    // 🚀 THE MASTER FIX: Smooth Dynamic Canvas Resizer
-    // Canvas CSS transition (300ms) ke sath sync hokar smoothly expand hoga
+    // 🚀 Smooth Resize Sync
     let startTime = Date.now();
     let smoothResize = setInterval(() => {
         canvas.setWidth(wrapper.clientWidth);
         canvas.renderAll();
-        
-        // Stop exactly when the CSS animation finishes (320ms safety margin)
-        if (Date.now() - startTime > 320) {
-            clearInterval(smoothResize);
-        }
-    }, 15); // ~60fps par frame-by-frame resize
+        if (Date.now() - startTime > 320) clearInterval(smoothResize);
+    }, 15);
 });
+
+// 🚀 THE MAGIC AUTOLOAD FIX: Phone par app khulte hi panel automatically band ho jayega
+if (window.innerWidth < 640) {
+    setTimeout(() => {
+        if (!isPanelHidden) btnTogglePanel.click();
+    }, 400); // Thoda delay taaki UI pehle load ho jaye
+}
 
 // =====================================
 // 🖐️ DRAGGABLE WEBCAM LOGIC (HYBRID)

@@ -2459,6 +2459,22 @@ window.addEventListener('message', async (event) => {
             window.nukeCloudStorageAsset(event.data.url);
         }
     }
+
+    // G. 🚀 THE REAL-TIME LIVE SYNC BRIDGE (Educator to Students)
+    if (event.data && event.data.type === 'SYNC_BOARD_STATE') {
+        // Sirf tabhi sync karo jab Live Session chal raha ho
+        if (window.currentLiveSessionData && window.currentLiveSessionData.blockId) {
+            const { jsonContent, metaContent } = event.data.payload;
+            try {
+                const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                await updateDoc(doc(db, "live_sessions", window.currentLiveSessionData.blockId), {
+                    canvasState: jsonContent,
+                    metaContent: metaContent || "{}",
+                    lastUpdated: new Date().toISOString()
+                });
+            } catch(e) { console.error("Live Sync Error:", e); }
+        }
+    }
 });
 
 // Close iframe animation (The "Back" visual effect)
@@ -2895,8 +2911,36 @@ window.selectedGreenRoomFileId = null; // 🚀 NEW: Tracks which file the educat
         </div>
     </div>`;
 
-    document.body.insertAdjacentHTML('beforeend', greenRoomHTML + smartLobbyHTML);
+    // 🚀 NEW: Student Slate Full-Screen Iframe Container
+    const studentSlateContainerHTML = `
+    <div id="student-slate-container" class="fixed inset-0 z-[300] hidden bg-slate-900 transition-transform duration-500 translate-y-full flex flex-col">
+        <!-- Minimal Top Bar to Exit -->
+        <div class="h-12 bg-slate-900 flex justify-between items-center px-4 shrink-0 shadow-md border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                <span class="text-white font-bold text-[10px] uppercase tracking-widest hidden sm:inline">Live Classroom</span>
+            </div>
+            <button onclick="window.closeStudentSlate()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
+                <i class="fa-solid fa-door-open mr-1"></i> Leave Class
+            </button>
+        </div>
+        <!-- The Magical Iframe -->
+        <iframe id="student-slate-frame" class="w-full flex-grow border-none bg-slate-100 dark:bg-slate-900" allow="camera; microphone; display-capture; fullscreen"></iframe>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', greenRoomHTML + smartLobbyHTML + studentSlateContainerHTML);
 })();
+
+// 🚀 NEW: Close Student Slate Function
+window.closeStudentSlate = function() {
+    if(!confirm("Are you sure you want to leave the live class?")) return;
+    const container = document.getElementById('student-slate-container');
+    container.classList.add('translate-y-full');
+    setTimeout(() => {
+        container.classList.add('hidden');
+        document.getElementById('student-slate-frame').src = ''; 
+    }, 500);
+}
 
 // 🚀 NEW: Function to handle File Selection inside Green Room
 window.selectGreenRoomFile = function(fileId) {
@@ -3062,9 +3106,17 @@ window.openSmartLobby = async function(sessionData) {
 
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    // 🚀 BUG FIX: URL mein 'student-slate/' folder add kar diya gaya hai
                     const url = `student-slate/student.html?roomId=${sessionData.blockId}&course=${encodeURIComponent(sessionData.courseName)}`;
-                    window.open(url, '_blank'); 
+                    
+                    // 🚀 PHASE 5: In-App Teleportation (No New Tabs!)
+                    const container = document.getElementById('student-slate-container');
+                    const frame = document.getElementById('student-slate-frame');
+                    
+                    frame.src = url;
+                    container.classList.remove('hidden');
+                    
+                    // Smooth Slide-Up Animation
+                    setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
                 }, 1200);
             }
         });
