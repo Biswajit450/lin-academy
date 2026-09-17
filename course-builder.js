@@ -950,7 +950,8 @@ window.consumeContent = async function(type, elementOrId) { // 🚀 Changed to a
     const titleInput = block.querySelector('input[placeholder*="Title"]');
     const title = titleInput ? titleInput.value : 'Classroom Content';
     
-    if(!val) { 
+    // 🚀 THE BUG FIX: Skip the empty link check ONLY for Native Live Classes!
+    if(!val && type !== 'live') { 
         alert("Your educator hasn't provided a secure link for this resource yet."); 
         return; 
     }
