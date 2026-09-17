@@ -86,11 +86,11 @@ window.addBlock = function(type) {
             placeholderText = ''; // Removed URL placeholder since it's native now
             actionBtnText = '🔴 Join Live Class'; actionColor = 'bg-red-500 hover:bg-red-600 text-white border border-red-600';
             
-            // Native Engine Indicator instead of an input box
+            // 🚀 FIX 1: Made the Native Engine Indicator Clickable for Educator!
             extraInputs = `
-                <div class="mt-2 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded flex items-center justify-center gap-2">
+                <div onclick="window.consumeContent('live', this)" class="mt-2 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded flex items-center justify-center gap-2 cursor-pointer hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors shadow-sm" title="Click to launch Green Room">
                     <i class="fa-solid fa-bolt text-red-500 animate-pulse"></i>
-                    <span class="text-[10px] font-extrabold text-red-600 dark:text-red-400 uppercase tracking-widest">PWOS Native Live Engine</span>
+                    <span class="text-[10px] font-extrabold text-red-600 dark:text-red-400 uppercase tracking-widest">PWOS Native Live Engine (Click to Launch)</span>
                 </div>
             `; 
             
@@ -116,7 +116,6 @@ window.addBlock = function(type) {
             icon = 'fa-file-pdf'; color = 'text-rose-500 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800'; typeName = 'PDF Handout'; placeholderText = 'Secure File URL (Firebase Storage etc.)'; 
             actionBtnText = '📄 View Document'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-600'; 
             
-            // 🚀 NEW: Firebase Upload Button for PDF
             extraInputs = `
                 <div class="mt-2 flex items-center gap-2">
                     <input type="file" accept="application/pdf" class="hidden" onchange="window.uploadCoursePdf(this)">
@@ -125,6 +124,7 @@ window.addBlock = function(type) {
                 </div>`;
         }
 
+        // 🚀 FIX 2: Removed 'hidden' class from button and replaced with 'flex'
         blockHTML = `
         <div id="${blockId}" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
             <div class="w-12 h-12 rounded-xl flex items-center justify-center border ${color} shrink-0 text-xl shadow-inner">
@@ -141,7 +141,7 @@ window.addBlock = function(type) {
                     ${extraInputs}
                 </div>
                 ${studentVisibleHtml}
-                <button class="student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 ${actionColor} hidden w-full sm:w-auto text-center justify-center" onclick="window.consumeContent('${type}', this)">${actionBtnText}</button>
+                <button class="student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 ${actionColor} flex w-full sm:w-auto text-center justify-center items-center gap-2" onclick="window.consumeContent('${type}', this)">${actionBtnText}</button>
             </div>
         </div>`;
     }
