@@ -1,9 +1,13 @@
 // =====================================
-// 🚀 STUDENT ENGINE - CORE INITIALIZATION
+// 🚀 STUDENT ENGINE - FULLY OPTIMIZED
 // =====================================
+// 🚨 BUG FIX: Corrected Firebase Path to point to the root directory
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { db } from "../firebase-config.js";
+
 const wrapper = document.getElementById('canvas-wrapper');
 const canvas = new fabric.Canvas('student-canvas', {
-    selection: false, // 🔒 Strict Read-Only Mode
+    selection: false, // Strict Read-Only Mode
     isDrawingMode: false,
     width: wrapper.clientWidth,
     height: wrapper.clientHeight,
@@ -58,8 +62,6 @@ if (localStorage.getItem('student_theme') === 'dark') {
 // =====================================
 // 📡 THE FIREBASE SYNC BRIDGE (REAL-TIME RECEIVER)
 // =====================================
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { db } from "../pwos-studio/firebase-config.js"; // Adjust path if needed
 
 let currentPdfDoc = null;
 let currentSlideData = {};
