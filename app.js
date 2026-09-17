@@ -3062,7 +3062,8 @@ window.openSmartLobby = async function(sessionData) {
 
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    const url = `student.html?roomId=${sessionData.blockId}&course=${encodeURIComponent(sessionData.courseName)}`;
+                    // 🚀 BUG FIX: URL mein 'student-slate/' folder add kar diya gaya hai
+                    const url = `student-slate/student.html?roomId=${sessionData.blockId}&course=${encodeURIComponent(sessionData.courseName)}`;
                     window.open(url, '_blank'); 
                 }, 1200);
             }
