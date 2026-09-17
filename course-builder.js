@@ -82,11 +82,18 @@ window.addBlock = function(type) {
         let icon = ''; let color = ''; let placeholderText = ''; let typeName = ''; let extraInputs = ''; let actionBtnText = ''; let actionColor = ''; let studentVisibleHtml = '';
         
         if(type === 'live') { 
-            icon = 'fa-video'; color = 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'; typeName = 'Live Session'; placeholderText = 'Meeting Link (Zoom, Meet, etc.)';
+            icon = 'fa-video'; color = 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'; typeName = 'Live Session'; 
+            placeholderText = ''; // Removed URL placeholder since it's native now
             actionBtnText = '🔴 Join Live Class'; actionColor = 'bg-red-500 hover:bg-red-600 text-white border border-red-600';
             
-            // 🚨 BUG FIX: Time boxes moved OUTSIDE admin area so students can see them!
-            extraInputs = ``; 
+            // Native Engine Indicator instead of an input box
+            extraInputs = `
+                <div class="mt-2 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bolt text-red-500 animate-pulse"></i>
+                    <span class="text-[10px] font-extrabold text-red-600 dark:text-red-400 uppercase tracking-widest">PWOS Native Live Engine</span>
+                </div>
+            `; 
+            
             studentVisibleHtml = `
                 <div class="grid grid-cols-2 gap-3 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <div>
@@ -130,7 +137,7 @@ window.addBlock = function(type) {
                 </div>
                 <input type="text" placeholder="${typeName} Title" class="w-full bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-brand-blue outline-none text-sm font-bold text-slate-900 dark:text-white pb-1 mb-2 transition-colors">
                 <div class="admin-input-area">
-                    <input type="text" placeholder="${placeholderText}" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    ${type !== 'live' ? `<input type="text" placeholder="${placeholderText}" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono">` : ''}
                     ${extraInputs}
                 </div>
                 ${studentVisibleHtml}
@@ -978,9 +985,38 @@ window.consumeContent = async function(type, elementOrId) { // 🚀 Changed to a
 
     // --- (Baaki ka purana video/pdf logic same rahega) ---
     if(type === 'live') { 
-        window.open(val, '_blank'); 
+        const role = String(window.currentUserRole).toLowerCase().trim();
+        const courseName = document.getElementById('course-view-title').innerText;
+        
+        // Extract scheduled time to pass along (for countdowns)
+        const timeInputs = block.querySelectorAll('input[type="datetime-local"]');
+        const startTime = timeInputs[0] ? timeInputs[0].value : null;
+        
+        const sessionData = {
+            blockId: block.id,
+            courseName: courseName,
+            title: title,
+            startTime: startTime
+        };
+
+        if (role === 'admin' || role === 'superadmin' || role === 'educator') {
+            // Route Educator to Phase 2: Green Room
+            if (window.openGreenRoom) {
+                window.openGreenRoom(sessionData);
+            } else {
+                console.warn("Green Room UI not implemented yet.");
+            }
+        } else {
+            // Route Student to Phase 2: Smart Lobby
+            if (window.openSmartLobby) {
+                window.openSmartLobby(sessionData);
+            } else {
+                console.warn("Smart Lobby UI not implemented yet.");
+            }
+        }
+        return; 
     } 
-    else if(type === 'video' || type === 'pdf') { 
+    else if(type === 'video' || type === 'pdf') {
         document.getElementById('content-player-modal').classList.remove('hidden');
         document.getElementById('player-title').innerText = title;
         

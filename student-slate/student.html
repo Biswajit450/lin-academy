@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lin Academy | Live Classroom</title>
+    
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Fabric.js Core Engine (For Read-Only Rendering) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { blue: '#2563eb' } } } } }
+    </script>
+    
+    <!-- PDF.js Core Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+
+    <style>
+        body, html { 
+            margin: 0; padding: 0; overflow: hidden; 
+            background-color: #f8fafc; touch-action: none; 
+        }
+        .glass-toolbar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .dark .glass-toolbar {
+            background: rgba(30, 41, 59, 0.85);
+            border-color: rgba(51, 65, 85, 0.8);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex overflow-hidden bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+
+    <!-- LEFT: The Read-Only Infinite Canvas Area -->
+    <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+        
+        <!-- Top Sleek Header (Class & Educator Name) -->
+        <div class="absolute top-4 left-4 z-40 glass-toolbar dark:bg-slate-800/90 rounded-2xl shadow-lg px-5 py-2.5 flex flex-col pointer-events-none">
+            <span id="class-title" class="text-[10px] font-extrabold text-brand-blue uppercase tracking-widest mb-0.5">Connecting to class...</span>
+            <span id="educator-name" class="text-sm font-bold text-slate-800 dark:text-white">Waiting for Educator</span>
+        </div>
+
+        <!-- 🚀 Interactive Polling UI (Hidden by default) -->
+        <div id="poll-overlay" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-80 max-w-[90vw] flex-col gap-3 transition-all">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-extrabold text-slate-900 dark:text-white text-lg"><i class="fa-solid fa-square-poll-vertical text-brand-blue mr-2"></i> Live Poll</h3>
+                <span class="text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded animate-pulse">Live</span>
+            </div>
+            <p id="poll-question-text" class="text-sm text-slate-600 dark:text-slate-300 font-medium mb-2 hidden">Question text goes here</p>
+            
+            <div id="poll-options-container" class="flex flex-col gap-2">
+                <!-- Options injected via JS later -->
+            </div>
+        </div>
+
+        <!-- Canvas Background -->
+        <canvas id="student-canvas"></canvas>
+    </div>
+
+    <!-- RIGHT: Live Interaction Panel (Chat, Webcam, Settings) -->
+    <!-- 🚀 FIX: Adjusted width classes for dynamic resizing and removed old slide animation -->
+    <div id="right-panel" class="absolute sm:relative right-0 w-full sm:w-[350px] md:w-[400px] shrink-0 h-full bg-white dark:bg-slate-900 flex shadow-2xl sm:shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] z-50 transition-all duration-300">
+        
+        <!-- 🚀 FIX: Added 'chat-section' ID so we can hide only this part -->
+        <div id="chat-section" class="flex-1 flex flex-col h-full border-l border-slate-200 dark:border-slate-700 overflow-hidden transition-all">
+            
+            <!-- 📷 WebRTC Live Video Stream Container -->
+            <div id="webcam-placeholder" class="h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">
+                <div id="webcam-container" class="h-full w-full flex flex-col items-center justify-center text-slate-500 select-none overflow-hidden relative">
+                    <div id="cam-offline-ui" class="flex flex-col items-center">
+                        <i class="fa-solid fa-video-slash text-3xl mb-2 opacity-50"></i>
+                        <span class="text-xs font-bold tracking-widest uppercase">Stream Offline</span>
+                    </div>
+                    <video id="student-live-video" class="hidden w-full h-full object-cover" autoplay playsinline></video>
+                    <div class="absolute top-3 left-3 bg-rose-500 text-white text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider hidden" id="live-badge">Live</div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50">
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center shadow-sm z-10">
+                    <span class="font-extrabold text-slate-700 dark:text-slate-200 font-serif">Class Chat</span>
+                    <button class="sm:hidden text-slate-400 hover:text-rose-500" onclick="document.getElementById('btn-toggle-panel').click()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-sm">
+                    <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest my-2">Welcome to the classroom</div>
+                </div>
+                
+                <!-- Chat Input Area -->
+                <div class="h-[72px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-3 flex items-center gap-2">
+                    <button class="text-slate-400 hover:text-amber-500 px-2 transition"><i class="fa-regular fa-face-smile text-xl"></i></button>
+                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl px-4 text-sm outline-none focus:border-brand-blue transition">
+                    <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-12 h-full rounded-xl flex items-center justify-center transition shadow-md active:scale-95"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right-Most Tools Bar (Student Utilities) -->
+        <div class="w-14 shrink-0 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-5 z-20">
+            <!-- 🌙 Dark Mode -->
+            <button id="btn-theme" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition" title="Toggle Dark Mode"><i class="fa-solid fa-moon text-lg"></i></button>
+            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            
+            <!-- ☁️ Doubt / Upload Notes -->
+            <button id="btn-doubt" class="w-10 h-10 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition shadow-sm" title="Ask Doubt & Upload File"><i class="fa-solid fa-cloud-arrow-up text-lg"></i></button>
+            
+            <!-- ✋ Raise Hand -->
+            <button id="btn-raise-hand" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition shadow-sm relative group" title="Raise Hand to Speak">
+                <i class="fa-solid fa-hand text-lg"></i>
+                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full hidden" id="hand-indicator"></span>
+            </button>
+            
+            <!-- ⚙️ Video Quality Settings -->
+            <div class="relative group">
+                <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Video Quality Settings"><i class="fa-solid fa-gear text-lg"></i></button>
+                
+                <!-- 🚀 FIX: Added 'pr-4' bridge so mouse doesn't fall into the invisible gap! -->
+                <div class="absolute right-10 top-0 pr-4 hidden group-hover:block z-50">
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-48 p-3 pointer-events-auto">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-2 tracking-wider">Educator Video</p>
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Enable Video</span>
+                            <input type="checkbox" id="toggle-video" checked class="accent-brand-blue cursor-pointer w-4 h-4">
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">Stream Quality</p>
+                        <select id="video-quality" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold p-2 outline-none dark:text-white cursor-pointer focus:border-brand-blue transition-colors">
+                            <option value="auto">Auto (Recommended)</option>
+                            <option value="high">High (720p)</option>
+                            <option value="low">Data Saver (360p)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1 mt-auto"></div>
+            
+            <!-- 🚀 FIX: Master Panel Toggle Button -->
+            <button id="btn-toggle-panel" class="w-10 h-10 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-blue transition" title="Toggle Chat Panel">
+                <i id="toggle-panel-icon" class="fa-solid fa-arrow-right-to-bracket text-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- The Lightweight Engine Script -->
+    <script type="module" src="student-engine.js"></script>
+</body>
+</html>
