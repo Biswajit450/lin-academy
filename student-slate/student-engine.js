@@ -167,28 +167,28 @@ let camOffsetX = 0, camOffsetY = 0;
 
 btnTogglePanel.addEventListener('click', () => {
     isPanelHidden = !isPanelHidden;
-    const isMobile = window.innerWidth < 640; // 🚀 Detect Mobile Screen
+    const isMobile = window.innerWidth < 640; 
     
     if (isPanelHidden) {
-        // 1. Hide Chat
+        // 1. Hide Chat Content
         chatSection.style.display = 'none';
         
-        // 2. Shrink Panel
-        rightPanel.classList.remove('w-full', 'sm:w-[350px]', 'md:w-[400px]');
+        // 2. 🚀 BUG FIX: Remove ALL width classes properly (including 85vw) and shrink to toolbar size (w-14)
+        rightPanel.classList.remove('w-[85vw]', 'w-full', 'sm:w-[350px]', 'md:w-[400px]');
         rightPanel.classList.add('w-14');
         
         togglePanelIcon.classList.replace('fa-arrow-right-to-bracket', 'fa-message');
         
-        // 3. Floating Webcam
+        // 3. Floating Webcam Setup
         document.body.appendChild(webcamContainer);
         webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none transition-all';
         
-        // 🚀 THE FIX: Chhota camera for Mobile, Bada camera for Desktop
+        // 🚀 ULTRA-SMALL PIP CAMERA FIX (90px x 65px)
         if (isMobile) {
-            webcamContainer.style.width = '120px'; 
-            webcamContainer.style.height = '90px'; 
-            webcamContainer.style.top = '10px'; 
-            webcamContainer.style.right = '65px'; // Just beside the toolbar
+            webcamContainer.style.width = '90px'; 
+            webcamContainer.style.height = '65px'; 
+            webcamContainer.style.top = '15px'; 
+            webcamContainer.style.right = '65px'; // Hawa mein latkega, toolbar ke theek bagal mein
         } else {
             webcamContainer.style.width = '240px'; 
             webcamContainer.style.height = '160px'; 
@@ -198,23 +198,25 @@ btnTogglePanel.addEventListener('click', () => {
         webcamContainer.style.left = 'auto';
 
     } else {
-        // Show Chat & Reset
+        // 1. Show Chat Content
         chatSection.style.display = 'flex';
+        
+        // 2. Expand Panel Back to Drawer Size (85vw)
         rightPanel.classList.remove('w-14');
-        rightPanel.classList.add('w-full', 'sm:w-[350px]', 'md:w-[400px]');
+        rightPanel.classList.add('w-[85vw]', 'sm:w-[350px]', 'md:w-[400px]');
         togglePanelIcon.classList.replace('fa-message', 'fa-arrow-right-to-bracket');
         
+        // 3. Snap Camera Back to Placeholder
         webcamPlaceholder.appendChild(webcamContainer);
         webcamContainer.className = 'h-full w-full flex flex-col items-center justify-center text-slate-500 select-none relative';
         webcamContainer.removeAttribute('style'); 
     }
 
-    // 🚀 Smooth Resize Sync
+    // 🚀 Smooth Resize Sync (Auto-Scaling preserved)
     let startTime = Date.now();
     let smoothResize = setInterval(() => {
         canvas.setWidth(wrapper.clientWidth);
         
-        // Apply dynamic scale re-calculation during UI toggle
         if (lastEducatorWidth) {
             const scaleMultiplier = wrapper.clientWidth / lastEducatorWidth;
             canvas.setZoom(scaleMultiplier);
