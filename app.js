@@ -3115,8 +3115,22 @@ window.openSmartLobby = async function(sessionData) {
                     frame.src = url;
                     container.classList.remove('hidden');
                     
-                    // Smooth Slide-Up Animation
-                    setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
+                    // Smooth Slide-Up Animation & 🚀 LANDSCAPE LOCK ENGINE
+                    setTimeout(() => { 
+                        container.classList.remove('translate-y-full'); 
+                        
+                        // Zordaar Native Fullscreen & Landscape Lock
+                        try {
+                            const reqFullscreen = container.requestFullscreen || container.webkitRequestFullscreen || container.msRequestFullscreen;
+                            if (reqFullscreen) {
+                                reqFullscreen.call(container).then(() => {
+                                    if (screen.orientation && screen.orientation.lock) {
+                                        screen.orientation.lock('landscape').catch(e => console.log("Orientation locked:", e));
+                                    }
+                                }).catch(e => console.log("Fullscreen request failed", e));
+                            }
+                        } catch(e) {}
+                    }, 50);
                 }, 1200);
             }
         });

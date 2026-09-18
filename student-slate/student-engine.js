@@ -1,5 +1,5 @@
 // =====================================
-// 🚀 STUDENT ENGINE - FULLY OPTIMIZED
+// 🚀 STUDENT ENGINE - FULLY OPTIMIZED (WITH AUTO-SCALING)
 // =====================================
 // 🚨 BUG FIX: Corrected Firebase Path to point to the root directory
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -65,6 +65,7 @@ if (localStorage.getItem('student_theme') === 'dark') {
 
 let currentPdfDoc = null;
 let currentSlideData = {};
+let lastEducatorWidth = null; // 🚀 NAYA: Scaling variable
 
 // 1. Read Room ID from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -106,31 +107,48 @@ if (roomId) {
     document.getElementById('educator-name').innerText = "Invalid Room ID";
 }
 
-// The Core Rendering Logic
+// The Core Rendering Logic (WITH AUTO-SCALING)
 window.syncEducatorBoard = function(jsonContent, metaContent) {
     if (!jsonContent) return;
 
-    // 1. Process Canvas Strokes & Objects
-    canvas.loadFromJSON(jsonContent, function() {
-        // Lock all incoming objects to prevent student tampering
-        canvas.getObjects().forEach(obj => {
-            obj.set({ selectable: false, evented: false, hasControls: false, lockMovementX: true, lockMovementY: true });
-        });
-        canvas.renderAll();
-        // Check theme inversion immediately after rendering
-        window.applyStudentTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-    });
-
-    // 2. Process Background Slide/PDF
+    // 1. Process Background Slide/PDF & CALCULATE SCALE
+    let educatorWidth = 1920; // Default fallback width (Full HD)
     if (metaContent) {
         try {
             const meta = JSON.parse(metaContent);
-            // Additional logic for rendering PDF slides can go here
+            if (meta.canvasWidth) {
+                educatorWidth = meta.canvasWidth;
+                lastEducatorWidth = meta.canvasWidth; // Yaad rakho taaki resize pe kaam aaye
+            }
             console.log("Meta Content Received:", meta);
         } catch(e) {
             console.error("Sync parsing error:", e);
         }
+    } else if (lastEducatorWidth) {
+        // Fallback agar meta nahi aaya par purana ratio yaad hai
+        educatorWidth = lastEducatorWidth; 
     }
+
+    // 2. Process Canvas Strokes & Objects
+    canvas.loadFromJSON(jsonContent, function() {
+        
+        // 🚀 THE MAGIC RATIO FIX: Calculate Zoom based on student's screen vs educator's screen
+        const studentWidth = wrapper.clientWidth;
+        const scaleMultiplier = studentWidth / educatorWidth;
+        
+        // Apply the zoom to fit the entire drawing perfectly!
+        canvas.setZoom(scaleMultiplier);
+
+        // Lock all incoming objects to prevent student tampering
+        canvas.getObjects().forEach(obj => {
+            obj.set({ selectable: false, evented: false, hasControls: false, lockMovementX: true, lockMovementY: true });
+        });
+        
+        canvas.renderAll();
+        
+        // Check theme inversion immediately after rendering
+        window.applyStudentTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
 };
 
 // =====================================
@@ -195,6 +213,13 @@ btnTogglePanel.addEventListener('click', () => {
     let startTime = Date.now();
     let smoothResize = setInterval(() => {
         canvas.setWidth(wrapper.clientWidth);
+        
+        // Apply dynamic scale re-calculation during UI toggle
+        if (lastEducatorWidth) {
+            const scaleMultiplier = wrapper.clientWidth / lastEducatorWidth;
+            canvas.setZoom(scaleMultiplier);
+        }
+        
         canvas.renderAll();
         if (Date.now() - startTime > 320) clearInterval(smoothResize);
     }, 15);

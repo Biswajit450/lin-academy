@@ -173,7 +173,10 @@ function saveHistory() {
         const metaContent = JSON.stringify({
             currentSlide: currentSlide,
             totalSlides: totalSlides,
-            pdfUrl: currentPdfUrl
+            pdfUrl: currentPdfUrl,
+            // 🚀 THE RATIO FIX: Educator apne canvas ka size bhej raha hai
+            canvasWidth: wrapper.clientWidth,
+            canvasHeight: wrapper.clientHeight
         });
 
         window.parent.postMessage({
