@@ -164,6 +164,7 @@ let camOffsetX = 0, camOffsetY = 0;
 
 // UI update karne ka master function
 function updatePanelUI() {
+    // 🚀 THE LANDSCAPE FIX: 1024px tak sabko mobile/compact maano (Pehle 640px tha)
     const isMobile = window.innerWidth < 1024; 
     
     if (isPanelHidden) {
