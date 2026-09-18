@@ -1,7 +1,6 @@
 // =====================================
-// 🚀 STUDENT ENGINE - FULLY OPTIMIZED (WITH AUTO-SCALING)
+// 🚀 STUDENT ENGINE - FULLY OPTIMIZED (WITH AUTO-SCALING & DRAWER)
 // =====================================
-// 🚨 BUG FIX: Corrected Firebase Path to point to the root directory
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { db } from "../firebase-config.js";
 
@@ -120,12 +119,10 @@ window.syncEducatorBoard = function(jsonContent, metaContent) {
                 educatorWidth = meta.canvasWidth;
                 lastEducatorWidth = meta.canvasWidth; // Yaad rakho taaki resize pe kaam aaye
             }
-            console.log("Meta Content Received:", meta);
         } catch(e) {
             console.error("Sync parsing error:", e);
         }
     } else if (lastEducatorWidth) {
-        // Fallback agar meta nahi aaya par purana ratio yaad hai
         educatorWidth = lastEducatorWidth; 
     }
 
@@ -152,43 +149,39 @@ window.syncEducatorBoard = function(jsonContent, metaContent) {
 };
 
 // =====================================
-// 📱 MOBILE INTERACTION PANEL & DYNAMIC CANVAS
+// 📱 SLIDING DRAWER & CAMERA ENGINE (THE BIG FIX)
 // =====================================
-const rightPanel = document.getElementById('right-panel');
-const chatSection = document.getElementById('chat-section');
+const chatDrawer = document.getElementById('chat-drawer'); // 🚀 Fixed ID
 const btnTogglePanel = document.getElementById('btn-toggle-panel');
 const togglePanelIcon = document.getElementById('toggle-panel-icon');
 const webcamContainer = document.getElementById('webcam-container');
 const webcamPlaceholder = document.getElementById('webcam-placeholder');
 
-let isPanelHidden = false;
+// HTML Drawer default hidden (translate-x-full) hai, toh state true rahegi
+let isPanelHidden = true; 
 let isDraggingCam = false;
 let camOffsetX = 0, camOffsetY = 0;
 
-btnTogglePanel.addEventListener('click', () => {
-    isPanelHidden = !isPanelHidden;
+// UI update karne ka master function
+function updatePanelUI() {
     const isMobile = window.innerWidth < 640; 
     
     if (isPanelHidden) {
-        // 1. Hide Chat Content
-        chatSection.style.display = 'none';
-        
-        // 2. 🚀 BUG FIX: Remove ALL width classes properly (including 85vw) and shrink to toolbar size (w-14)
-        rightPanel.classList.remove('w-[85vw]', 'w-full', 'sm:w-[350px]', 'md:w-[400px]');
-        rightPanel.classList.add('w-14');
-        
+        // 1. Hide Drawer (Slide off-screen)
+        chatDrawer.classList.add('translate-x-full');
         togglePanelIcon.classList.replace('fa-arrow-right-to-bracket', 'fa-message');
+        togglePanelIcon.classList.replace('fa-xmark', 'fa-message'); 
         
-        // 3. Floating Webcam Setup
+        // 2. Pop Webcam out to become a floating PIP
         document.body.appendChild(webcamContainer);
-        webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none transition-all';
+        webcamContainer.className = 'absolute z-50 shadow-2xl rounded-xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none transition-all duration-300';
         
-        // 🚀 ULTRA-SMALL PIP CAMERA FIX (90px x 65px)
+        // 🚀 ULTRA-TINY CAMERA FIX FOR MOBILE (75px by 55px)
         if (isMobile) {
-            webcamContainer.style.width = '90px'; 
-            webcamContainer.style.height = '65px'; 
+            webcamContainer.style.width = '75px'; 
+            webcamContainer.style.height = '55px'; 
             webcamContainer.style.top = '15px'; 
-            webcamContainer.style.right = '65px'; // Hawa mein latkega, toolbar ke theek bagal mein
+            webcamContainer.style.right = '70px'; // Right Toolbar ke bagal mein
         } else {
             webcamContainer.style.width = '240px'; 
             webcamContainer.style.height = '160px'; 
@@ -198,25 +191,31 @@ btnTogglePanel.addEventListener('click', () => {
         webcamContainer.style.left = 'auto';
 
     } else {
-        // 1. Show Chat Content
-        chatSection.style.display = 'flex';
-        
-        // 2. Expand Panel Back to Drawer Size (85vw)
-        rightPanel.classList.remove('w-14');
-        rightPanel.classList.add('w-[85vw]', 'sm:w-[350px]', 'md:w-[400px]');
+        // 1. Show Drawer (Slide in)
+        chatDrawer.classList.remove('translate-x-full');
         togglePanelIcon.classList.replace('fa-message', 'fa-arrow-right-to-bracket');
         
-        // 3. Snap Camera Back to Placeholder
+        // 2. Snap Webcam Back to Drawer
         webcamPlaceholder.appendChild(webcamContainer);
         webcamContainer.className = 'h-full w-full flex flex-col items-center justify-center text-slate-500 select-none relative';
         webcamContainer.removeAttribute('style'); 
     }
+}
 
-    // 🚀 Smooth Resize Sync (Auto-Scaling preserved)
+// System start hote hi Camera ko bahar nikal lo (Kyunki drawer band hai)
+updatePanelUI();
+
+// Button click logic
+btnTogglePanel.addEventListener('click', () => {
+    isPanelHidden = !isPanelHidden;
+    updatePanelUI();
+
+    // 🚀 Smooth Canvas Resizing 
     let startTime = Date.now();
     let smoothResize = setInterval(() => {
         canvas.setWidth(wrapper.clientWidth);
         
+        // Dynamically correct scale during slide animation
         if (lastEducatorWidth) {
             const scaleMultiplier = wrapper.clientWidth / lastEducatorWidth;
             canvas.setZoom(scaleMultiplier);
@@ -227,18 +226,18 @@ btnTogglePanel.addEventListener('click', () => {
     }, 15);
 });
 
-// 🚀 THE MAGIC AUTOLOAD FIX: Phone par app khulte hi panel automatically band ho jayega
-if (window.innerWidth < 640) {
+// Agar Desktop par class join ki hai, toh Chat Box apne aap khul jayega
+if (window.innerWidth >= 640) {
     setTimeout(() => {
-        if (!isPanelHidden) btnTogglePanel.click();
-    }, 400); // Thoda delay taaki UI pehle load ho jaye
+        if (isPanelHidden) btnTogglePanel.click();
+    }, 400); 
 }
 
 // =====================================
 // 🖐️ DRAGGABLE WEBCAM LOGIC (HYBRID)
 // =====================================
 function startDragCam(e) {
-    if (!isPanelHidden) return; 
+    if (!isPanelHidden) return; // Jab chat khula ho tab drag nahi hoga
     isDraggingCam = true;
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
@@ -286,12 +285,10 @@ btnRaiseHand.addEventListener('click', () => {
         handIndicator.classList.remove('hidden');
         btnRaiseHand.classList.replace('text-amber-500', 'text-white');
         btnRaiseHand.classList.replace('hover:bg-amber-50', 'bg-amber-500');
-        console.log("Hand Raised!");
     } else {
         handIndicator.classList.add('hidden');
         btnRaiseHand.classList.replace('text-white', 'text-amber-500');
         btnRaiseHand.classList.replace('bg-amber-500', 'hover:bg-amber-50');
-        console.log("Hand Lowered.");
     }
 });
 

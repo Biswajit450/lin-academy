@@ -37,7 +37,8 @@
         }
     </style>
 </head>
-<body class="w-screen h-screen flex overflow-hidden bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+<body class="w-screen h-screen flex overflow-hidden bg-slate-100 dark:bg-slate-900 transition-colors duration-300 relative">
+    
     <!-- 🚀 THE PORTRAIT BLOCKER ENGINE -->
     <style>
         /* Jab mobile seedha hoga (portrait) aur screen size chhota hoga, toh blocker dikhega aur app chhup jayega */
@@ -54,47 +55,44 @@
         <p class="text-slate-400 text-sm max-w-xs mx-auto font-medium">To enjoy the immersive wide-screen classroom experience, please turn your phone sideways (Landscape mode).</p>
     </div>
 
-    <!-- LEFT: The Read-Only Infinite Canvas Area -->
-    <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900">
+    <!-- Wrap entire active app to hide during portrait mode -->
+    <div id="main-student-app" class="w-full h-full flex relative overflow-hidden">
         
-        <!-- Top Sleek Header (Class & Educator Name) -->
-        <div class="absolute top-4 left-4 z-40 glass-toolbar dark:bg-slate-800/90 rounded-2xl shadow-lg px-5 py-2.5 flex flex-col pointer-events-none">
-            <span id="class-title" class="text-[10px] font-extrabold text-brand-blue uppercase tracking-widest mb-0.5">Connecting to class...</span>
-            <span id="educator-name" class="text-sm font-bold text-slate-800 dark:text-white">Waiting for Educator</span>
+        <!-- ========================================== -->
+        <!-- LEFT: The Read-Only Infinite Canvas Area -->
+        <!-- ========================================== -->
+        <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900 z-10">
+            
+            <!-- Top Sleek Header (Class & Educator Name) -->
+            <div class="absolute top-4 left-4 z-40 glass-toolbar dark:bg-slate-800/90 rounded-2xl shadow-lg px-5 py-2.5 flex flex-col pointer-events-none">
+                <span id="class-title" class="text-[10px] font-extrabold text-brand-blue uppercase tracking-widest mb-0.5">Connecting to class...</span>
+                <span id="educator-name" class="text-sm font-bold text-slate-800 dark:text-white">Waiting for Educator</span>
+            </div>
+
+            <!-- 🚀 Interactive Polling UI (Hidden by default) -->
+            <div id="poll-overlay" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-80 max-w-[90vw] flex-col gap-3 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-lg"><i class="fa-solid fa-square-poll-vertical text-brand-blue mr-2"></i> Live Poll</h3>
+                    <span class="text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded animate-pulse">Live</span>
+                </div>
+                <p id="poll-question-text" class="text-sm text-slate-600 dark:text-slate-300 font-medium mb-2 hidden">Question text goes here</p>
+                <div id="poll-options-container" class="flex flex-col gap-2"></div>
+            </div>
+
+            <!-- Canvas Background -->
+            <canvas id="student-canvas"></canvas>
         </div>
 
-        <!-- 🚀 Interactive Polling UI (Hidden by default) -->
-        <div id="poll-overlay" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-80 max-w-[90vw] flex-col gap-3 transition-all">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-extrabold text-slate-900 dark:text-white text-lg"><i class="fa-solid fa-square-poll-vertical text-brand-blue mr-2"></i> Live Poll</h3>
-                <span class="text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded animate-pulse">Live</span>
-            </div>
-            <p id="poll-question-text" class="text-sm text-slate-600 dark:text-slate-300 font-medium mb-2 hidden">Question text goes here</p>
-            
-            <div id="poll-options-container" class="flex flex-col gap-2">
-                <!-- Options injected via JS later -->
-            </div>
-        </div>
+        <!-- ========================================== -->
+        <!-- RIGHT: Overlay Drawer & Fixed Toolbar Setup -->
+        <!-- ========================================== -->
 
-        <!-- Canvas Background -->
-        <canvas id="student-canvas"></canvas>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- RIGHT: Live Interaction Panel (Sliding Drawer on Mobile) -->
-    <!-- ========================================== -->
-    <!-- 🚀 THE SLIDER FIX: Mobile par 'absolute' and 'z-50', Tablet/Desktop par 'relative' -->
-    <!-- 🚀 FIX: Changed to 'flex-row' for side-by-side toolbar, and 'transition-all' for smooth sliding -->
-    <div id="right-panel" class="absolute right-0 w-[85vw] sm:relative sm:w-[350px] md:w-[400px] shrink-0 h-full bg-white dark:bg-slate-900 flex flex-row shadow-2xl sm:shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] z-50 transition-all duration-300">
-        
-        <div id="chat-section" class="flex-1 flex flex-col h-full border-l border-slate-200 dark:border-slate-700 overflow-hidden">
+        <!-- 🚀 THE SLIDING CHAT DRAWER (Separated from Toolbar) -->
+        <!-- Positioned absolute, stuck to right-14 (just left of the toolbar). Initially translated off-screen (100%) -->
+        <div id="chat-drawer" class="absolute right-14 top-0 w-[85vw] sm:w-[350px] md:w-[400px] h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-40 transition-transform duration-300 transform translate-x-full border-l border-slate-200 dark:border-slate-700">
             
-            <!-- 🚀 CAMERA HEIGHT FIX: Mobile par height sirf 100px (Extra small), Desktop par 220px -->
+            <!-- Camera Container -->
             <div id="webcam-placeholder" class="h-[100px] sm:h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">
-                <!-- Webcam Container (Injected by JS) -->
-            </div>
-
-            <!-- Iske aage aapka purana Chat Tab aur Settings waghera ka code as it is rahega -->
                 <div id="webcam-container" class="h-full w-full flex flex-col items-center justify-center text-slate-500 select-none overflow-hidden relative">
                     <div id="cam-offline-ui" class="flex flex-col items-center">
                         <i class="fa-solid fa-video-slash text-3xl mb-2 opacity-50"></i>
@@ -106,7 +104,7 @@
             </div>
 
             <!-- Chat Section -->
-            <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50">
+            <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50 overflow-hidden">
                 <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center shadow-sm z-10">
                     <span class="font-extrabold text-slate-700 dark:text-slate-200 font-serif">Class Chat</span>
                     <button class="sm:hidden text-slate-400 hover:text-rose-500" onclick="document.getElementById('btn-toggle-panel').click()"><i class="fa-solid fa-xmark"></i></button>
@@ -125,8 +123,8 @@
             </div>
         </div>
 
-        <!-- Right-Most Tools Bar (Student Utilities) -->
-        <div class="w-14 shrink-0 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-5 z-20">
+        <!-- 🚀 FIXED TOOLBAR (Never moves, never breaks. Stuck to the right edge) -->
+        <div class="absolute right-0 top-0 w-14 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-5 z-50">
             <!-- 🌙 Dark Mode -->
             <button id="btn-theme" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition" title="Toggle Dark Mode"><i class="fa-solid fa-moon text-lg"></i></button>
             <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
@@ -144,7 +142,6 @@
             <div class="relative group">
                 <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Video Quality Settings"><i class="fa-solid fa-gear text-lg"></i></button>
                 
-                <!-- 🚀 FIX: Added 'pr-4' bridge so mouse doesn't fall into the invisible gap! -->
                 <div class="absolute right-10 top-0 pr-4 hidden group-hover:block z-50">
                     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-48 p-3 pointer-events-auto">
                         <p class="text-[10px] text-slate-500 font-bold uppercase mb-2 tracking-wider">Educator Video</p>
@@ -164,12 +161,12 @@
 
             <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1 mt-auto"></div>
             
-            <!-- 🚀 FIX: Master Panel Toggle Button -->
+            <!-- 🚀 Master Panel Toggle Button -->
             <button id="btn-toggle-panel" class="w-10 h-10 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-blue transition" title="Toggle Chat Panel">
-                <i id="toggle-panel-icon" class="fa-solid fa-arrow-right-to-bracket text-lg"></i>
+                <i id="toggle-panel-icon" class="fa-solid fa-message text-lg"></i>
             </button>
         </div>
-    </div>
+    </div> <!-- End of main-student-app -->
 
     <!-- The Lightweight Engine Script -->
     <script type="module" src="student-engine.js"></script>
