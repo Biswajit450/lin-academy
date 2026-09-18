@@ -22,13 +22,22 @@ window.addEventListener('resize', () => {
     }
 });
 
-// 🚀 SAFE DOM HELPER: Checks local iframe AND parent window (app.js) without crashing!
+// 🚀 ULTRA-SAFE DOM HELPER: Uses Try-Catch to prevent browser CORS crashes!
 function safeSetText(id, text) {
     let el = document.getElementById(id);
-    if (!el && window.parent && window.parent.document) {
-        el = window.parent.document.getElementById(id);
+    if (el) {
+        el.innerText = text;
+        return;
     }
-    if (el) el.innerText = text;
+    // Agar element yahan nahi hai, toh parent frame mein safely try karo
+    try {
+        if (window.parent && window.parent.document) {
+            let pEl = window.parent.document.getElementById(id);
+            if (pEl) pEl.innerText = text;
+        }
+    } catch(e) {
+        console.warn("Parent DOM access blocked by browser security. Script execution continues safely.", e);
+    }
 }
 
 // =====================================
@@ -111,9 +120,14 @@ if (roomId) {
             // Handle Stream end
             if (data.status === 'ended') {
                 alert("The educator has ended the live session.");
-                if (window.parent && window.parent.closeStudentSlate) {
-                    window.parent.closeStudentSlate();
-                } else {
+                // Safe parent closure
+                try {
+                    if (window.parent && typeof window.parent.closeStudentSlate === 'function') {
+                        window.parent.closeStudentSlate();
+                    } else {
+                        window.close();
+                    }
+                } catch(e) {
                     window.close();
                 }
             }
