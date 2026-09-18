@@ -2916,12 +2916,21 @@ window.selectedGreenRoomFileId = null; // 🚀 NEW: Tracks which file the educat
     <div id="student-slate-container" class="fixed inset-0 z-[300] hidden bg-slate-900 transition-transform duration-500 translate-y-full flex flex-col">
         <!-- Minimal Top Bar to Exit -->
         <div class="h-12 bg-slate-900 flex justify-between items-center px-4 shrink-0 shadow-md border-b border-slate-800">
-            <div class="flex items-center gap-3">
-                <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                <span class="text-white font-bold text-[10px] uppercase tracking-widest hidden sm:inline">Live Classroom</span>
+            <div class="flex items-center gap-3 w-full">
+                <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] shrink-0"></div>
+                <span class="text-white font-bold text-[10px] uppercase tracking-widest shrink-0 hidden sm:inline">Live Classroom</span>
+                
+                <!-- 🚀 NAYA: Class Aur Educator ka naam ab iss black bar mein aayega -->
+                <div class="flex items-center gap-2 overflow-hidden w-full px-2">
+                    <div class="h-4 w-px bg-slate-700 mx-1 hidden sm:block shrink-0"></div>
+                    <span id="class-title" class="text-[10px] font-extrabold text-brand-blue uppercase tracking-widest truncate">Connecting...</span>
+                    <span class="text-slate-500 text-[10px] hidden sm:inline shrink-0">•</span>
+                    <span id="educator-name" class="text-[10px] sm:text-xs font-bold text-slate-300 truncate">Educator</span>
+                </div>
+
             </div>
-            <button onclick="window.closeStudentSlate()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
-                <i class="fa-solid fa-door-open mr-1"></i> Leave Class
+            <button onclick="window.closeStudentSlate()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm shrink-0">
+                <i class="fa-solid fa-door-open mr-1"></i> Leave
             </button>
         </div>
         <!-- The Magical Iframe -->
