@@ -88,18 +88,17 @@
         <!-- ========================================== -->
 
         <!-- 🚀 THE SLIDING CHAT DRAWER (Separated from Toolbar) -->
-        <!-- Positioned absolute, stuck to right-14 (just left of the toolbar). Initially translated off-screen (100%) -->
-        <div id="chat-drawer" class="absolute right-14 top-0 w-[85vw] sm:w-[350px] md:w-[400px] h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-40 transition-transform duration-300 transform translate-x-full border-l border-slate-200 dark:border-slate-700">
+        <div id="chat-drawer" class="absolute right-12 sm:right-14 top-0 w-[75vw] sm:w-[350px] md:w-[400px] h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-40 transition-transform duration-300 transform translate-x-full border-l border-slate-200 dark:border-slate-700">
             
-            <!-- Camera Container -->
-            <div id="webcam-placeholder" class="h-[100px] sm:h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">
+            <!-- Camera Container (Shrunk for mobile: 60px) -->
+            <div id="webcam-placeholder" class="h-[60px] sm:h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">
                 <div id="webcam-container" class="h-full w-full flex flex-col items-center justify-center text-slate-500 select-none overflow-hidden relative">
                     <div id="cam-offline-ui" class="flex flex-col items-center">
-                        <i class="fa-solid fa-video-slash text-3xl mb-2 opacity-50"></i>
-                        <span class="text-xs font-bold tracking-widest uppercase">Stream Offline</span>
+                        <i class="fa-solid fa-video-slash text-xl sm:text-3xl mb-1 sm:mb-2 opacity-50"></i>
+                        <span class="text-[8px] sm:text-xs font-bold tracking-widest uppercase">Stream Offline</span>
                     </div>
                     <video id="student-live-video" class="hidden w-full h-full object-cover" autoplay playsinline></video>
-                    <div class="absolute top-3 left-3 bg-rose-500 text-white text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider hidden" id="live-badge">Live</div>
+                    <div class="absolute top-1 sm:top-3 left-1 sm:left-3 bg-rose-500 text-white text-[7px] sm:text-[9px] px-1.5 sm:px-2 py-0.5 rounded font-bold uppercase tracking-wider hidden" id="live-badge">Live</div>
                 </div>
             </div>
 
@@ -115,42 +114,42 @@
                 </div>
                 
                 <!-- Chat Input Area -->
-                <div class="h-[72px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-3 flex items-center gap-2">
-                    <button class="text-slate-400 hover:text-amber-500 px-2 transition"><i class="fa-regular fa-face-smile text-xl"></i></button>
-                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl px-4 text-sm outline-none focus:border-brand-blue transition">
-                    <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-12 h-full rounded-xl flex items-center justify-center transition shadow-md active:scale-95"><i class="fa-solid fa-paper-plane"></i></button>
+                <div class="h-[50px] sm:h-[72px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 sm:p-3 flex items-center gap-1 sm:gap-2 shrink-0">
+                    <button class="text-slate-400 hover:text-amber-500 px-1 sm:px-2 transition"><i class="fa-regular fa-face-smile text-sm sm:text-xl"></i></button>
+                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg sm:rounded-xl px-2 sm:px-4 text-[11px] sm:text-sm outline-none focus:border-brand-blue transition">
+                    <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-8 h-8 sm:w-12 sm:h-full rounded-lg sm:rounded-xl flex items-center justify-center transition shadow-md active:scale-95"><i class="fa-solid fa-paper-plane text-xs sm:text-base"></i></button>
                 </div>
             </div>
         </div>
 
-        <!-- 🚀 FIXED TOOLBAR (Never moves, never breaks. Stuck to the right edge) -->
-        <div class="absolute right-0 top-0 w-14 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-5 z-50">
+        <!-- 🚀 FIXED TOOLBAR (Thinner on mobile: w-12) -->
+        <div class="absolute right-0 top-0 w-12 sm:w-14 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-2 sm:py-4 gap-3 sm:gap-5 z-50">
             <!-- 🌙 Dark Mode -->
-            <button id="btn-theme" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition" title="Toggle Dark Mode"><i class="fa-solid fa-moon text-lg"></i></button>
-            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            <button id="btn-theme" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition text-sm sm:text-lg" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
+            <div class="w-4 sm:w-6 h-px bg-slate-200 dark:bg-slate-700 my-0.5 sm:my-1"></div>
             
             <!-- ☁️ Doubt / Upload Notes -->
-            <button id="btn-doubt" class="w-10 h-10 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition shadow-sm" title="Ask Doubt & Upload File"><i class="fa-solid fa-cloud-arrow-up text-lg"></i></button>
+            <button id="btn-doubt" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-sm sm:text-lg shadow-sm" title="Ask Doubt & Upload File"><i class="fa-solid fa-cloud-arrow-up"></i></button>
             
             <!-- ✋ Raise Hand -->
-            <button id="btn-raise-hand" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition shadow-sm relative group" title="Raise Hand to Speak">
-                <i class="fa-solid fa-hand text-lg"></i>
-                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full hidden" id="hand-indicator"></span>
+            <button id="btn-raise-hand" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition text-sm sm:text-lg shadow-sm relative group" title="Raise Hand to Speak">
+                <i class="fa-solid fa-hand"></i>
+                <span class="absolute -top-1 -right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full hidden" id="hand-indicator"></span>
             </button>
             
             <!-- ⚙️ Video Quality Settings -->
             <div class="relative group">
-                <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Video Quality Settings"><i class="fa-solid fa-gear text-lg"></i></button>
+                <button class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-sm sm:text-lg" title="Video Quality Settings"><i class="fa-solid fa-gear"></i></button>
                 
-                <div class="absolute right-10 top-0 pr-4 hidden group-hover:block z-50">
-                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-48 p-3 pointer-events-auto">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-2 tracking-wider">Educator Video</p>
-                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Enable Video</span>
-                            <input type="checkbox" id="toggle-video" checked class="accent-brand-blue cursor-pointer w-4 h-4">
+                <div class="absolute right-8 sm:right-10 top-0 pr-2 sm:pr-4 hidden group-hover:block z-50">
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-40 sm:w-48 p-2 sm:p-3 pointer-events-auto">
+                        <p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-2 tracking-wider">Educator Video</p>
+                        <div class="flex items-center justify-between mb-2 sm:mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
+                            <span class="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Enable Video</span>
+                            <input type="checkbox" id="toggle-video" checked class="accent-brand-blue cursor-pointer w-3.5 h-3.5 sm:w-4 sm:h-4">
                         </div>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">Stream Quality</p>
-                        <select id="video-quality" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold p-2 outline-none dark:text-white cursor-pointer focus:border-brand-blue transition-colors">
+                        <p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">Stream Quality</p>
+                        <select id="video-quality" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-bold p-1.5 sm:p-2 outline-none dark:text-white cursor-pointer focus:border-brand-blue transition-colors">
                             <option value="auto">Auto (Recommended)</option>
                             <option value="high">High (720p)</option>
                             <option value="low">Data Saver (360p)</option>
@@ -159,11 +158,11 @@
                 </div>
             </div>
 
-            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1 mt-auto"></div>
+            <div class="w-4 sm:w-6 h-px bg-slate-200 dark:bg-slate-700 my-0.5 sm:my-1 mt-auto"></div>
             
             <!-- 🚀 Master Panel Toggle Button -->
-            <button id="btn-toggle-panel" class="w-10 h-10 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-blue transition" title="Toggle Chat Panel">
-                <i id="toggle-panel-icon" class="fa-solid fa-message text-lg"></i>
+            <button id="btn-toggle-panel" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-blue transition text-sm sm:text-lg" title="Toggle Chat Panel">
+                <i id="toggle-panel-icon" class="fa-solid fa-message"></i>
             </button>
         </div>
     </div> <!-- End of main-student-app -->

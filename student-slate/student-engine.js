@@ -176,12 +176,12 @@ function updatePanelUI() {
         document.body.appendChild(webcamContainer);
         webcamContainer.className = 'absolute z-50 shadow-2xl rounded-xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none transition-all duration-300';
         
-        // 🚀 ULTRA-TINY CAMERA FIX FOR MOBILE (75px by 55px)
+        // 🚀 MICRO PIP CAMERA FIX FOR MOBILE (60px x 45px)
         if (isMobile) {
-            webcamContainer.style.width = '75px'; 
-            webcamContainer.style.height = '55px'; 
+            webcamContainer.style.width = '60px'; 
+            webcamContainer.style.height = '45px'; 
             webcamContainer.style.top = '15px'; 
-            webcamContainer.style.right = '70px'; // Right Toolbar ke bagal mein
+            webcamContainer.style.right = '55px'; // Naye patle toolbar (48px) ke theek bagal mein
         } else {
             webcamContainer.style.width = '240px'; 
             webcamContainer.style.height = '160px'; 
