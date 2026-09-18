@@ -35,6 +35,10 @@
             background: rgba(30, 41, 59, 0.85);
             border-color: rgba(51, 65, 85, 0.8);
         }
+        /* 🚀 Custom Scrollbar for smaller chat area */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
     </style>
 </head>
 <body class="w-screen h-screen flex overflow-hidden bg-slate-100 dark:bg-slate-900 transition-colors duration-300 relative">
@@ -64,18 +68,18 @@
         <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900 z-10">
             
             <!-- Top Sleek Header (Class & Educator Name) -->
-            <div class="absolute top-4 left-4 z-40 glass-toolbar dark:bg-slate-800/90 rounded-2xl shadow-lg px-5 py-2.5 flex flex-col pointer-events-none">
-                <span id="class-title" class="text-[10px] font-extrabold text-brand-blue uppercase tracking-widest mb-0.5">Connecting to class...</span>
-                <span id="educator-name" class="text-sm font-bold text-slate-800 dark:text-white">Waiting for Educator</span>
+            <div class="absolute top-2 lg:top-4 left-2 lg:left-4 z-40 glass-toolbar dark:bg-slate-800/90 rounded-xl lg:rounded-2xl shadow-lg px-3 lg:px-5 py-1.5 lg:py-2.5 flex flex-col pointer-events-none">
+                <span id="class-title" class="text-[8px] lg:text-[10px] font-extrabold text-brand-blue uppercase tracking-widest mb-0.5">Connecting to class...</span>
+                <span id="educator-name" class="text-xs lg:text-sm font-bold text-slate-800 dark:text-white">Waiting for Educator</span>
             </div>
 
             <!-- 🚀 Interactive Polling UI (Hidden by default) -->
-            <div id="poll-overlay" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-80 max-w-[90vw] flex-col gap-3 transition-all">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-extrabold text-slate-900 dark:text-white text-lg"><i class="fa-solid fa-square-poll-vertical text-brand-blue mr-2"></i> Live Poll</h3>
-                    <span class="text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded animate-pulse">Live</span>
+            <div id="poll-overlay" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl lg:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 lg:p-6 w-72 lg:w-80 max-w-[90vw] flex-col gap-2 lg:gap-3 transition-all">
+                <div class="flex items-center justify-between mb-1 lg:mb-2">
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base lg:text-lg"><i class="fa-solid fa-square-poll-vertical text-brand-blue mr-2"></i> Live Poll</h3>
+                    <span class="text-[9px] lg:text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded animate-pulse">Live</span>
                 </div>
-                <p id="poll-question-text" class="text-sm text-slate-600 dark:text-slate-300 font-medium mb-2 hidden">Question text goes here</p>
+                <p id="poll-question-text" class="text-xs lg:text-sm text-slate-600 dark:text-slate-300 font-medium mb-1 lg:mb-2 hidden">Question text goes here</p>
                 <div id="poll-options-container" class="flex flex-col gap-2"></div>
             </div>
 
@@ -88,68 +92,68 @@
         <!-- ========================================== -->
 
         <!-- 🚀 THE SLIDING CHAT DRAWER (Separated from Toolbar) -->
-        <div id="chat-drawer" class="absolute right-12 sm:right-14 top-0 w-[75vw] sm:w-[350px] md:w-[400px] h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-40 transition-transform duration-300 transform translate-x-full border-l border-slate-200 dark:border-slate-700">
+        <div id="chat-drawer" class="absolute right-12 lg:right-14 top-0 w-[280px] lg:w-[400px] h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-40 transition-transform duration-300 transform translate-x-full border-l border-slate-200 dark:border-slate-700">
             
             <!-- Camera Container (Shrunk for mobile: 60px) -->
-            <div id="webcam-placeholder" class="h-[60px] sm:h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">
+            <div id="webcam-placeholder" class="h-[60px] lg:h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">
                 <div id="webcam-container" class="h-full w-full flex flex-col items-center justify-center text-slate-500 select-none overflow-hidden relative">
                     <div id="cam-offline-ui" class="flex flex-col items-center">
-                        <i class="fa-solid fa-video-slash text-xl sm:text-3xl mb-1 sm:mb-2 opacity-50"></i>
-                        <span class="text-[8px] sm:text-xs font-bold tracking-widest uppercase">Stream Offline</span>
+                        <i class="fa-solid fa-video-slash text-xl lg:text-3xl mb-1 lg:mb-2 opacity-50"></i>
+                        <span class="text-[8px] lg:text-xs font-bold tracking-widest uppercase">Stream Offline</span>
                     </div>
                     <video id="student-live-video" class="hidden w-full h-full object-cover" autoplay playsinline></video>
-                    <div class="absolute top-1 sm:top-3 left-1 sm:left-3 bg-rose-500 text-white text-[7px] sm:text-[9px] px-1.5 sm:px-2 py-0.5 rounded font-bold uppercase tracking-wider hidden" id="live-badge">Live</div>
+                    <div class="absolute top-1 lg:top-3 left-1 lg:left-3 bg-rose-500 text-white text-[7px] lg:text-[9px] px-1.5 lg:px-2 py-0.5 rounded font-bold uppercase tracking-wider hidden" id="live-badge">Live</div>
                 </div>
             </div>
 
             <!-- Chat Section -->
             <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50 overflow-hidden">
-                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center shadow-sm z-10">
-                    <span class="font-extrabold text-slate-700 dark:text-slate-200 font-serif">Class Chat</span>
-                    <button class="sm:hidden text-slate-400 hover:text-rose-500" onclick="document.getElementById('btn-toggle-panel').click()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="px-3 lg:px-4 py-2 lg:py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center shadow-sm z-10">
+                    <span class="text-xs lg:text-base font-extrabold text-slate-700 dark:text-slate-200 font-serif">Class Chat</span>
+                    <button class="lg:hidden text-slate-400 hover:text-rose-500" onclick="document.getElementById('btn-toggle-panel').click()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 
-                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-sm">
-                    <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest my-2">Welcome to the classroom</div>
+                <div id="chat-messages" class="flex-1 p-3 lg:p-4 overflow-y-auto flex flex-col gap-2 lg:gap-3 text-xs lg:text-sm">
+                    <div class="text-center text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest my-1 lg:my-2">Welcome to the classroom</div>
                 </div>
                 
                 <!-- Chat Input Area -->
-                <div class="h-[50px] sm:h-[72px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 sm:p-3 flex items-center gap-1 sm:gap-2 shrink-0">
-                    <button class="text-slate-400 hover:text-amber-500 px-1 sm:px-2 transition"><i class="fa-regular fa-face-smile text-sm sm:text-xl"></i></button>
-                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg sm:rounded-xl px-2 sm:px-4 text-[11px] sm:text-sm outline-none focus:border-brand-blue transition">
-                    <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-8 h-8 sm:w-12 sm:h-full rounded-lg sm:rounded-xl flex items-center justify-center transition shadow-md active:scale-95"><i class="fa-solid fa-paper-plane text-xs sm:text-base"></i></button>
+                <div class="h-[50px] lg:h-[72px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 lg:p-3 flex items-center gap-1 lg:gap-2 shrink-0">
+                    <button class="text-slate-400 hover:text-amber-500 px-1 lg:px-2 transition"><i class="fa-regular fa-face-smile text-base lg:text-xl"></i></button>
+                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-md lg:rounded-xl px-2 lg:px-4 text-[11px] lg:text-sm outline-none focus:border-brand-blue transition">
+                    <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-8 h-8 lg:w-12 lg:h-full rounded-md lg:rounded-xl flex items-center justify-center transition shadow-md active:scale-95"><i class="fa-solid fa-paper-plane text-xs lg:text-base"></i></button>
                 </div>
             </div>
         </div>
 
         <!-- 🚀 FIXED TOOLBAR (Thinner on mobile: w-12) -->
-        <div class="absolute right-0 top-0 w-12 sm:w-14 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-2 sm:py-4 gap-3 sm:gap-5 z-50">
+        <div class="absolute right-0 top-0 w-12 lg:w-14 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-2 lg:py-4 gap-3 lg:gap-5 z-50">
             <!-- 🌙 Dark Mode -->
-            <button id="btn-theme" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition text-sm sm:text-lg" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
-            <div class="w-4 sm:w-6 h-px bg-slate-200 dark:bg-slate-700 my-0.5 sm:my-1"></div>
+            <button id="btn-theme" class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition text-sm lg:text-lg" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
+            <div class="w-4 lg:w-6 h-px bg-slate-200 dark:bg-slate-700 my-0.5 lg:my-1"></div>
             
             <!-- ☁️ Doubt / Upload Notes -->
-            <button id="btn-doubt" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-sm sm:text-lg shadow-sm" title="Ask Doubt & Upload File"><i class="fa-solid fa-cloud-arrow-up"></i></button>
+            <button id="btn-doubt" class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-sm lg:text-lg shadow-sm" title="Ask Doubt & Upload File"><i class="fa-solid fa-cloud-arrow-up"></i></button>
             
             <!-- ✋ Raise Hand -->
-            <button id="btn-raise-hand" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition text-sm sm:text-lg shadow-sm relative group" title="Raise Hand to Speak">
+            <button id="btn-raise-hand" class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition text-sm lg:text-lg shadow-sm relative group" title="Raise Hand to Speak">
                 <i class="fa-solid fa-hand"></i>
-                <span class="absolute -top-1 -right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full hidden" id="hand-indicator"></span>
+                <span class="absolute -top-1 -right-1 w-2 h-2 lg:w-2.5 lg:h-2.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full hidden" id="hand-indicator"></span>
             </button>
             
             <!-- ⚙️ Video Quality Settings -->
             <div class="relative group">
-                <button class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-sm sm:text-lg" title="Video Quality Settings"><i class="fa-solid fa-gear"></i></button>
+                <button class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-sm lg:text-lg" title="Video Quality Settings"><i class="fa-solid fa-gear"></i></button>
                 
-                <div class="absolute right-8 sm:right-10 top-0 pr-2 sm:pr-4 hidden group-hover:block z-50">
-                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-40 sm:w-48 p-2 sm:p-3 pointer-events-auto">
-                        <p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-2 tracking-wider">Educator Video</p>
-                        <div class="flex items-center justify-between mb-2 sm:mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <span class="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Enable Video</span>
-                            <input type="checkbox" id="toggle-video" checked class="accent-brand-blue cursor-pointer w-3.5 h-3.5 sm:w-4 sm:h-4">
+                <div class="absolute right-8 lg:right-10 top-0 pr-2 lg:pr-4 hidden group-hover:block z-50">
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-40 lg:w-48 p-2 lg:p-3 pointer-events-auto">
+                        <p class="text-[9px] lg:text-[10px] text-slate-500 font-bold uppercase mb-2 tracking-wider">Educator Video</p>
+                        <div class="flex items-center justify-between mb-2 lg:mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
+                            <span class="text-[11px] lg:text-xs font-bold text-slate-700 dark:text-slate-300">Enable Video</span>
+                            <input type="checkbox" id="toggle-video" checked class="accent-brand-blue cursor-pointer w-3.5 h-3.5 lg:w-4 lg:h-4">
                         </div>
-                        <p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">Stream Quality</p>
-                        <select id="video-quality" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-bold p-1.5 sm:p-2 outline-none dark:text-white cursor-pointer focus:border-brand-blue transition-colors">
+                        <p class="text-[9px] lg:text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">Stream Quality</p>
+                        <select id="video-quality" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md lg:rounded-lg text-[11px] lg:text-xs font-bold p-1.5 lg:p-2 outline-none dark:text-white cursor-pointer focus:border-brand-blue transition-colors">
                             <option value="auto">Auto (Recommended)</option>
                             <option value="high">High (720p)</option>
                             <option value="low">Data Saver (360p)</option>
@@ -158,10 +162,10 @@
                 </div>
             </div>
 
-            <div class="w-4 sm:w-6 h-px bg-slate-200 dark:bg-slate-700 my-0.5 sm:my-1 mt-auto"></div>
+            <div class="w-4 lg:w-6 h-px bg-slate-200 dark:bg-slate-700 my-0.5 lg:my-1 mt-auto"></div>
             
             <!-- 🚀 Master Panel Toggle Button -->
-            <button id="btn-toggle-panel" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-blue transition text-sm sm:text-lg" title="Toggle Chat Panel">
+            <button id="btn-toggle-panel" class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-blue transition text-sm lg:text-lg" title="Toggle Chat Panel">
                 <i id="toggle-panel-icon" class="fa-solid fa-message"></i>
             </button>
         </div>
