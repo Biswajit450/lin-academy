@@ -68,9 +68,10 @@
         <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900 z-10">
             
             <!-- Top Sleek Header (Class & Educator Name) -->
-            <div class="absolute top-2 lg:top-4 left-2 lg:left-4 z-40 glass-toolbar dark:bg-slate-800/90 rounded-xl lg:rounded-2xl shadow-lg px-3 lg:px-5 py-1.5 lg:py-2.5 flex flex-col pointer-events-none">
-                <span id="class-title" class="text-[8px] lg:text-[10px] font-extrabold text-brand-blue uppercase tracking-widest mb-0.5">Connecting to class...</span>
-                <span id="educator-name" class="text-xs lg:text-sm font-bold text-slate-800 dark:text-white">Waiting for Educator</span>
+            <!-- 🚀 FIX: Full-width thin black bar on Mobile, Floating glass box on Desktop -->
+            <div class="absolute top-0 left-0 w-full lg:w-auto lg:top-4 lg:left-4 z-40 bg-slate-900 lg:bg-white/85 lg:dark:bg-slate-800/90 lg:backdrop-blur-md lg:rounded-2xl shadow-md lg:shadow-lg px-3 py-1.5 lg:px-5 lg:py-2.5 flex flex-row lg:flex-col justify-between items-center lg:items-start pointer-events-none border-b border-slate-700 lg:border lg:border-slate-200 lg:dark:border-slate-700">
+                <span id="class-title" class="text-[9px] lg:text-[10px] font-extrabold text-slate-300 lg:text-brand-blue uppercase tracking-widest truncate max-w-[50%] lg:max-w-none lg:mb-0.5">Connecting to class...</span>
+                <span id="educator-name" class="text-[10px] lg:text-sm font-bold text-white lg:text-slate-800 lg:dark:text-white truncate max-w-[50%] lg:max-w-none text-right lg:text-left">Waiting for Educator</span>
             </div>
 
             <!-- 🚀 Interactive Polling UI (Hidden by default) -->
