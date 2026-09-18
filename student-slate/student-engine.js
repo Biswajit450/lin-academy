@@ -164,7 +164,7 @@ let camOffsetX = 0, camOffsetY = 0;
 
 // UI update karne ka master function
 function updatePanelUI() {
-    const isMobile = window.innerWidth < 640; 
+    const isMobile = window.innerWidth < 1024; 
     
     if (isPanelHidden) {
         // 1. Hide Drawer (Slide off-screen)
@@ -227,7 +227,7 @@ btnTogglePanel.addEventListener('click', () => {
 });
 
 // Agar Desktop par class join ki hai, toh Chat Box apne aap khul jayega
-if (window.innerWidth >= 640) {
+if (window.innerWidth >= 1024) {
     setTimeout(() => {
         if (isPanelHidden) btnTogglePanel.click();
     }, 400); 
