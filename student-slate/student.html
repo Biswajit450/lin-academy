@@ -113,12 +113,31 @@
                     <div class="text-center text-[8px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest my-1 lg:my-2">Welcome to the classroom</div>
                 </div>
                 
-                <!-- Chat Input Area -->
-                <div class="h-[50px] lg:h-[72px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 lg:p-3 flex items-center gap-1 lg:gap-2 shrink-0">
-                    <button class="text-slate-400 hover:text-amber-500 px-1 lg:px-2 transition"><i class="fa-regular fa-face-smile text-sm lg:text-xl"></i></button>
-                    <!-- FIX: Input text shrunk to text-[10px] for mobile -->
-                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-md lg:rounded-xl px-2 lg:px-4 text-[10px] lg:text-sm outline-none focus:border-brand-blue transition">
-                    <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-8 h-8 lg:w-12 lg:h-full rounded-md lg:rounded-xl flex items-center justify-center transition shadow-md active:scale-95"><i class="fa-solid fa-paper-plane text-[10px] lg:text-base"></i></button>
+                <!-- 🚀 Chat Input Area (With Emoji Bar & Lock Overlay) -->
+                <div class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex flex-col shrink-0 relative">
+                    
+                    <!-- 🔒 Chat Lock Overlay (Hidden by default) -->
+                    <div id="chat-lock-overlay" class="hidden absolute inset-0 z-20 bg-slate-100/90 dark:bg-slate-900/90 backdrop-blur-sm flex items-center justify-center">
+                        <span class="text-[10px] lg:text-xs font-bold text-rose-500 uppercase tracking-widest"><i class="fa-solid fa-lock mr-1"></i> Educator paused chat</span>
+                    </div>
+
+                    <!-- ✨ Quick Emoji Bar (Scrollable for Mobile) -->
+                    <div class="flex items-center gap-3 px-2 py-1.5 lg:px-3 lg:py-2 overflow-x-auto scrollbar-hide border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 shadow-inner">
+                        <span class="text-[8px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-widest shrink-0 mr-1">React:</span>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('😂')">😂</button>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('💯')">💯</button>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('👏')">👏</button>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('🙋‍♂️')">🙋‍♂️</button>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('❓')">❓</button>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('👍')">👍</button>
+                        <button class="hover:scale-125 transition-transform text-sm lg:text-base shrink-0" onclick="insertStudentEmoji('❤️')">❤️</button>
+                    </div>
+
+                    <!-- 💬 Input Box -->
+                    <div class="h-[45px] lg:h-[60px] p-2 lg:p-3 flex items-center gap-1 lg:gap-2">
+                        <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-900 border border-transparent dark:text-white rounded-md lg:rounded-xl px-2 lg:px-4 text-[10px] lg:text-sm outline-none focus:border-brand-blue transition font-medium">
+                        <button id="btn-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-8 h-8 lg:w-12 lg:h-full rounded-md lg:rounded-xl flex items-center justify-center transition shadow-md active:scale-95 shrink-0"><i class="fa-solid fa-paper-plane text-[10px] lg:text-base"></i></button>
+                    </div>
                 </div>
             </div>
         </div>

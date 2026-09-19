@@ -372,3 +372,162 @@ window.submitPollAnswer = function(selectedIndex) {
         if (pollOverlay) pollOverlay.classList.add('hidden');
     }, 1500);
 };
+
+// =====================================
+// 🚀 LIVE CHAT ENGINE (STUDENT SIDE)
+// =====================================
+const chatInput = document.getElementById('chat-input');
+const btnSendChat = document.getElementById('btn-send-chat');
+const chatMessages = document.getElementById('chat-messages');
+const chatLockOverlay = document.getElementById('chat-lock-overlay');
+
+let lastMessageTime = 0;
+const SPAM_COOLDOWN = 2000; // 2 Seconds Anti-Spam Timer
+
+// 1. Emoji Inserter Function
+window.insertStudentEmoji = function(emoji) {
+    if(chatInput && !chatInput.disabled) {
+        chatInput.value += emoji;
+        chatInput.focus();
+    }
+}
+
+// 2. Main Chat Init Function
+async function initStudentChat() {
+    if (!roomId) return;
+
+    try {
+        const { collection, query, orderBy, onSnapshot, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+        const auth = getAuth();
+
+        // A. Listen for Admin Chat Lock (God Mode)
+        onSnapshot(doc(db, "live_sessions", roomId), (snap) => {
+            if (snap.exists()) {
+                const isChatDisabled = snap.data().chatDisabled || false;
+                if (isChatDisabled) {
+                    if (chatLockOverlay) chatLockOverlay.classList.remove('hidden');
+                    if (chatInput) chatInput.disabled = true;
+                    if (btnSendChat) btnSendChat.disabled = true;
+                } else {
+                    if (chatLockOverlay) chatLockOverlay.classList.add('hidden');
+                    if (chatInput) chatInput.disabled = false;
+                    if (btnSendChat) btnSendChat.disabled = false;
+                }
+            }
+        });
+
+        // B. Listen for Incoming Chat Messages
+        const q = query(collection(db, "live_sessions", roomId, "chats"), orderBy("timestamp", "asc"));
+        onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    renderStudentChatMessage(change.doc.data(), auth);
+                }
+            });
+            // Auto-Scroll chat to bottom
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+
+        // C. Send Message Handler (With Anti-Spam)
+        window.sendStudentMessage = async function() {
+            const text = chatInput.value.trim();
+            if (!text || !roomId) return;
+
+            // Anti-Spam Check
+            const now = Date.now();
+            if (now - lastMessageTime < SPAM_COOLDOWN) {
+                const originalP = chatInput.placeholder;
+                chatInput.value = '';
+                chatInput.placeholder = "Cool down... wait 2s";
+                setTimeout(() => { chatInput.placeholder = originalP; }, 2000);
+                return;
+            }
+
+            const btn = btnSendChat;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px] lg:text-base"></i>';
+            btn.disabled = true;
+
+            try {
+                // Fetch student name from Firebase Auth
+                const userName = (auth && auth.currentUser) ? (auth.currentUser.displayName || "Student") : "Student";
+                await addDoc(collection(db, "live_sessions", roomId, "chats"), {
+                    senderName: userName,
+                    role: "student",
+                    text: text,
+                    timestamp: new Date().toISOString()
+                });
+                
+                lastMessageTime = Date.now();
+                chatInput.value = '';
+            } catch (e) {
+                console.error("Failed to send", e);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                chatInput.focus();
+            }
+        };
+
+        if (btnSendChat && chatInput) {
+            btnSendChat.addEventListener('click', sendStudentMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendStudentMessage();
+            });
+        }
+
+    } catch (e) {
+        console.error("Student chat engine failed:", e);
+    }
+}
+
+// 3. Smart UI Renderer (Styles Educator vs Student)
+function renderStudentChatMessage(msg, auth) {
+    if (!chatMessages) return;
+
+    const isEducator = msg.role === 'educator';
+    const currentUserName = (auth && auth.currentUser) ? (auth.currentUser.displayName || "Student") : "Student";
+    const isMe = (msg.role === 'student' && msg.senderName === currentUserName);
+    
+    const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    let html = '';
+
+    if (isEducator) {
+        // Educator Message (VIP Highlighted style)
+        html = `
+        <div class="flex flex-col items-start w-full animate-fade-in-up mt-1">
+            <span class="text-[8px] lg:text-[10px] font-bold text-amber-500 mb-0.5 ml-1 uppercase tracking-widest"><i class="fa-solid fa-graduation-cap mr-1"></i> Educator • ${timeStr}</span>
+            <div class="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 px-3 py-2 rounded-xl rounded-tl-sm shadow-sm border border-amber-200 dark:border-amber-700/50 max-w-[90%]">
+                <p class="leading-relaxed font-medium">${msg.text}</p>
+            </div>
+        </div>`;
+    } else if (isMe) {
+        // My Message (Blue styling on Right)
+        html = `
+        <div class="flex flex-col items-end w-full animate-fade-in-up mt-1">
+            <span class="text-[8px] lg:text-[10px] font-bold text-slate-400 mb-0.5 mr-1">You • ${timeStr}</span>
+            <div class="bg-brand-blue text-white px-3 py-2 rounded-xl rounded-tr-sm shadow-sm max-w-[85%] border border-blue-600">
+                <p class="leading-relaxed">${msg.text}</p>
+            </div>
+        </div>`;
+    } else {
+        // Other Students (Gray styling on Left)
+        html = `
+        <div class="flex flex-col items-start w-full animate-fade-in-up mt-1">
+            <span class="text-[8px] lg:text-[10px] font-bold text-slate-500 mb-0.5 ml-1">${msg.senderName} • ${timeStr}</span>
+            <div class="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl rounded-tl-sm shadow-sm border border-slate-200 dark:border-slate-700 max-w-[85%]">
+                <p class="leading-relaxed">${msg.text}</p>
+            </div>
+        </div>`;
+    }
+
+    chatMessages.insertAdjacentHTML('beforeend', html);
+}
+
+// 🚀 Start Engine automatically!
+if (roomId) {
+    initStudentChat();
+}
