@@ -538,9 +538,9 @@ async function initStudentPolling() {
                     btn.className = "student-poll-opt bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl py-3 text-lg font-black text-slate-700 dark:text-white hover:border-brand-blue hover:text-brand-blue transition-all active:scale-95";
                 });
                 
-                activeUI.classList.remove('hidden');
-                resultUI.classList.add('hidden');
-                leaderboardUI.classList.add('hidden');
+                if (activeUI) activeUI.classList.remove('hidden');
+                if (resultUI) resultUI.classList.add('hidden');
+                if (leaderboardUI) leaderboardUI.classList.add('hidden');
                 
                 // Slide up animation
                 if (pollOverlay) {
@@ -608,10 +608,15 @@ function startStudentTimer(pollData) {
     const timeElapsedSecs = Math.floor((new Date() - new Date(pollData.launchedAt)) / 1000);
     timeLeft = Math.max(0, pollData.duration - timeElapsedSecs);
 
-    countdownEl.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
-    progressEl.style.width = '100%';
-    progressEl.className = "absolute left-0 top-0 h-full bg-brand-blue transition-all duration-1000 ease-linear w-full";
-    countdownEl.previousElementSibling.classList.replace('text-rose-500', 'text-brand-blue');
+    if (countdownEl) {
+        countdownEl.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
+        countdownEl.previousElementSibling.classList.replace('text-rose-500', 'text-brand-blue');
+    }
+    
+    if (progressEl) {
+        progressEl.style.width = '100%';
+        progressEl.className = "absolute left-0 top-0 h-full bg-brand-blue transition-all duration-1000 ease-linear w-full";
+    }
 
     if (pollInterval) clearInterval(pollInterval);
 
@@ -619,30 +624,34 @@ function startStudentTimer(pollData) {
         timeLeft--;
         if (timeLeft < 0) {
             clearInterval(pollInterval);
-            countdownEl.innerText = "00";
+            if (countdownEl) countdownEl.innerText = "00";
             return;
         }
 
-        countdownEl.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
-        progressEl.style.width = `${(timeLeft / pollData.duration) * 100}%`;
+        if (countdownEl) countdownEl.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
+        if (progressEl) progressEl.style.width = `${(timeLeft / pollData.duration) * 100}%`;
 
         // Amber warning at 10s
         if (timeLeft === 10) {
-            progressEl.classList.replace('bg-brand-blue', 'bg-amber-500');
-            countdownEl.classList.add('text-amber-500');
-            countdownEl.previousElementSibling.classList.replace('text-brand-blue', 'text-amber-500');
+            if (progressEl) progressEl.classList.replace('bg-brand-blue', 'bg-amber-500');
+            if (countdownEl) {
+                countdownEl.classList.add('text-amber-500');
+                countdownEl.previousElementSibling.classList.replace('text-brand-blue', 'text-amber-500');
+            }
         }
         // Red critical at 3s
         if (timeLeft === 3) {
-            progressEl.classList.replace('bg-amber-500', 'bg-rose-500');
-            countdownEl.classList.replace('text-amber-500', 'text-rose-500');
-            countdownEl.previousElementSibling.classList.replace('text-amber-500', 'text-rose-500');
+            if (progressEl) progressEl.classList.replace('bg-amber-500', 'bg-rose-500');
+            if (countdownEl) {
+                countdownEl.classList.replace('text-amber-500', 'text-rose-500');
+                countdownEl.previousElementSibling.classList.replace('text-amber-500', 'text-rose-500');
+            }
         }
 
     }, 1000);
 }
 
-// Result Reveal & Leaderboard Logic
+// Result Reveal & Leaderboard Logic - (FUTURE PROOF FIREBASE INDEXED QUERY)
 async function revealPollResult(pollData) {
     if (activeUI) activeUI.classList.add('hidden');
     if (resultUI) resultUI.classList.remove('hidden');
@@ -676,10 +685,12 @@ async function revealPollResult(pollData) {
         }
     }
 
-    // 🚀 FETCH STUDENT LEADERBOARD
+    // 🚀 FASTEST FINGERS (Server Side Filtering - Cost & Speed Optimized)
     try {
         const { collection, query, orderBy, limit, getDocs, where } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         const votesRef = collection(db, "live_sessions", roomId, "polls", currentPollId, "votes");
+        
+        // LIMIT 5 Lagane se sirf 5 docs download honge, bhale class mein 10,000 bacche hon!
         const q = query(votesRef, where("answer", "==", pollData.correctOption), orderBy("timestamp", "asc"), limit(5));
         const snap = await getDocs(q);
 
@@ -708,7 +719,7 @@ async function revealPollResult(pollData) {
         console.error("Leaderboard fetch error:", e);
     }
 
-    // Auto-hide popup after 10 seconds (gives time to read leaderboard)
+    // Auto-hide popup after 10 seconds
     setTimeout(() => {
         if (pollOverlay) {
             pollOverlay.classList.remove('translate-y-0', 'opacity-100');

@@ -502,7 +502,7 @@ toggleBtn.addEventListener('click', () => {
         
         // 2. Detach Webcam & Apply Floating Classes
         document.body.appendChild(webcamContainer);
-        webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none';
+        webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-50 select-none';
         webcamContainer.style.width = '340px';
         webcamContainer.style.height = '200px';
         webcamContainer.style.top = '20px'; 
@@ -1538,7 +1538,7 @@ const pollAdminResultUI = document.getElementById('poll-admin-result-ui');
 let selectedCorrectOpt = null;
 let selectedTimeLimit = 30; 
 let adminPollInterval = null;
-let adminVoteListener = null; // 🚀 NAYA: Live Vote Tracker
+let adminVoteListener = null; 
 let currentPollId = null;
 
 btnLaunchPoll.addEventListener('click', () => {
@@ -1617,8 +1617,9 @@ function startAdminRadar(pollData) {
     const circumference = 276; 
     ringEl.style.strokeDasharray = circumference;
 
-    // 🚀 LIVE VOTE LISTENER
-    import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js").then(({ collection, onSnapshot }) => {
+    // 🚀 LIVE VOTE LISTENER FIXED
+    import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js").then(async ({ collection, onSnapshot }) => {
+        const { db } = await import("../firebase-config.js");
         const votesRef = collection(db, "live_sessions", currentSessionId, "polls", currentPollId, "votes");
         adminVoteListener = onSnapshot(votesRef, (snap) => {
             totalVotesCount = snap.size;
@@ -1652,7 +1653,7 @@ function startAdminRadar(pollData) {
     }, 1000);
 }
 
-// 🚀 SHOW ADMIN LEADERBOARD
+// 🚀 SHOW ADMIN LEADERBOARD - (FUTURE PROOF FIREBASE INDEXED QUERY)
 async function showAdminPollResults(pollData, totalVotes) {
     pollLiveRadar.classList.add('hidden');
     if(pollAdminResultUI) pollAdminResultUI.classList.remove('hidden');
@@ -1662,16 +1663,17 @@ async function showAdminPollResults(pollData, totalVotes) {
 
     try {
         const { doc, updateDoc, collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
         
         // 1. Mark poll as ended
         await updateDoc(doc(db, "live_sessions", currentSessionId, "polls", "current_poll"), { status: 'ended' });
 
-        // 2. Fetch Correct Answers for Leaderboard
+        // 2. 🚀 FUTURE-PROOF QUERY: Server par hi sort filter ho jayega!
         const votesRef = collection(db, "live_sessions", currentSessionId, "polls", currentPollId, "votes");
         const qCorrect = query(votesRef, where("answer", "==", pollData.correctOption), orderBy("timestamp", "asc"));
         const snapCorrect = await getDocs(qCorrect);
         
-        const correctCount = snapCorrect.size;
+        const correctCount = snapCorrect.size; // Sirf sahi jawab walo ka count
         document.getElementById('admin-correct-votes').innerText = correctCount;
         
         const accuracy = totalVotes > 0 ? Math.round((correctCount / totalVotes) * 100) : 0;
@@ -1686,7 +1688,7 @@ async function showAdminPollResults(pollData, totalVotes) {
             } else {
                 let rank = 1;
                 snapCorrect.forEach(docSnap => {
-                    if(rank > 5) return; // Top 5 only
+                    if (rank > 5) return; // UI mein sirf Top 5 dikhayenge
                     const vData = docSnap.data();
                     const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `#${rank}`));
                     listEl.innerHTML += `
