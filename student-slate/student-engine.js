@@ -336,44 +336,6 @@ if (toggleVideoCheck) {
 }
 
 // =====================================
-// 📊 INTERACTIVE POLLING RECEIVER
-// =====================================
-const pollOverlay = document.getElementById('poll-overlay');
-
-window.triggerPoll = function(question, optionsArray) {
-    const qText = document.getElementById('poll-question-text');
-    if (qText) {
-        qText.innerText = question;
-        qText.classList.remove('hidden');
-    }
-    
-    const container = document.getElementById('poll-options-container');
-    if (container) {
-        container.innerHTML = ''; 
-        optionsArray.forEach((opt, index) => {
-            container.innerHTML += `
-                <button onclick="window.submitPollAnswer(${index})" class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-brand-blue hover:text-white hover:border-brand-blue transition-colors shadow-sm">
-                    ${String.fromCharCode(65 + index)}. ${opt}
-                </button>
-            `;
-        });
-    }
-
-    if (pollOverlay) pollOverlay.classList.remove('hidden');
-};
-
-window.submitPollAnswer = function(selectedIndex) {
-    const container = document.getElementById('poll-options-container');
-    if (container) {
-        container.innerHTML = `<div class="text-center py-6"><i class="fa-solid fa-spinner fa-spin text-2xl text-brand-blue mb-2"></i><br><span class="text-xs font-bold text-slate-500">Submitting answer...</span></div>`;
-    }
-    
-    setTimeout(() => {
-        if (pollOverlay) pollOverlay.classList.add('hidden');
-    }, 1500);
-};
-
-// =====================================
 // 🚀 LIVE CHAT ENGINE (STUDENT SIDE)
 // =====================================
 const chatInput = document.getElementById('chat-input');
@@ -530,4 +492,197 @@ function renderStudentChatMessage(msg, auth) {
 // 🚀 Start Engine automatically!
 if (roomId) {
     initStudentChat();
+}
+
+// =====================================
+// 🚀 GAMIFIED LIVE POLLING ENGINE (STUDENT SIDE)
+// =====================================
+
+const pollOverlay = document.getElementById('poll-overlay');
+const countdownEl = document.getElementById('student-poll-countdown');
+const progressEl = document.getElementById('student-poll-progress');
+const activeUI = document.getElementById('student-poll-active-ui');
+const resultUI = document.getElementById('student-poll-result-ui');
+const leaderboardUI = document.getElementById('student-poll-leaderboard');
+const pollBtns = document.querySelectorAll('.student-poll-opt');
+
+let currentPollId = null;
+let pollInterval = null;
+let hasVoted = false;
+let studentSelectedOpt = null;
+
+// The Listener: Watch for new polls from the Educator
+async function initStudentPolling() {
+    if (!roomId) return;
+
+    try {
+        const { doc, onSnapshot, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+        const auth = getAuth();
+
+        const pollRef = doc(db, "live_sessions", roomId, "polls", "current_poll");
+
+        onSnapshot(pollRef, (snap) => {
+            if (!snap.exists()) return;
+            const pollData = snap.data();
+
+            // 1. A new poll is launched!
+            if (pollData.status === 'active' && pollData.id !== currentPollId) {
+                currentPollId = pollData.id;
+                hasVoted = false;
+                studentSelectedOpt = null;
+                
+                // Reset UI
+                pollBtns.forEach(btn => {
+                    btn.disabled = false;
+                    btn.className = "student-poll-opt bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl py-3 text-lg font-black text-slate-700 dark:text-white hover:border-brand-blue hover:text-brand-blue transition-all active:scale-95";
+                });
+                
+                activeUI.classList.remove('hidden');
+                resultUI.classList.add('hidden');
+                leaderboardUI.classList.add('hidden');
+                
+                // Slide up animation
+                pollOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    pollOverlay.classList.remove('translate-y-full', 'opacity-0');
+                }, 50);
+
+                startStudentTimer(pollData);
+            }
+
+            // 2. Poll is finished! Reveal answers
+            if (pollData.status === 'ended' && currentPollId === pollData.id) {
+                if (pollInterval) clearInterval(pollInterval);
+                revealPollResult(pollData);
+            }
+        });
+
+        // Handle Voting
+        pollBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if (hasVoted) return; // Prevent double voting
+                
+                hasVoted = true;
+                studentSelectedOpt = e.target.getAttribute('data-opt');
+                
+                // Visual lock-in
+                pollBtns.forEach(b => {
+                    b.disabled = true;
+                    b.classList.remove('hover:border-brand-blue', 'hover:text-brand-blue', 'active:scale-95');
+                    b.classList.add('opacity-50');
+                });
+                e.target.classList.replace('opacity-50', 'border-brand-blue');
+                e.target.classList.add('bg-blue-50', 'dark:bg-blue-900/30', 'text-brand-blue');
+
+                // Send to Firebase
+                try {
+                    const userName = (auth && auth.currentUser) ? (auth.currentUser.displayName || "Student") : "Student";
+                    const userId = (auth && auth.currentUser) ? auth.currentUser.uid : "anon_" + Date.now();
+                    
+                    const voteRef = doc(db, "live_sessions", roomId, "polls", currentPollId, "votes", userId);
+                    await setDoc(voteRef, {
+                        name: userName,
+                        answer: studentSelectedOpt,
+                        timestamp: Date.now() // For fastest finger calculation
+                    });
+                } catch(err) {
+                    console.error("Failed to cast vote", err);
+                }
+            });
+        });
+
+    } catch (e) {
+        console.error("Polling Engine Error:", e);
+    }
+}
+
+// Timer Logic
+function startStudentTimer(pollData) {
+    let timeLeft = pollData.duration;
+    
+    // Sync logic: Adjust time if student joined slightly late
+    const timeElapsedSecs = Math.floor((new Date() - new Date(pollData.launchedAt)) / 1000);
+    timeLeft = Math.max(0, pollData.duration - timeElapsedSecs);
+
+    countdownEl.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
+    progressEl.style.width = '100%';
+    progressEl.className = "absolute left-0 top-0 h-full bg-brand-blue transition-all duration-1000 ease-linear w-full";
+    countdownEl.previousElementSibling.classList.replace('text-rose-500', 'text-brand-blue');
+
+    if (pollInterval) clearInterval(pollInterval);
+
+    pollInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft < 0) {
+            clearInterval(pollInterval);
+            countdownEl.innerText = "00";
+            return;
+        }
+
+        countdownEl.innerText = timeLeft < 10 ? "0" + timeLeft : timeLeft;
+        progressEl.style.width = `${(timeLeft / pollData.duration) * 100}%`;
+
+        // Amber warning at 10s
+        if (timeLeft === 10) {
+            progressEl.classList.replace('bg-brand-blue', 'bg-amber-500');
+            countdownEl.classList.add('text-amber-500');
+            countdownEl.previousElementSibling.classList.replace('text-brand-blue', 'text-amber-500');
+        }
+        // Red critical at 3s
+        if (timeLeft === 3) {
+            progressEl.classList.replace('bg-amber-500', 'bg-rose-500');
+            countdownEl.classList.replace('text-amber-500', 'text-rose-500');
+            countdownEl.previousElementSibling.classList.replace('text-amber-500', 'text-rose-500');
+        }
+
+    }, 1000);
+}
+
+// Result Reveal Logic
+function revealPollResult(pollData) {
+    activeUI.classList.add('hidden');
+    resultUI.classList.remove('hidden');
+    
+    const iconEl = document.getElementById('poll-result-icon');
+    const titleEl = document.getElementById('poll-result-title');
+    const msgEl = document.getElementById('poll-result-msg');
+
+    // Clean up classes
+    iconEl.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-inner border-4 mb-2";
+    titleEl.className = "font-black text-lg text-center uppercase tracking-wider";
+
+    if (!hasVoted) {
+        // Did not vote
+        iconEl.classList.add('bg-slate-100', 'dark:bg-slate-800', 'border-slate-300', 'text-slate-400');
+        iconEl.innerHTML = '<i class="fa-solid fa-hourglass-end"></i>';
+        titleEl.classList.add('text-slate-500');
+        titleEl.innerText = "Time Up!";
+        msgEl.innerText = `You didn't vote. Correct answer was ${pollData.correctOption}.`;
+    } else if (studentSelectedOpt === pollData.correctOption) {
+        // Voted Correctly
+        iconEl.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'border-emerald-500', 'text-emerald-500', 'animate-bounce');
+        iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+        titleEl.classList.add('text-emerald-500');
+        titleEl.innerText = "Excellent!";
+        msgEl.innerText = `Your answer ${studentSelectedOpt} was correct!`;
+    } else {
+        // Voted Incorrectly
+        iconEl.classList.add('bg-rose-100', 'dark:bg-rose-900/40', 'border-rose-500', 'text-rose-500', 'animate-wiggle');
+        iconEl.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        titleEl.classList.add('text-rose-500');
+        titleEl.innerText = "Incorrect!";
+        msgEl.innerHTML = `You chose ${studentSelectedOpt}.<br>Correct answer was <span class="text-emerald-500 font-bold">${pollData.correctOption}</span>.`;
+    }
+
+    // Auto-hide the poll popup after 8 seconds
+    setTimeout(() => {
+        pollOverlay.classList.add('translate-y-full', 'opacity-0');
+        setTimeout(() => pollOverlay.classList.add('hidden'), 500);
+    }, 8000);
+}
+
+// 🚀 Start Polling Engine automatically!
+if (roomId) {
+    initStudentPolling();
 }

@@ -1522,3 +1522,130 @@ if(btnAdminSendChat && adminChatInput) {
         if (e.key === 'Enter') sendAdminMessage();
     });
 }
+
+// =====================================
+// 🚀 GAMIFIED LIVE POLLING ENGINE (EDUCATOR)
+// =====================================
+const btnLaunchPoll = document.getElementById('btn-launch-poll');
+const pollModal = document.getElementById('admin-poll-modal');
+const btnClosePollModal = document.getElementById('btn-close-poll-modal');
+const btnFirePoll = document.getElementById('btn-fire-poll');
+
+const pollSetupUI = document.getElementById('poll-setup-ui');
+const pollLiveRadar = document.getElementById('poll-live-radar');
+
+let selectedCorrectOpt = null;
+let selectedTimeLimit = 30; // Default 30s
+let adminPollInterval = null;
+
+// 1. UI Toggles for Setup
+btnLaunchPoll.addEventListener('click', () => {
+    pollModal.classList.toggle('hidden');
+    // Reset state
+    pollSetupUI.classList.remove('hidden');
+    pollLiveRadar.classList.add('hidden');
+});
+btnClosePollModal.addEventListener('click', () => pollModal.classList.add('hidden'));
+
+document.querySelectorAll('.admin-poll-opt').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.admin-poll-opt').forEach(b => b.classList.remove('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600'));
+        e.target.classList.add('border-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600');
+        selectedCorrectOpt = e.target.getAttribute('data-opt');
+    });
+});
+
+document.querySelectorAll('.admin-poll-time').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.admin-poll-time').forEach(b => b.classList.remove('bg-amber-500', 'text-white'));
+        e.target.classList.add('bg-amber-500', 'text-white');
+        selectedTimeLimit = parseInt(e.target.getAttribute('data-time'));
+    });
+});
+
+// 2. Fire the Poll to Firebase
+btnFirePoll.addEventListener('click', async () => {
+    if (!selectedCorrectOpt) return alert("Please select the correct answer (A, B, C, or D) first.");
+    if (!currentSessionId) return alert("No active session found.");
+
+    btnFirePoll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Launching...';
+    btnFirePoll.disabled = true;
+
+    try {
+        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+
+        const pollData = {
+            id: 'poll_' + Date.now(),
+            correctOption: selectedCorrectOpt,
+            duration: selectedTimeLimit,
+            launchedAt: new Date().toISOString(),
+            status: 'active'
+        };
+
+        // Write to current_poll document
+        await setDoc(doc(db, "live_sessions", currentSessionId, "polls", "current_poll"), pollData);
+
+        // Switch UI to Radar Mode
+        pollSetupUI.classList.add('hidden');
+        pollLiveRadar.classList.remove('hidden');
+        startAdminRadar(pollData);
+
+        // Notify chat
+        appendAdminSystemMessage(`🚀 Poll Launched for ${selectedTimeLimit}s (Answer: ${selectedCorrectOpt})`);
+
+    } catch (e) {
+        console.error("Poll launch failed", e);
+        alert("Failed to launch poll.");
+    } finally {
+        btnFirePoll.innerHTML = '<i class="fa-solid fa-rocket"></i> Launch to Students';
+        btnFirePoll.disabled = false;
+    }
+});
+
+// 3. Admin Live Radar Timer
+function startAdminRadar(pollData) {
+    const countdownEl = document.getElementById('admin-poll-countdown');
+    const ringEl = document.getElementById('poll-timer-ring');
+    document.getElementById('admin-radar-answer').innerText = pollData.correctOption;
+    document.getElementById('admin-radar-votes').innerText = "0"; // Will implement vote counting later
+    
+    let timeLeft = pollData.duration;
+    countdownEl.innerText = timeLeft;
+    
+    const circumference = 276; // 2 * pi * r (r=44)
+    ringEl.style.strokeDasharray = circumference;
+
+    if (adminPollInterval) clearInterval(adminPollInterval);
+
+    adminPollInterval = setInterval(async () => {
+        timeLeft--;
+        countdownEl.innerText = timeLeft;
+        
+        const offset = circumference - (timeLeft / pollData.duration) * circumference;
+        ringEl.style.strokeDashoffset = offset;
+
+        // Color shifts
+        if (timeLeft <= 10) {
+            ringEl.classList.replace('text-brand-blue', 'text-rose-500');
+            countdownEl.classList.add('text-rose-500');
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(adminPollInterval);
+            countdownEl.innerText = "DONE";
+            // Set poll status to ended in Firebase
+            try {
+                const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                const { db } = await import("../firebase-config.js");
+                await updateDoc(doc(db, "live_sessions", currentSessionId, "polls", "current_poll"), {
+                    status: 'ended'
+                });
+                setTimeout(() => {
+                    pollModal.classList.add('hidden');
+                    appendAdminSystemMessage(`✅ Poll Completed.`);
+                }, 3000);
+            } catch(e) {}
+        }
+    }, 1000);
+}

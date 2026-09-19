@@ -67,14 +67,51 @@
         <!-- ========================================== -->
         <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900 z-10">
             
-            <!-- 🚀 Interactive Polling UI (Hidden by default) -->
-            <div id="poll-overlay" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl lg:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 lg:p-6 w-72 lg:w-80 max-w-[90vw] flex-col gap-2 lg:gap-3 transition-all">
-                <div class="flex items-center justify-between mb-1 lg:mb-2">
-                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base lg:text-lg"><i class="fa-solid fa-square-poll-vertical text-brand-blue mr-2"></i> Live Poll</h3>
-                    <span class="text-[9px] lg:text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded animate-pulse">Live</span>
+            <!-- 🚀 GAMIFIED LIVE POLLING UI -->
+            <div id="poll-overlay" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:right-6 lg:bottom-6 z-50 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl w-[90vw] lg:w-[320px] flex-col transition-all duration-500 translate-y-full opacity-0">
+                <!-- Header -->
+                <div class="bg-slate-50 dark:bg-slate-900 rounded-t-3xl px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center relative overflow-hidden">
+                    <div class="absolute inset-0 bg-brand-blue/10 animate-pulse"></div>
+                    <h3 class="font-black text-slate-800 dark:text-white uppercase tracking-wider relative z-10 flex items-center gap-2 text-sm lg:text-base"><i class="fa-solid fa-bolt text-amber-500"></i> Fast Poll</h3>
+                    
+                    <div class="relative z-10 flex items-center gap-2 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <i class="fa-regular fa-clock text-rose-500 animate-pulse text-[10px]"></i>
+                        <span id="student-poll-countdown" class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">00</span>
+                    </div>
                 </div>
-                <p id="poll-question-text" class="text-xs lg:text-sm text-slate-600 dark:text-slate-300 font-medium mb-1 lg:mb-2 hidden">Question text goes here</p>
-                <div id="poll-options-container" class="flex flex-col gap-2"></div>
+
+                <!-- Active Voting Area -->
+                <div id="student-poll-active-ui" class="p-4 lg:p-5 flex flex-col gap-3">
+                    <p class="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-300 text-center mb-1">Select the correct option</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="student-poll-opt bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl py-3 text-lg font-black text-slate-700 dark:text-white hover:border-brand-blue hover:text-brand-blue transition-all active:scale-95" data-opt="A">A</button>
+                        <button class="student-poll-opt bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl py-3 text-lg font-black text-slate-700 dark:text-white hover:border-brand-blue hover:text-brand-blue transition-all active:scale-95" data-opt="B">B</button>
+                        <button class="student-poll-opt bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl py-3 text-lg font-black text-slate-700 dark:text-white hover:border-brand-blue hover:text-brand-blue transition-all active:scale-95" data-opt="C">C</button>
+                        <button class="student-poll-opt bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl py-3 text-lg font-black text-slate-700 dark:text-white hover:border-brand-blue hover:text-brand-blue transition-all active:scale-95" data-opt="D">D</button>
+                    </div>
+                </div>
+
+                <!-- Result Area (Hidden initially) -->
+                <div id="student-poll-result-ui" class="hidden p-5 flex flex-col items-center justify-center gap-3">
+                    <div id="poll-result-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-inner border-4 mb-2">
+                        <!-- Icon injected via JS -->
+                    </div>
+                    <h3 id="poll-result-title" class="font-black text-lg text-center uppercase tracking-wider">Time Up!</h3>
+                    <p id="poll-result-msg" class="text-xs font-bold text-slate-500 text-center">Waiting for educator to end poll...</p>
+                </div>
+
+                <!-- Mini Leaderboard (Hidden initially) -->
+                <div id="student-poll-leaderboard" class="hidden border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-b-3xl">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3 text-center">Fastest Fingers First</span>
+                    <div id="fastest-fingers-list" class="flex flex-col gap-2">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-b-3xl overflow-hidden relative">
+                    <div id="student-poll-progress" class="absolute left-0 top-0 h-full bg-brand-blue transition-all duration-1000 ease-linear w-full"></div>
+                </div>
             </div>
 
             <!-- Canvas Background -->
