@@ -297,26 +297,163 @@ if (webcamContainer) {
 }
 
 // =====================================
-// 🙋‍♂️ STUDENT UTILITIES (RAISE HAND & VIDEO SETTINGS)
+// 🙋‍♂️ STUDENT UTILITIES & LIVE AUDIO ENGINE (RAISE HAND)
 // =====================================
 
 const btnRaiseHand = document.getElementById('btn-raise-hand');
 const handIndicator = document.getElementById('hand-indicator');
-let isHandRaised = false;
 
-if (btnRaiseHand) {
-    btnRaiseHand.addEventListener('click', () => {
-        isHandRaised = !isHandRaised;
-        if (isHandRaised) {
-            if (handIndicator) handIndicator.classList.remove('hidden');
-            btnRaiseHand.classList.replace('text-amber-500', 'text-white');
-            btnRaiseHand.classList.replace('hover:bg-amber-50', 'bg-amber-500');
-        } else {
-            if (handIndicator) handIndicator.classList.add('hidden');
-            btnRaiseHand.classList.replace('text-white', 'text-amber-500');
-            btnRaiseHand.classList.replace('bg-amber-500', 'hover:bg-amber-50');
+let audioStream = null;
+let studentAudioPC = null;
+let handRequestUnsubscribe = null;
+let currentHandStatus = 'none'; // State: none, pending, connected
+
+async function initStudentRaiseHand() {
+    if (!roomId) return;
+
+    try {
+        const { doc, setDoc, deleteDoc, onSnapshot, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+        const auth = getAuth();
+
+        if (btnRaiseHand) {
+            btnRaiseHand.addEventListener('click', async () => {
+                
+                const userId = (auth && auth.currentUser) ? auth.currentUser.uid : "anon_" + Date.now();
+                const userName = (auth && auth.currentUser) ? (auth.currentUser.displayName || "Student") : "Student";
+                const reqRef = doc(db, "live_sessions", roomId, "raise_hands", userId);
+
+                // CASE 1: Student is requesting to speak
+                if (currentHandStatus === 'none') {
+                    
+                    // 1. Request Microphone Hardware Access
+                    try {
+                        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    } catch(err) {
+                        alert("Microphone access is required to ask a doubt.");
+                        return;
+                    }
+
+                    // 2. Visual Update -> PENDING
+                    currentHandStatus = 'pending';
+                    btnRaiseHand.classList.remove('text-amber-500', 'hover:bg-amber-50');
+                    btnRaiseHand.classList.add('text-white', 'bg-amber-500', 'animate-pulse');
+                    const iconEl = btnRaiseHand.querySelector('i');
+                    if(iconEl) iconEl.className = 'fa-solid fa-hourglass-half'; // Waiting Icon
+
+                    // 3. Send Request to Firebase Queue
+                    await setDoc(reqRef, {
+                        name: userName,
+                        status: 'pending',
+                        timestamp: Date.now()
+                    });
+
+                    // 4. Listen for Educator's "Connect" Command
+                    handRequestUnsubscribe = onSnapshot(reqRef, async (snap) => {
+                        if (!snap.exists()) {
+                            // Educator rejected/dismissed or ended the call
+                            resetRaiseHandUI();
+                            return;
+                        }
+
+                        const data = snap.data();
+
+                        // 5. Educator Accepted -> Start WebRTC Connection
+                        if (data.status === 'connected' && data.offer && currentHandStatus !== 'connected') {
+                            currentHandStatus = 'connected';
+                            
+                            // Visual Update -> LIVE AUDIO
+                            btnRaiseHand.classList.remove('animate-pulse', 'bg-amber-500');
+                            btnRaiseHand.classList.add('bg-emerald-500', 'shadow-[0_0_15px_rgba(16,185,129,0.6)]');
+                            if(iconEl) iconEl.className = 'fa-solid fa-microphone-lines animate-pulse';
+
+                            // Initialize Peer Connection
+                            studentAudioPC = new RTCPeerConnection({
+                                iceServers: [
+                                    { urls: 'stun:stun.l.google.com:19302' },
+                                    { urls: 'stun:stun1.l.google.com:19302' }
+                                ]
+                            });
+
+                            // Inject Student's Mic into the Connection
+                            audioStream.getTracks().forEach(track => {
+                                studentAudioPC.addTrack(track, audioStream);
+                            });
+
+                            // Send Student's Network Path to Admin
+                            studentAudioPC.onicecandidate = async (event) => {
+                                if (event.candidate) {
+                                    await updateDoc(reqRef, {
+                                        studentCandidate: JSON.stringify(event.candidate)
+                                    });
+                                }
+                            };
+
+                            // Accept Admin's WebRTC Offer
+                            const offerDesc = new RTCSessionDescription(JSON.parse(data.offer));
+                            await studentAudioPC.setRemoteDescription(offerDesc);
+
+                            // Send Answer back to Admin
+                            const answer = await studentAudioPC.createAnswer();
+                            await studentAudioPC.setLocalDescription(answer);
+
+                            await updateDoc(reqRef, {
+                                answer: JSON.stringify({ sdp: answer.sdp, type: answer.type })
+                            });
+                        }
+
+                        // Sync Network Paths
+                        if (data.adminCandidate && studentAudioPC) {
+                            try {
+                                await studentAudioPC.addIceCandidate(new RTCIceCandidate(JSON.parse(data.adminCandidate)));
+                            } catch(e) {}
+                        }
+                    });
+
+                } 
+                // CASE 2: Student cancels the request or hangs up
+                else {
+                    await deleteDoc(reqRef);
+                    resetRaiseHandUI();
+                }
+            });
         }
-    });
+
+        // The Reset Engine (Clears Mic & UI)
+        function resetRaiseHandUI() {
+            currentHandStatus = 'none';
+            
+            // Shut off the microphone completely
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                audioStream = null;
+            }
+            // Disconnect WebRTC pipe
+            if (studentAudioPC) {
+                studentAudioPC.close();
+                studentAudioPC = null;
+            }
+            // Stop listening to Firebase document
+            if (handRequestUnsubscribe) {
+                handRequestUnsubscribe();
+                handRequestUnsubscribe = null;
+            }
+
+            // Restore the normal Hand Button UI
+            btnRaiseHand.classList.remove('animate-pulse', 'bg-emerald-500', 'bg-amber-500', 'text-white', 'shadow-[0_0_15px_rgba(16,185,129,0.6)]');
+            btnRaiseHand.classList.add('text-amber-500', 'hover:bg-amber-50');
+            const iconEl = btnRaiseHand.querySelector('i');
+            if(iconEl) iconEl.className = 'fa-solid fa-hand';
+        }
+
+    } catch (e) {
+        console.error("Student Raise Hand Engine Error:", e);
+    }
+}
+
+// Start Engine Safely
+if (roomId) {
+    setTimeout(() => initStudentRaiseHand(), 1500);
 }
 
 const toggleVideoCheck = document.getElementById('toggle-video');
