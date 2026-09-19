@@ -1355,3 +1355,170 @@ window.addEventListener('mouseup', endDragNotes);
 notesDragHandle.addEventListener('touchstart', startDragNotes, { passive: true });
 window.addEventListener('touchmove', dragNotes, { passive: true });
 window.addEventListener('touchend', endDragNotes);
+
+// =====================================
+// 🚀 PRO LIVE CHAT ENGINE (EDUCATOR "GOD MODE")
+// =====================================
+const adminChatMessages = document.getElementById('admin-chat-messages');
+const adminChatInput = document.getElementById('admin-chat-input');
+const btnAdminSendChat = document.getElementById('btn-admin-send-chat');
+const adminChatToggle = document.getElementById('admin-chat-toggle');
+
+let currentSessionId = null;
+
+// Firebase listener function reference
+let chatUnsubscribe = null;
+
+// Ek function jisse Hum Quick Emoji Daal Sake
+window.insertAdminEmoji = function(emoji) {
+    if(adminChatInput) {
+        adminChatInput.value += emoji;
+        adminChatInput.focus();
+    }
+}
+
+// Ye function parent(app.js) se current Firebase session ID mangne ke liye call hoga jab Slate load ho
+window.addEventListener('message', async (event) => {
+    // Check if the parent passed the session data upon load
+    if (event.data && event.data.type === 'SLATE_DATA_LOADED') {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentSessionId = urlParams.get('roomId');
+        if(currentSessionId) {
+            initAdminLiveChat();
+        }
+    }
+});
+
+// Agar parent message se data na mile, toh fallback URL parameters check karo (direct refresh case)
+setTimeout(() => {
+    if(!currentSessionId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentSessionId = urlParams.get('roomId');
+        if(currentSessionId) {
+            initAdminLiveChat();
+        }
+    }
+}, 1500);
+
+async function initAdminLiveChat() {
+    if(!currentSessionId) return;
+
+    try {
+        const { collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+
+        // 1. Initial State of Chat Toggle setup
+        const sessionRef = doc(db, "live_sessions", currentSessionId);
+        const sessionSnap = await getDoc(sessionRef);
+        if(sessionSnap.exists()) {
+            const isChatDisabled = sessionSnap.data().chatDisabled || false;
+            adminChatToggle.checked = !isChatDisabled;
+        }
+
+        // Toggle Listener
+        adminChatToggle.addEventListener('change', async (e) => {
+            const isChecked = e.target.checked;
+            try {
+                await updateDoc(sessionRef, { chatDisabled: !isChecked });
+                appendAdminSystemMessage(isChecked ? "You unlocked the chat." : "You locked the chat.");
+            } catch(err) {
+                console.error("Failed to toggle chat", err);
+                e.target.checked = !isChecked; // revert on fail
+            }
+        });
+
+        // 2. Real-time Chat Sync
+        const q = query(collection(db, "live_sessions", currentSessionId, "chats"), orderBy("timestamp", "asc"));
+        
+        if (chatUnsubscribe) chatUnsubscribe();
+        
+        chatUnsubscribe = onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const msg = change.doc.data();
+                    renderAdminChatMessage(msg);
+                }
+            });
+            // Auto scroll to bottom
+            adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
+        });
+
+    } catch (e) {
+        console.error("Admin Chat Init Error:", e);
+    }
+}
+
+function renderAdminChatMessage(msg) {
+    if(!adminChatMessages) return;
+
+    const isEducator = msg.role === 'educator';
+    const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    let html = '';
+    if (isEducator) {
+        // Educator Message (Right Side, Brand Blue)
+        html = `
+        <div class="flex flex-col items-end w-full animate-fade-in-up">
+            <span class="text-[9px] font-bold text-slate-400 mb-0.5 mr-1"><i class="fa-solid fa-graduation-cap text-amber-500 mr-1"></i> You • ${timeStr}</span>
+            <div class="bg-brand-blue text-white px-3 py-2 rounded-2xl rounded-tr-sm shadow-sm max-w-[85%] border border-blue-600">
+                <p class="leading-relaxed">${msg.text}</p>
+            </div>
+        </div>`;
+    } else {
+        // Student Message (Left Side, White/Gray)
+        html = `
+        <div class="flex flex-col items-start w-full animate-fade-in-up">
+            <span class="text-[9px] font-bold text-slate-500 mb-0.5 ml-1">${msg.senderName} • ${timeStr}</span>
+            <div class="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-2xl rounded-tl-sm shadow-sm border border-slate-200 dark:border-slate-700 max-w-[85%]">
+                <p class="leading-relaxed">${msg.text}</p>
+            </div>
+        </div>`;
+    }
+    
+    adminChatMessages.insertAdjacentHTML('beforeend', html);
+}
+
+function appendAdminSystemMessage(text) {
+    const html = `<div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest my-2 animate-pulse">${text}</div>`;
+    adminChatMessages.insertAdjacentHTML('beforeend', html);
+    adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
+}
+
+// 3. Send Message Logic
+async function sendAdminMessage() {
+    const text = adminChatInput.value.trim();
+    if (!text || !currentSessionId) return;
+
+    const btn = btnAdminSendChat;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    try {
+        const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+
+        await addDoc(collection(db, "live_sessions", currentSessionId, "chats"), {
+            senderName: "Educator",
+            role: "educator",
+            text: text,
+            timestamp: new Date().toISOString()
+        });
+
+        adminChatInput.value = '';
+    } catch(e) {
+        console.error("Failed to send message", e);
+        alert("Failed to send message.");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        adminChatInput.focus();
+    }
+}
+
+if(btnAdminSendChat && adminChatInput) {
+    btnAdminSendChat.addEventListener('click', sendAdminMessage);
+    adminChatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendAdminMessage();
+    });
+}

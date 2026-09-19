@@ -223,19 +223,37 @@
             </div>
 
             <!-- Chat Section -->
-            <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50">
-                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
-                    <span class="font-bold text-slate-700 dark:text-slate-200">Live Chat</span>
-                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded-full"><i class="fa-solid fa-circle text-[8px] mr-1"></i> 0</span>
+            <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-800/50 relative">
+                <!-- Chat Header -->
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center shadow-sm z-10 shrink-0">
+                    <span class="font-extrabold text-slate-700 dark:text-slate-200">Live Chat</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden lg:block">Status</span>
+                        <!-- 🚀 Chat Toggle Switch -->
+                        <label class="relative inline-flex items-center cursor-pointer" title="Enable/Disable Student Chat">
+                            <input type="checkbox" id="admin-chat-toggle" class="sr-only peer" checked>
+                            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
                 </div>
-                <div class="flex-1 p-4 overflow-y-auto flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-sm text-center">
-                    <i class="fa-regular fa-comments text-3xl mb-2"></i>
-                    <p>Live messages will appear here.</p>
+
+                <!-- 🚀 Chat Messages Area -->
+                <div id="admin-chat-messages" class="flex-1 p-3 overflow-y-auto flex flex-col gap-3 text-sm">
+                    <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest my-2">Session Started</div>
+                    <!-- Messages will be injected here via JS -->
                 </div>
-                <div class="h-16 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 flex items-center gap-2">
-                    <button class="text-slate-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 p-2 transition"><i class="fa-regular fa-face-smile text-lg"></i></button>
-                    <input type="text" placeholder="Type a message..." class="flex-1 h-full bg-slate-100 dark:bg-slate-700 dark:text-white rounded-lg px-3 text-sm outline-none border border-transparent focus:border-brand-blue transition" disabled>
-                    <button class="bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 w-10 h-10 rounded-lg flex items-center justify-center"><i class="fa-solid fa-paper-plane"></i></button>
+                
+                <!-- 🚀 Chat Input Area -->
+                <div class="h-[60px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 flex items-center gap-2 shrink-0 relative">
+                    <!-- Basic Emojis -->
+                    <div class="flex gap-1 text-lg mr-1 shrink-0">
+                        <button class="hover:scale-125 transition-transform" onclick="insertAdminEmoji('👍')">👍</button>
+                        <button class="hover:scale-125 transition-transform" onclick="insertAdminEmoji('❤️')">❤️</button>
+                    </div>
+                    
+                    <input type="text" id="admin-chat-input" placeholder="Message as Educator..." class="flex-1 h-full bg-blue-50 dark:bg-slate-900 border border-transparent dark:border-slate-700 dark:text-white rounded-lg px-3 text-sm outline-none focus:border-brand-blue transition font-medium">
+                    
+                    <button id="btn-admin-send-chat" class="bg-brand-blue hover:bg-blue-600 text-white w-10 h-full rounded-lg flex items-center justify-center transition shadow-md active:scale-95 shrink-0"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
