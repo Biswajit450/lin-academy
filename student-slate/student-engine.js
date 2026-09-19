@@ -119,7 +119,8 @@ if (roomId) {
             
             // Handle Stream end
             if (data.status === 'ended') {
-                alert("The educator has ended the live session.");
+                // 🚀 UPDATE: Added recording availability message
+                alert("The educator has ended the live session.\n\nRecording will be available soon.");
                 // Safe parent closure
                 try {
                     if (window.parent && typeof window.parent.closeStudentSlate === 'function') {

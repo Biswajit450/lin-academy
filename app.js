@@ -2345,6 +2345,15 @@ window.launchPWOSStudio = function(existingFileId = null) {
     const container = document.getElementById('pwos-studio-container');
     const frame = document.getElementById('pwos-studio-frame');
     
+    // 🚀 NEW: Offline Mode Top Bar Setup
+    const indicator = document.getElementById('admin-live-indicator');
+    const titleEl = document.getElementById('admin-studio-title');
+    const closeText = document.getElementById('admin-studio-close-text');
+    if(indicator) indicator.className = 'w-3 h-3 rounded-full bg-slate-500 shrink-0';
+    if(titleEl) { titleEl.innerText = 'Offline Workspace'; titleEl.className = 'text-[10px] font-extrabold text-slate-400 uppercase tracking-widest truncate'; }
+    if(closeText) closeText.innerText = 'Close Studio';
+    window.currentLiveSessionData = null; // Clear live data
+    
     let url = 'pwos-studio/studio.html';
     if(existingFileId) url += `?fileId=${existingFileId}`;
     
@@ -2352,11 +2361,10 @@ window.launchPWOSStudio = function(existingFileId = null) {
     container.classList.remove('hidden');
     setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
     
-    // 🚀 NEW: Slate ko open hote hi current theme bata do
     setTimeout(() => {
         const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         frame.contentWindow.postMessage({ type: 'SYNC_THEME', theme: currentTheme }, '*');
-    }, 800); // Thoda delay taaki iframe poora load ho jaye
+    }, 800); 
 }
 
 // THE FIREBASE SYNC ROUTER
@@ -2485,6 +2493,33 @@ window.closePWOSStudio = function() {
         container.classList.add('hidden');
         document.getElementById('pwos-studio-frame').src = ''; 
     }, 500);
+}
+
+// 🚀 NEW: Admin End Session & Close Engine
+window.endAdminLiveSession = async function() {
+    if (window.currentLiveSessionData && window.currentLiveSessionData.blockId) {
+        if(!confirm("Are you sure you want to END this live class? All students will be disconnected immediately.")) return;
+        
+        const btnText = document.getElementById('admin-studio-close-text');
+        if(btnText) btnText.innerText = "Ending...";
+
+        try {
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            // Class end karte waqt Firebase mein status update karo
+            await updateDoc(doc(db, "live_sessions", window.currentLiveSessionData.blockId), {
+                status: 'ended',
+                endedAt: new Date().toISOString()
+            });
+            console.log("Live class ended.");
+        } catch(e) {
+            console.error("Error ending session:", e);
+            alert("Could not end the session on server, but closing studio.");
+        }
+        window.currentLiveSessionData = null; 
+    } else {
+        if(!confirm("Close Studio Workspace? Unsaved changes may be lost.")) return;
+    }
+    window.closePWOSStudio();
 }
 
 // Render Cloud Files in Vault Dashboard (Filter out Trashed items)
@@ -3047,11 +3082,18 @@ window.startEducatorLiveSession = async function() {
         const container = document.getElementById('pwos-studio-container');
         const frame = document.getElementById('pwos-studio-frame');
         
-        // Build URL: Pass Room ID AND the File ID if they selected one from the Vault!
         let studioUrl = `pwos-studio/studio.html?roomId=${sessionData.blockId}`;
         if (window.selectedGreenRoomFileId) {
             studioUrl += `&fileId=${window.selectedGreenRoomFileId}`;
         }
+        
+        // 🚀 NEW: Live Mode Top Bar Setup
+        const indicator = document.getElementById('admin-live-indicator');
+        const titleEl = document.getElementById('admin-studio-title');
+        const closeText = document.getElementById('admin-studio-close-text');
+        if(indicator) indicator.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] shrink-0';
+        if(titleEl) { titleEl.innerText = `LIVE: ${sessionData.courseName}`; titleEl.className = 'text-[10px] font-extrabold text-brand-blue uppercase tracking-widest truncate'; }
+        if(closeText) closeText.innerText = 'End Class';
         
         frame.src = studioUrl;
         container.classList.remove('hidden');
