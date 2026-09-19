@@ -30,6 +30,17 @@ window.addEventListener('resize', () => {
     canvas.renderAll();
 });
 
+// 🚀 MASTER BUG FIX: Auto-Resize Trigger for Iframe Slide-Up Animation
+// Yeh ensure karega ki jab studio ka dabba poora upar aaye, tabhi canvas apna asli size measure kare!
+let bootResize = setInterval(() => {
+    if (wrapper.clientWidth > 0 && wrapper.clientHeight > 0) {
+        canvas.setWidth(wrapper.clientWidth);
+        canvas.setHeight(wrapper.clientHeight);
+        canvas.renderAll();
+    }
+}, 100);
+setTimeout(() => clearInterval(bootResize), 2000); // 2 second baad check karna automatically band ho jayega
+
 // =====================================
 // STATE & TOOLBAR MANAGEMENT (Keep your existing code below this line)
 // =====================================

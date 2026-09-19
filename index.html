@@ -393,9 +393,9 @@
                 </div>
 
                 <!-- 🚀 NAYA: PWOS STUDIO IFRAME CONTAINER (Native App Feel) -->
-                <div id="pwos-studio-container" class="fixed inset-0 z-[200] hidden bg-slate-900 flex-col transition-transform translate-y-full duration-500 ease-in-out">
+                <div id="pwos-studio-container" class="fixed inset-0 z-[200] hidden bg-slate-900 transition-transform translate-y-full duration-500 ease-in-out">
                     <!-- 🚀 Educator Top Bar -->
-                    <div class="h-12 bg-slate-900 flex justify-between items-center px-4 shrink-0 shadow-md border-b border-slate-800">
+                    <div class="absolute top-0 left-0 right-0 h-12 bg-slate-900 flex justify-between items-center px-4 shadow-md border-b border-slate-800 z-50">
                         <div class="flex items-center gap-3 w-full">
                             <div id="admin-live-indicator" class="w-3 h-3 rounded-full bg-slate-500 shrink-0"></div>
                             <span class="text-white font-bold text-[10px] uppercase tracking-widest shrink-0 hidden sm:inline">PWOS Studio</span>
@@ -409,7 +409,7 @@
                         </button>
                     </div>
                     <!-- The Magic Iframe -->
-                    <iframe id="pwos-studio-frame" src="" class="w-full flex-grow border-none bg-slate-100 dark:bg-slate-900" allow="camera; microphone; fullscreen; display-capture"></iframe>
+                    <iframe id="pwos-studio-frame" src="" class="absolute top-12 left-0 right-0 bottom-0 w-full h-[calc(100%-3rem)] border-none bg-slate-100 dark:bg-slate-900" allow="camera; microphone; fullscreen; display-capture"></iframe>
                 </div>
 
             </div>
