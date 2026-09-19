@@ -1533,17 +1533,19 @@ const btnFirePoll = document.getElementById('btn-fire-poll');
 
 const pollSetupUI = document.getElementById('poll-setup-ui');
 const pollLiveRadar = document.getElementById('poll-live-radar');
+const pollAdminResultUI = document.getElementById('poll-admin-result-ui');
 
 let selectedCorrectOpt = null;
-let selectedTimeLimit = 30; // Default 30s
+let selectedTimeLimit = 30; 
 let adminPollInterval = null;
+let adminVoteListener = null; // 🚀 NAYA: Live Vote Tracker
+let currentPollId = null;
 
-// 1. UI Toggles for Setup
 btnLaunchPoll.addEventListener('click', () => {
     pollModal.classList.toggle('hidden');
-    // Reset state
     pollSetupUI.classList.remove('hidden');
     pollLiveRadar.classList.add('hidden');
+    if(pollAdminResultUI) pollAdminResultUI.classList.add('hidden');
 });
 btnClosePollModal.addEventListener('click', () => pollModal.classList.add('hidden'));
 
@@ -1563,7 +1565,6 @@ document.querySelectorAll('.admin-poll-time').forEach(btn => {
     });
 });
 
-// 2. Fire the Poll to Firebase
 btnFirePoll.addEventListener('click', async () => {
     if (!selectedCorrectOpt) return alert("Please select the correct answer (A, B, C, or D) first.");
     if (!currentSessionId) return alert("No active session found.");
@@ -1575,23 +1576,21 @@ btnFirePoll.addEventListener('click', async () => {
         const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         const { db } = await import("../firebase-config.js");
 
+        currentPollId = 'poll_' + Date.now();
         const pollData = {
-            id: 'poll_' + Date.now(),
+            id: currentPollId,
             correctOption: selectedCorrectOpt,
             duration: selectedTimeLimit,
             launchedAt: new Date().toISOString(),
             status: 'active'
         };
 
-        // Write to current_poll document
         await setDoc(doc(db, "live_sessions", currentSessionId, "polls", "current_poll"), pollData);
 
-        // Switch UI to Radar Mode
         pollSetupUI.classList.add('hidden');
         pollLiveRadar.classList.remove('hidden');
         startAdminRadar(pollData);
 
-        // Notify chat
         appendAdminSystemMessage(`🚀 Poll Launched for ${selectedTimeLimit}s (Answer: ${selectedCorrectOpt})`);
 
     } catch (e) {
@@ -1603,18 +1602,31 @@ btnFirePoll.addEventListener('click', async () => {
     }
 });
 
-// 3. Admin Live Radar Timer
 function startAdminRadar(pollData) {
     const countdownEl = document.getElementById('admin-poll-countdown');
     const ringEl = document.getElementById('poll-timer-ring');
+    const votesEl = document.getElementById('admin-radar-votes');
+    
     document.getElementById('admin-radar-answer').innerText = pollData.correctOption;
-    document.getElementById('admin-radar-votes').innerText = "0"; // Will implement vote counting later
+    votesEl.innerText = "0"; 
     
     let timeLeft = pollData.duration;
+    let totalVotesCount = 0;
     countdownEl.innerText = timeLeft;
     
-    const circumference = 276; // 2 * pi * r (r=44)
+    const circumference = 276; 
     ringEl.style.strokeDasharray = circumference;
+
+    // 🚀 LIVE VOTE LISTENER
+    import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js").then(({ collection, onSnapshot }) => {
+        const votesRef = collection(db, "live_sessions", currentSessionId, "polls", currentPollId, "votes");
+        adminVoteListener = onSnapshot(votesRef, (snap) => {
+            totalVotesCount = snap.size;
+            votesEl.innerText = totalVotesCount;
+            votesEl.classList.add('animate-ping');
+            setTimeout(() => votesEl.classList.remove('animate-ping'), 300);
+        });
+    });
 
     if (adminPollInterval) clearInterval(adminPollInterval);
 
@@ -1625,7 +1637,6 @@ function startAdminRadar(pollData) {
         const offset = circumference - (timeLeft / pollData.duration) * circumference;
         ringEl.style.strokeDashoffset = offset;
 
-        // Color shifts
         if (timeLeft <= 10) {
             ringEl.classList.replace('text-brand-blue', 'text-rose-500');
             countdownEl.classList.add('text-rose-500');
@@ -1633,19 +1644,72 @@ function startAdminRadar(pollData) {
 
         if (timeLeft <= 0) {
             clearInterval(adminPollInterval);
+            if(adminVoteListener) adminVoteListener(); // Stop listening for votes
             countdownEl.innerText = "DONE";
-            // Set poll status to ended in Firebase
-            try {
-                const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-                const { db } = await import("../firebase-config.js");
-                await updateDoc(doc(db, "live_sessions", currentSessionId, "polls", "current_poll"), {
-                    status: 'ended'
-                });
-                setTimeout(() => {
-                    pollModal.classList.add('hidden');
-                    appendAdminSystemMessage(`✅ Poll Completed.`);
-                }, 3000);
-            } catch(e) {}
+            
+            showAdminPollResults(pollData, totalVotesCount);
         }
     }, 1000);
+}
+
+// 🚀 SHOW ADMIN LEADERBOARD
+async function showAdminPollResults(pollData, totalVotes) {
+    pollLiveRadar.classList.add('hidden');
+    if(pollAdminResultUI) pollAdminResultUI.classList.remove('hidden');
+
+    document.getElementById('admin-final-answer').innerText = pollData.correctOption;
+    document.getElementById('admin-total-votes').innerText = totalVotes;
+
+    try {
+        const { doc, updateDoc, collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        // 1. Mark poll as ended
+        await updateDoc(doc(db, "live_sessions", currentSessionId, "polls", "current_poll"), { status: 'ended' });
+
+        // 2. Fetch Correct Answers for Leaderboard
+        const votesRef = collection(db, "live_sessions", currentSessionId, "polls", currentPollId, "votes");
+        const qCorrect = query(votesRef, where("answer", "==", pollData.correctOption), orderBy("timestamp", "asc"));
+        const snapCorrect = await getDocs(qCorrect);
+        
+        const correctCount = snapCorrect.size;
+        document.getElementById('admin-correct-votes').innerText = correctCount;
+        
+        const accuracy = totalVotes > 0 ? Math.round((correctCount / totalVotes) * 100) : 0;
+        document.getElementById('admin-accuracy').innerText = `${accuracy}%`;
+
+        // 3. Build Leaderboard UI
+        const listEl = document.getElementById('admin-fastest-list');
+        if(listEl) {
+            listEl.innerHTML = '';
+            if (correctCount === 0) {
+                listEl.innerHTML = '<div class="text-center text-xs text-slate-500 py-2">Nobody got it right!</div>';
+            } else {
+                let rank = 1;
+                snapCorrect.forEach(docSnap => {
+                    if(rank > 5) return; // Top 5 only
+                    const vData = docSnap.data();
+                    const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `#${rank}`));
+                    listEl.innerHTML += `
+                        <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-1.5 rounded border border-slate-100 dark:border-slate-700">
+                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300"><span class="w-4 inline-block text-center mr-1">${badge}</span> ${vData.name}</span>
+                        </div>
+                    `;
+                    rank++;
+                });
+            }
+        }
+
+        // Close logic
+        const btnFinish = document.getElementById('btn-finish-poll');
+        if(btnFinish) {
+            btnFinish.onclick = () => {
+                pollModal.classList.add('hidden');
+                pollAdminResultUI.classList.add('hidden');
+                appendAdminSystemMessage(`✅ Poll Dashboard Closed.`);
+            };
+        }
+
+    } catch(e) {
+        console.error("Leaderboard error:", e);
+    }
 }

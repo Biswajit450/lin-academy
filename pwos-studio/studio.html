@@ -319,6 +319,25 @@
                         <span>Votes: <span id="admin-radar-votes" class="text-brand-blue font-black text-lg">0</span></span>
                     </div>
                 </div>
+                <!-- Admin Poll Result & Leaderboard (Hidden initially) -->
+                <div id="poll-admin-result-ui" class="hidden p-5 flex flex-col gap-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                    <div class="text-center">
+                        <h4 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider mb-1">Poll Ended</h4>
+                        <p class="text-xs font-bold text-slate-500">Correct Answer: <span id="admin-final-answer" class="text-emerald-500 text-base">A</span></p>
+                    </div>
+                    <div class="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div class="text-center"><span class="block text-[10px] text-slate-400 uppercase">Total Votes</span><span id="admin-total-votes" class="text-brand-blue text-lg">0</span></div>
+                        <div class="text-center"><span class="block text-[10px] text-slate-400 uppercase">Correct</span><span id="admin-correct-votes" class="text-emerald-500 text-lg">0</span></div>
+                        <div class="text-center"><span class="block text-[10px] text-slate-400 uppercase">Accuracy</span><span id="admin-accuracy" class="text-amber-500 text-lg">0%</span></div>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2 text-center">Fastest Fingers (Top 5)</span>
+                        <div id="admin-fastest-list" class="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+                    <button id="btn-finish-poll" class="w-full mt-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Close Dashboard</button>
+                </div>
 
             </div>
         </div>

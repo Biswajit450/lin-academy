@@ -543,10 +543,13 @@ async function initStudentPolling() {
                 leaderboardUI.classList.add('hidden');
                 
                 // Slide up animation
-                pollOverlay.classList.remove('hidden');
-                setTimeout(() => {
-                    pollOverlay.classList.remove('translate-y-full', 'opacity-0');
-                }, 50);
+                if (pollOverlay) {
+                    pollOverlay.classList.remove('hidden');
+                    setTimeout(() => {
+                        pollOverlay.classList.remove('translate-y-[150%]', 'opacity-0');
+                        pollOverlay.classList.add('translate-y-0', 'opacity-100');
+                    }, 50);
+                }
 
                 startStudentTimer(pollData);
             }
@@ -639,47 +642,80 @@ function startStudentTimer(pollData) {
     }, 1000);
 }
 
-// Result Reveal Logic
-function revealPollResult(pollData) {
-    activeUI.classList.add('hidden');
-    resultUI.classList.remove('hidden');
+// Result Reveal & Leaderboard Logic
+async function revealPollResult(pollData) {
+    if (activeUI) activeUI.classList.add('hidden');
+    if (resultUI) resultUI.classList.remove('hidden');
     
     const iconEl = document.getElementById('poll-result-icon');
     const titleEl = document.getElementById('poll-result-title');
     const msgEl = document.getElementById('poll-result-msg');
 
-    // Clean up classes
-    iconEl.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-inner border-4 mb-2";
-    titleEl.className = "font-black text-lg text-center uppercase tracking-wider";
+    if (iconEl && titleEl && msgEl) {
+        iconEl.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-inner border-4 mb-2";
+        titleEl.className = "font-black text-lg text-center uppercase tracking-wider";
 
-    if (!hasVoted) {
-        // Did not vote
-        iconEl.classList.add('bg-slate-100', 'dark:bg-slate-800', 'border-slate-300', 'text-slate-400');
-        iconEl.innerHTML = '<i class="fa-solid fa-hourglass-end"></i>';
-        titleEl.classList.add('text-slate-500');
-        titleEl.innerText = "Time Up!";
-        msgEl.innerText = `You didn't vote. Correct answer was ${pollData.correctOption}.`;
-    } else if (studentSelectedOpt === pollData.correctOption) {
-        // Voted Correctly
-        iconEl.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'border-emerald-500', 'text-emerald-500', 'animate-bounce');
-        iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
-        titleEl.classList.add('text-emerald-500');
-        titleEl.innerText = "Excellent!";
-        msgEl.innerText = `Your answer ${studentSelectedOpt} was correct!`;
-    } else {
-        // Voted Incorrectly
-        iconEl.classList.add('bg-rose-100', 'dark:bg-rose-900/40', 'border-rose-500', 'text-rose-500', 'animate-wiggle');
-        iconEl.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-        titleEl.classList.add('text-rose-500');
-        titleEl.innerText = "Incorrect!";
-        msgEl.innerHTML = `You chose ${studentSelectedOpt}.<br>Correct answer was <span class="text-emerald-500 font-bold">${pollData.correctOption}</span>.`;
+        if (!hasVoted) {
+            iconEl.classList.add('bg-slate-100', 'dark:bg-slate-800', 'border-slate-300', 'text-slate-400');
+            iconEl.innerHTML = '<i class="fa-solid fa-hourglass-end"></i>';
+            titleEl.classList.add('text-slate-500');
+            titleEl.innerText = "Time Up!";
+            msgEl.innerText = `You didn't vote. Correct answer was ${pollData.correctOption}.`;
+        } else if (studentSelectedOpt === pollData.correctOption) {
+            iconEl.classList.add('bg-emerald-100', 'dark:bg-emerald-900/40', 'border-emerald-500', 'text-emerald-500', 'animate-bounce');
+            iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+            titleEl.classList.add('text-emerald-500');
+            titleEl.innerText = "Excellent!";
+            msgEl.innerText = `Your answer ${studentSelectedOpt} was correct!`;
+        } else {
+            iconEl.classList.add('bg-rose-100', 'dark:bg-rose-900/40', 'border-rose-500', 'text-rose-500', 'animate-wiggle');
+            iconEl.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            titleEl.classList.add('text-rose-500');
+            titleEl.innerText = "Incorrect!";
+            msgEl.innerHTML = `You chose ${studentSelectedOpt}.<br>Correct answer was <span class="text-emerald-500 font-bold">${pollData.correctOption}</span>.`;
+        }
     }
 
-    // Auto-hide the poll popup after 8 seconds
+    // 🚀 FETCH STUDENT LEADERBOARD
+    try {
+        const { collection, query, orderBy, limit, getDocs, where } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const votesRef = collection(db, "live_sessions", roomId, "polls", currentPollId, "votes");
+        const q = query(votesRef, where("answer", "==", pollData.correctOption), orderBy("timestamp", "asc"), limit(5));
+        const snap = await getDocs(q);
+
+        const listEl = document.getElementById('fastest-fingers-list');
+        if (listEl) {
+            listEl.innerHTML = '';
+            if (snap.empty) {
+                listEl.innerHTML = '<div class="text-center text-xs text-slate-500 py-2">No correct answers given.</div>';
+            } else {
+                let rank = 1;
+                snap.forEach(docSnap => {
+                    const vData = docSnap.data();
+                    const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `#${rank}`));
+                    listEl.innerHTML += `
+                        <div class="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300"><span class="w-5 inline-block text-center mr-1">${badge}</span> ${vData.name}</span>
+                            <span class="text-[10px] text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">Correct</span>
+                        </div>
+                    `;
+                    rank++;
+                });
+            }
+        }
+        if(leaderboardUI) leaderboardUI.classList.remove('hidden');
+    } catch(e) {
+        console.error("Leaderboard fetch error:", e);
+    }
+
+    // Auto-hide popup after 10 seconds (gives time to read leaderboard)
     setTimeout(() => {
-        pollOverlay.classList.add('translate-y-full', 'opacity-0');
-        setTimeout(() => pollOverlay.classList.add('hidden'), 500);
-    }, 8000);
+        if (pollOverlay) {
+            pollOverlay.classList.remove('translate-y-0', 'opacity-100');
+            pollOverlay.classList.add('translate-y-[150%]', 'opacity-0');
+            setTimeout(() => pollOverlay.classList.add('hidden'), 500);
+        }
+    }, 10000);
 }
 
 // 🚀 Start Polling Engine automatically!
