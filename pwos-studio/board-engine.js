@@ -1846,3 +1846,203 @@ function broadcastLiveInk(action, clientX, clientY) {
         }
     }
 }
+
+// =====================================
+// 🚀 LIVE AUDIO ENGINE (RAISE HAND - ADMIN)
+// =====================================
+
+const btnAdminRaiseHand = document.getElementById('btn-admin-raise-hand');
+const adminHandModal = document.getElementById('admin-hand-modal');
+const btnCloseHandModal = document.getElementById('btn-close-hand-modal');
+const toggleAcceptHands = document.getElementById('toggle-accept-hands');
+const adminHandQueue = document.getElementById('admin-hand-queue');
+const adminHandDot = document.getElementById('admin-hand-dot');
+const remoteStudentAudio = document.getElementById('remote-student-audio');
+
+let audioPeerConnection = null;
+let currentActiveAudioStudentId = null;
+let isAcceptingHands = true;
+let handsUnsubscribe = null;
+let activeHandDocUnsubscribe = null;
+
+// UI Toggles
+if (btnAdminRaiseHand) {
+    btnAdminRaiseHand.addEventListener('click', () => {
+        adminHandModal.classList.toggle('hidden');
+        if (!adminHandModal.classList.contains('hidden')) {
+            adminHandDot.classList.add('hidden'); // Clear notification on open
+        }
+    });
+}
+if (btnCloseHandModal) {
+    btnCloseHandModal.addEventListener('click', () => adminHandModal.classList.add('hidden'));
+}
+
+async function initAdminRaiseHand() {
+    if (!currentSessionId) return;
+
+    try {
+        const { doc, updateDoc, collection, onSnapshot, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+
+        // 1. Toggle Switch (Master Switch for accepting hands)
+        toggleAcceptHands.addEventListener('change', async (e) => {
+            isAcceptingHands = e.target.checked;
+            await updateDoc(doc(db, "live_sessions", currentSessionId), { acceptHands: isAcceptingHands });
+            appendAdminSystemMessage(isAcceptingHands ? "✅ Hand raises enabled." : "🚫 Hand raises disabled.");
+        });
+
+        // 2. Initial Setup: Create acceptHands flag if it doesn't exist
+        await updateDoc(doc(db, "live_sessions", currentSessionId), { acceptHands: isAcceptingHands });
+
+        // 3. Listen for Incoming Queue
+        const handsRef = collection(db, "live_sessions", currentSessionId, "raise_hands");
+        handsUnsubscribe = onSnapshot(handsRef, (snap) => {
+            adminHandQueue.innerHTML = '';
+            let hasPending = false;
+
+            if (snap.empty) {
+                adminHandQueue.innerHTML = '<div class="text-center text-xs font-bold text-slate-400 py-4 uppercase tracking-widest">No active requests</div>';
+                return;
+            }
+
+            snap.forEach(docSnap => {
+                const requestData = docSnap.data();
+                const studentId = docSnap.id;
+
+                if (requestData.status === 'pending') hasPending = true;
+
+                let actionBtnHtml = '';
+                if (requestData.status === 'pending') {
+                    actionBtnHtml = `
+                        <div class="flex gap-2">
+                            <button onclick="acceptHandRequest('${studentId}')" class="text-xs bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 px-2 py-1.5 rounded hover:bg-emerald-500 hover:text-white transition font-bold shadow-sm"><i class="fa-solid fa-check"></i> Connect</button>
+                            <button onclick="dismissHandRequest('${studentId}')" class="text-xs bg-rose-50 dark:bg-rose-900/30 text-rose-500 px-2.5 py-1.5 rounded hover:bg-rose-500 hover:text-white transition font-bold shadow-sm"><i class="fa-solid fa-xmark"></i></button>
+                        </div>`;
+                } else if (requestData.status === 'connected') {
+                    actionBtnHtml = `<button onclick="endHandRequest('${studentId}')" class="text-xs bg-rose-500 text-white px-3 py-1.5 rounded hover:bg-rose-600 transition font-bold animate-pulse shadow-md">🔴 End Call</button>`;
+                }
+
+                adminHandQueue.innerHTML += `
+                    <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:border-brand-blue">
+                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"><i class="fa-solid fa-user-graduate text-slate-400"></i> ${requestData.name}</span>
+                        ${actionBtnHtml}
+                    </div>
+                `;
+            });
+
+            // Trigger Red Dot if new request comes and modal is closed
+            if (hasPending && adminHandModal.classList.contains('hidden')) {
+                adminHandDot.classList.remove('hidden');
+            }
+        });
+
+    } catch (e) {
+        console.error("Raise Hand Admin Init Error:", e);
+    }
+}
+
+// Ensure this starts smoothly after Chat and Ink WebRTC
+setTimeout(() => {
+    initAdminRaiseHand();
+}, 2000);
+
+// =====================================
+// 🎙️ WEBRTC CONNECTION CONTROLS
+// =====================================
+
+window.acceptHandRequest = async function(studentId) {
+    if (currentActiveAudioStudentId) {
+        alert("Please end the current call before connecting a new one.");
+        return;
+    }
+
+    try {
+        const { doc, updateDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+        
+        currentActiveAudioStudentId = studentId;
+
+        // Create WebRTC Peer for Audio (Receive only)
+        audioPeerConnection = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        });
+        
+        // When Student's audio track arrives, play it!
+        audioPeerConnection.ontrack = (event) => {
+            console.log("⚡ Audio stream received!");
+            remoteStudentAudio.srcObject = event.streams[0];
+            appendAdminSystemMessage(`🎙️ Live Audio Connected.`);
+        };
+
+        // Handle Network Paths
+        audioPeerConnection.onicecandidate = async (event) => {
+            if (event.candidate) {
+                await updateDoc(doc(db, "live_sessions", currentSessionId, "raise_hands", studentId), {
+                    adminCandidate: JSON.stringify(event.candidate)
+                });
+            }
+        };
+
+        // Create Offer (Ask student to connect)
+        const offer = await audioPeerConnection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+        await audioPeerConnection.setLocalDescription(offer);
+
+        await updateDoc(doc(db, "live_sessions", currentSessionId, "raise_hands", studentId), {
+            status: 'connected',
+            offer: JSON.stringify({ sdp: offer.sdp, type: offer.type })
+        });
+
+        // Listen for Student's Answer & their Network Path
+        const reqRef = doc(db, "live_sessions", currentSessionId, "raise_hands", studentId);
+        activeHandDocUnsubscribe = onSnapshot(reqRef, async (snap) => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            
+            if (data.answer && !audioPeerConnection.currentRemoteDescription) {
+                const answerDesc = new RTCSessionDescription(JSON.parse(data.answer));
+                await audioPeerConnection.setRemoteDescription(answerDesc);
+            }
+            if (data.studentCandidate) {
+                try {
+                    await audioPeerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(data.studentCandidate)));
+                } catch(e) {}
+            }
+        });
+
+    } catch(e) {
+        console.error("WebRTC Accept Error:", e);
+        currentActiveAudioStudentId = null;
+    }
+};
+
+window.dismissHandRequest = async function(studentId) {
+    try {
+        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+        await deleteDoc(doc(db, "live_sessions", currentSessionId, "raise_hands", studentId));
+    } catch(e) {}
+};
+
+window.endHandRequest = async function(studentId) {
+    try {
+        if (audioPeerConnection) {
+            audioPeerConnection.close();
+            audioPeerConnection = null;
+        }
+        if (activeHandDocUnsubscribe) {
+            activeHandDocUnsubscribe();
+            activeHandDocUnsubscribe = null;
+        }
+        currentActiveAudioStudentId = null;
+        remoteStudentAudio.srcObject = null;
+        appendAdminSystemMessage(`🚫 Call Ended.`);
+
+        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+        await deleteDoc(doc(db, "live_sessions", currentSessionId, "raise_hands", studentId));
+    } catch(e) {}
+};
