@@ -13,13 +13,16 @@ const canvas = new fabric.Canvas('student-canvas', {
     backgroundColor: '#ffffff'
 });
 
-// Auto-Resize Canvas on Window/Mobile Rotation
+// 🚀 FIX: iOS Safari GPU Glitch Fix (Debounced Resize)
+let resizeTimer;
 window.addEventListener('resize', () => {
-    if (wrapper) {
-        canvas.setWidth(wrapper.clientWidth);
-        canvas.setHeight(wrapper.clientHeight);
-        canvas.renderAll();
-    }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (wrapper && typeof window.applySmartCanvasScaling === 'function') {
+            window.applySmartCanvasScaling();
+            canvas.renderAll();
+        }
+    }, 150); // 150ms wait karega taaki iPhone ka graphics card hang na ho
 });
 
 // 🚀 ULTRA-SAFE DOM HELPER: Uses Try-Catch to prevent browser CORS crashes!
@@ -266,18 +269,14 @@ if (btnTogglePanel) {
         isPanelHidden = !isPanelHidden;
         updatePanelUI();
 
-        let startTime = Date.now();
-        let smoothResize = setInterval(() => {
-            if (wrapper) canvas.setWidth(wrapper.clientWidth);
-            
-            if (lastEducatorWidth && wrapper) {
-                const scaleMultiplier = wrapper.clientWidth / lastEducatorWidth;
-                canvas.setZoom(scaleMultiplier);
+        // 🚀 FIX: Removed the heavy setInterval that was crashing iPhones!
+        // CSS panel slide animation (300ms) ko poora hone do, phir aaram se 1 baar canvas resize karo.
+        setTimeout(() => {
+            if (typeof window.applySmartCanvasScaling === 'function') {
+                window.applySmartCanvasScaling();
+                canvas.renderAll();
             }
-            
-            canvas.renderAll();
-            if (Date.now() - startTime > 320) clearInterval(smoothResize);
-        }, 15);
+        }, 350); 
     });
 }
 
