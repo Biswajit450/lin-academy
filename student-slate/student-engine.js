@@ -733,3 +733,139 @@ async function revealPollResult(pollData) {
 if (roomId) {
     initStudentPolling();
 }
+
+// =====================================
+// 🚀 WEBRTC ENGINE (STUDENT: RECEIVER & LIVE INK RENDERER)
+// =====================================
+
+let peerConnection = null;
+let signalingUnsubscribe = null;
+
+const rtcConfig = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+};
+
+async function initStudentWebRTC() {
+    if (!roomId) return;
+
+    try {
+        const { doc, setDoc, onSnapshot, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+
+        // 1. Listen for the High-Speed Data Channel from Admin
+        peerConnection.ondatachannel = (event) => {
+            const receiveChannel = event.channel;
+            receiveChannel.onopen = () => console.log("⚡ WebRTC Live Ink Connected!");
+            
+            // This is where the magic happens (Receiving pixels)
+            receiveChannel.onmessage = (e) => {
+                renderLiveInk(e.data);
+            };
+        };
+
+        // 2. Handle ICE Candidates
+        peerConnection.onicecandidate = async (event) => {
+            if (event.candidate) {
+                // Send student's network route back to admin
+                // (In 1-to-many, this requires an SFU server. For this test, we write direct)
+                const candidatesRef = doc(db, "live_sessions", roomId, "webrtc_signaling", "student_candidates");
+                await setDoc(candidatesRef, event.candidate.toJSON(), { merge: true });
+            }
+        };
+
+        // 3. Find the Educator's Offer
+        const offerRef = doc(db, "live_sessions", roomId, "webrtc_signaling", "offer");
+        
+        signalingUnsubscribe = onSnapshot(offerRef, async (snap) => {
+            const data = snap.data();
+            if (data && data.type === 'offer' && !peerConnection.currentRemoteDescription) {
+                const offer = new RTCSessionDescription(data);
+                await peerConnection.setRemoteDescription(offer);
+
+                // Create the Answer and send it back
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                await setDoc(doc(db, "live_sessions", roomId, "webrtc_signaling", "answer"), {
+                    sdp: answer.sdp,
+                    type: answer.type
+                });
+            }
+        });
+
+    } catch (e) {
+        console.error("WebRTC Student Init Error:", e);
+    }
+}
+
+// Hook it into the startup sequence
+if (roomId) {
+    setTimeout(() => {
+        initStudentWebRTC();
+    }, 2000); // Give Firebase a moment to load chat first
+}
+
+// -------------------------------------
+// 🎨 RENDER LIVE PEN STROKES (GHOST PEN)
+// -------------------------------------
+
+// We create a temporary invisible canvas on top to draw live pixels 
+// so it doesn't mess with Fabric.js history state
+const liveInkCanvas = document.createElement('canvas');
+liveInkCanvas.style.position = 'absolute';
+liveInkCanvas.style.top = '0';
+liveInkCanvas.style.left = '0';
+liveInkCanvas.style.pointerEvents = 'none'; // Click through it
+liveInkCanvas.style.zIndex = '5';
+wrapper.appendChild(liveInkCanvas);
+
+let ctx = liveInkCanvas.getContext('2d');
+let lastX = 0, lastY = 0;
+
+// Sync size with Fabric canvas
+window.addEventListener('resize', syncLiveCanvasSize);
+function syncLiveCanvasSize() {
+    liveInkCanvas.width = wrapper.clientWidth;
+    liveInkCanvas.height = wrapper.clientHeight;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+}
+setTimeout(syncLiveCanvasSize, 500);
+
+function renderLiveInk(dataString) {
+    const data = JSON.parse(dataString);
+    
+    // Scale coordinates from educator's screen to student's screen
+    const educatorW = lastEducatorWidth || 1920; 
+    const scale = wrapper.clientWidth / educatorW;
+    
+    const currentX = data.x * scale;
+    const currentY = data.y * scale;
+
+    if (data.a === 'start') {
+        ctx.beginPath();
+        ctx.moveTo(currentX, currentY);
+        lastX = currentX;
+        lastY = currentY;
+    } else if (data.a === 'move') {
+        ctx.strokeStyle = data.c;
+        ctx.lineWidth = data.w * scale;
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+        
+        lastX = currentX;
+        lastY = currentY;
+    } else if (data.a === 'end') {
+        // When educator lifts the pen, Firebase will send the final perfect vector object.
+        // So we clear our temporary pixel canvas!
+        ctx.clearRect(0, 0, liveInkCanvas.width, liveInkCanvas.height);
+    }
+}

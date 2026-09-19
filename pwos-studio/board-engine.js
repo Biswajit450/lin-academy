@@ -1715,3 +1715,134 @@ async function showAdminPollResults(pollData, totalVotes) {
         console.error("Leaderboard error:", e);
     }
 }
+
+// =====================================
+// 🚀 WEBRTC ENGINE (ADMIN: SIGNALING & LIVE INK CASTER)
+// =====================================
+
+let peerConnection = null;
+let dataChannel = null;
+let signalingUnsubscribe = null;
+
+// The Standard WebRTC Configuration (Uses free Google STUN servers to find IP)
+const rtcConfig = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+};
+
+async function initAdminWebRTC() {
+    if (!currentSessionId) return;
+
+    try {
+        const { doc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const { db } = await import("../firebase-config.js");
+
+        const roomRef = doc(db, "live_sessions", currentSessionId);
+
+        // 1. Initialize Peer Connection
+        peerConnection = new RTCPeerConnection(rtcConfig);
+
+        // 2. Create the Data Channel for Live Ink
+        dataChannel = peerConnection.createDataChannel('live_ink', { ordered: false, maxRetransmits: 0 }); // ordered:false means zero delay, we don't care if a pixel drops
+
+        dataChannel.onopen = () => {
+            console.log("⚡ WebRTC Live Ink Channel Opened!");
+            appendAdminSystemMessage("✅ High-Speed Live Ink Activated.");
+        };
+
+        // 3. Handle ICE Candidates (Finding network route)
+        peerConnection.onicecandidate = async (event) => {
+            if (event.candidate) {
+                // We send our network path to the room
+                const candidatesRef = doc(db, "live_sessions", currentSessionId, "webrtc_signaling", "admin_candidates");
+                // Note: In a production app with many students, signaling is handled differently (e.g., via SFU/Socket). 
+                // For this Peer-to-Peer 1:1 test, we write it to a specific doc.
+                await setDoc(candidatesRef, event.candidate.toJSON(), { merge: true });
+            }
+        };
+
+        // 4. Create an Offer (The Invitation)
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        // Save Offer to Firebase so students can see it
+        await setDoc(doc(db, "live_sessions", currentSessionId, "webrtc_signaling", "offer"), {
+            sdp: offer.sdp,
+            type: offer.type
+        });
+
+        // 5. Listen for Students' Answers
+        const answerRef = doc(db, "live_sessions", currentSessionId, "webrtc_signaling", "answer");
+        signalingUnsubscribe = onSnapshot(answerRef, async (snap) => {
+            const data = snap.data();
+            if (data && data.type === 'answer' && !peerConnection.currentRemoteDescription) {
+                const answer = new RTCSessionDescription(data);
+                await peerConnection.setRemoteDescription(answer);
+            }
+        });
+
+    } catch (e) {
+        console.error("WebRTC Init Error:", e);
+    }
+}
+
+// Ensure WebRTC starts when session is confirmed
+const originalInitChat = initAdminLiveChat;
+initAdminLiveChat = async function() {
+    await originalInitChat();
+    initAdminWebRTC();
+};
+
+// -------------------------------------
+// 🎨 CAPTURE AND SEND LIVE PEN STROKES
+// -------------------------------------
+
+let isDrawingLive = false;
+
+canvas.on('mouse:down', function(opt) {
+    if (currentMode === 'draw' || currentMode === 'highlight' || currentMode === 'laser') {
+        isDrawingLive = true;
+        broadcastLiveInk('start', opt.e.clientX, opt.e.clientY);
+    }
+});
+
+canvas.on('mouse:move', function(opt) {
+    if (isDrawingLive) {
+        broadcastLiveInk('move', opt.e.clientX, opt.e.clientY);
+    }
+});
+
+canvas.on('mouse:up', function(opt) {
+    if (isDrawingLive) {
+        isDrawingLive = false;
+        broadcastLiveInk('end', 0, 0);
+    }
+});
+
+function broadcastLiveInk(action, clientX, clientY) {
+    // Only send if the high-speed channel is ready
+    if (dataChannel && dataChannel.readyState === 'open') {
+        // Adjust coordinates relative to the canvas
+        const rect = wrapper.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        // Pack the data tightly to save bandwidth
+        const inkData = JSON.stringify({
+            a: action, // action
+            x: x,      // x coord
+            y: y,      // y coord
+            c: canvas.freeDrawingBrush.color, // color
+            w: canvas.freeDrawingBrush.width, // width
+            m: currentMode // pen mode
+        });
+
+        try {
+            dataChannel.send(inkData);
+        } catch (e) {
+            console.log("Live ink dropped frame");
+        }
+    }
+}
