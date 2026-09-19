@@ -260,11 +260,12 @@
 
         <!-- Inner Right: Tools -->
         <div class="w-14 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-4 relative">
+            
             <!-- 🌙 Dark Mode Toggle Button -->
             <button id="btn-theme" class="w-10 h-10 rounded-xl text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition" title="Toggle Dark Mode"><i class="fa-solid fa-moon text-lg"></i></button>
             <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
             
-            <!-- 🚀 NEW: Presenter Notes Button -->
+            <!-- 🚀 Presenter Notes Button -->
             <button id="btn-presenter-notes" class="w-10 h-10 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" title="Private Presenter Notes"><i class="fa-solid fa-clipboard-list text-lg"></i></button>
             
             <!-- 🚀 THE GAMIFIED POLL BUTTON -->
@@ -276,8 +277,17 @@
                 <span id="admin-hand-dot" class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full hidden animate-pulse"></span>
             </button>
 
+            <!-- Other Tools -->
+            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition" title="Clear Chat"><i class="fa-solid fa-comment-slash text-lg"></i></button>
+            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Settings"><i class="fa-solid fa-gear text-lg"></i></button>
+
+            <!-- ============================================== -->
+            <!-- 🚀 ALL MODALS GO HERE (Absolute Positioned) -->
+            <!-- ============================================== -->
+
             <!-- 🚀 RAISE HAND DASHBOARD MODAL -->
-            <div id="admin-hand-modal" class="hidden absolute top-48 right-16 w-[340px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col transition-all">
+            <div id="admin-hand-modal" class="hidden absolute top-40 right-16 w-[340px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col transition-all">
                 <div class="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <span class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-hand text-amber-500"></i> Hand Raises</span>
                     <div class="flex items-center gap-3">
@@ -291,19 +301,15 @@
                 
                 <!-- Queue Container -->
                 <div class="p-3 max-h-60 overflow-y-auto flex flex-col gap-2" id="admin-hand-queue">
-                    <!-- Javascript will inject requests here -->
                     <div class="text-center text-xs font-bold text-slate-400 py-4 uppercase tracking-widest">No active requests</div>
                 </div>
                 
                 <!-- Hidden Audio Element for WebRTC Stream -->
                 <audio id="remote-student-audio" autoplay class="hidden"></audio>
             </div>
-            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition"><i class="fa-solid fa-comment-slash text-lg"></i></button>
-            <div class="w-6 h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
-            <button class="w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-gear text-lg"></i></button>
 
-            <!-- 🚀 THE POLL LAUNCHER MODAL (Absolute Positioning) -->
-            <div id="admin-poll-modal" class="hidden absolute top-32 right-16 w-[340px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col transition-all">
+            <!-- 🚀 THE POLL LAUNCHER MODAL -->
+            <div id="admin-poll-modal" class="hidden absolute top-28 right-16 w-[340px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col transition-all">
                 <div class="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <span class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bolt text-brand-blue"></i> Live Poll Setup</span>
                     <button id="btn-close-poll-modal" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark"></i></button>
@@ -346,6 +352,7 @@
                         <span>Votes: <span id="admin-radar-votes" class="text-brand-blue font-black text-lg">0</span></span>
                     </div>
                 </div>
+
                 <!-- Admin Poll Result & Leaderboard (Hidden initially) -->
                 <div id="poll-admin-result-ui" class="hidden p-5 flex flex-col gap-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
                     <div class="text-center">
@@ -365,9 +372,9 @@
                     </div>
                     <button id="btn-finish-poll" class="w-full mt-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Close Dashboard</button>
                 </div>
+            </div> <!-- End of Poll Modal -->
 
-            </div>
-        </div>
+        </div> <!-- End of Inner Right Tools -->
     </div>
 
     <!-- 🚀 NEW: Presenter's Teleprompter (Draggable Notes) -->
