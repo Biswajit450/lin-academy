@@ -1861,7 +1861,7 @@ const remoteStudentAudio = document.getElementById('remote-student-audio');
 
 let audioPeerConnection = null;
 let currentActiveAudioStudentId = null;
-let isAcceptingHands = true;
+let isAcceptingHands = false; // 🚀 FIX: Default is OFF
 let handsUnsubscribe = null;
 let activeHandDocUnsubscribe = null;
 

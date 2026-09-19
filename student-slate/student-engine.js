@@ -316,17 +316,32 @@ async function initStudentRaiseHand() {
         const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
         const auth = getAuth();
 
+        // 🚀 NEW: Listen to Admin's Master Switch (Accept Hands)
+        onSnapshot(doc(db, "live_sessions", roomId), (snap) => {
+            if (snap.exists() && btnRaiseHand) {
+                const isAccepting = snap.data().acceptHands || false;
+                
+                // Agar Admin ne OFF kiya hai aur hum connected nahi hain, toh button disable kar do
+                if (!isAccepting && currentHandStatus === 'none') {
+                    btnRaiseHand.disabled = true;
+                    btnRaiseHand.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btnRaiseHand.disabled = false;
+                    btnRaiseHand.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        });
+
         if (btnRaiseHand) {
             btnRaiseHand.addEventListener('click', async () => {
-                
+                if (btnRaiseHand.disabled) return; // Switch off hai toh kuch mat karo
+
                 const userId = (auth && auth.currentUser) ? auth.currentUser.uid : "anon_" + Date.now();
                 const userName = (auth && auth.currentUser) ? (auth.currentUser.displayName || "Student") : "Student";
                 const reqRef = doc(db, "live_sessions", roomId, "raise_hands", userId);
 
-                // CASE 1: Student is requesting to speak
+                // CASE 1: Request to speak
                 if (currentHandStatus === 'none') {
-                    
-                    // 1. Request Microphone Hardware Access
                     try {
                         audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     } catch(err) {
@@ -334,40 +349,33 @@ async function initStudentRaiseHand() {
                         return;
                     }
 
-                    // 2. Visual Update -> PENDING
                     currentHandStatus = 'pending';
                     btnRaiseHand.classList.remove('text-amber-500', 'hover:bg-amber-50');
                     btnRaiseHand.classList.add('text-white', 'bg-amber-500', 'animate-pulse');
                     const iconEl = btnRaiseHand.querySelector('i');
-                    if(iconEl) iconEl.className = 'fa-solid fa-hourglass-half'; // Waiting Icon
+                    if(iconEl) iconEl.className = 'fa-solid fa-hourglass-half'; 
 
-                    // 3. Send Request to Firebase Queue
                     await setDoc(reqRef, {
                         name: userName,
                         status: 'pending',
                         timestamp: Date.now()
                     });
 
-                    // 4. Listen for Educator's "Connect" Command
                     handRequestUnsubscribe = onSnapshot(reqRef, async (snap) => {
                         if (!snap.exists()) {
-                            // Educator rejected/dismissed or ended the call
                             resetRaiseHandUI();
                             return;
                         }
 
                         const data = snap.data();
 
-                        // 5. Educator Accepted -> Start WebRTC Connection
                         if (data.status === 'connected' && data.offer && currentHandStatus !== 'connected') {
                             currentHandStatus = 'connected';
                             
-                            // Visual Update -> LIVE AUDIO
                             btnRaiseHand.classList.remove('animate-pulse', 'bg-amber-500');
                             btnRaiseHand.classList.add('bg-emerald-500', 'shadow-[0_0_15px_rgba(16,185,129,0.6)]');
                             if(iconEl) iconEl.className = 'fa-solid fa-microphone-lines animate-pulse';
 
-                            // Initialize Peer Connection
                             studentAudioPC = new RTCPeerConnection({
                                 iceServers: [
                                     { urls: 'stun:stun.l.google.com:19302' },
@@ -375,25 +383,19 @@ async function initStudentRaiseHand() {
                                 ]
                             });
 
-                            // Inject Student's Mic into the Connection
                             audioStream.getTracks().forEach(track => {
                                 studentAudioPC.addTrack(track, audioStream);
                             });
 
-                            // Send Student's Network Path to Admin
                             studentAudioPC.onicecandidate = async (event) => {
                                 if (event.candidate) {
-                                    await updateDoc(reqRef, {
-                                        studentCandidate: JSON.stringify(event.candidate)
-                                    });
+                                    await updateDoc(reqRef, { studentCandidate: JSON.stringify(event.candidate) });
                                 }
                             };
 
-                            // Accept Admin's WebRTC Offer
                             const offerDesc = new RTCSessionDescription(JSON.parse(data.offer));
                             await studentAudioPC.setRemoteDescription(offerDesc);
 
-                            // Send Answer back to Admin
                             const answer = await studentAudioPC.createAnswer();
                             await studentAudioPC.setLocalDescription(answer);
 
@@ -402,19 +404,26 @@ async function initStudentRaiseHand() {
                             });
                         }
 
-                        // Sync Network Paths
                         if (data.adminCandidate && studentAudioPC) {
                             try {
                                 await studentAudioPC.addIceCandidate(new RTCIceCandidate(JSON.parse(data.adminCandidate)));
                             } catch(e) {}
                         }
                     });
-
                 } 
-                // CASE 2: Student cancels the request or hangs up
-                else {
+                // CASE 2: Cancel Request BEFORE connection
+                else if (currentHandStatus === 'pending') {
                     await deleteDoc(reqRef);
                     resetRaiseHandUI();
+                }
+                // CASE 3: 🚀 BUG FIX - ALREADY CONNECTED (Block Disconnect)
+                else if (currentHandStatus === 'connected') {
+                    // Agar call chal rahi hai, toh student cut nahi kar sakta!
+                    console.log("Call is active. Only Educator can end it.");
+                    // Yahan ek chhota sa vibration ya shake effect de sakte hain (Optional)
+                    btnRaiseHand.classList.add('animate-shake');
+                    setTimeout(() => btnRaiseHand.classList.remove('animate-shake'), 500);
+                    return; 
                 }
             });
         }
@@ -423,23 +432,19 @@ async function initStudentRaiseHand() {
         function resetRaiseHandUI() {
             currentHandStatus = 'none';
             
-            // Shut off the microphone completely
             if (audioStream) {
                 audioStream.getTracks().forEach(track => track.stop());
                 audioStream = null;
             }
-            // Disconnect WebRTC pipe
             if (studentAudioPC) {
                 studentAudioPC.close();
                 studentAudioPC = null;
             }
-            // Stop listening to Firebase document
             if (handRequestUnsubscribe) {
                 handRequestUnsubscribe();
                 handRequestUnsubscribe = null;
             }
 
-            // Restore the normal Hand Button UI
             btnRaiseHand.classList.remove('animate-pulse', 'bg-emerald-500', 'bg-amber-500', 'text-white', 'shadow-[0_0_15px_rgba(16,185,129,0.6)]');
             btnRaiseHand.classList.add('text-amber-500', 'hover:bg-amber-50');
             const iconEl = btnRaiseHand.querySelector('i');
