@@ -140,11 +140,13 @@ if (roomId) {
     safeSetText('educator-name', "Invalid Room ID");
 }
 
-// The Core Rendering Logic (WITH AUTO-SCALING)
+// The Core Rendering Logic (WITH SMART AUTO-SCALING)
 window.syncEducatorBoard = function(jsonContent, metaContent) {
     if (!jsonContent) return;
 
     let educatorWidth = 1920; 
+    let educatorHeight = 1080; // 🚀 NAYA: Height bhi track kar rahe hain
+    
     if (metaContent) {
         try {
             const meta = JSON.parse(metaContent);
@@ -152,18 +154,45 @@ window.syncEducatorBoard = function(jsonContent, metaContent) {
                 educatorWidth = meta.canvasWidth;
                 lastEducatorWidth = meta.canvasWidth; 
             }
+            // 🚀 NAYA: Educator ki screen ki height save karo
+            if (meta.canvasHeight) {
+                educatorHeight = meta.canvasHeight;
+                lastEducatorHeight = meta.canvasHeight;
+            }
         } catch(e) {
             console.error("Sync parsing error:", e);
         }
     } else if (lastEducatorWidth) {
         educatorWidth = lastEducatorWidth; 
+        if (typeof lastEducatorHeight !== 'undefined') educatorHeight = lastEducatorHeight;
     }
 
     canvas.loadFromJSON(jsonContent, function() {
         const studentWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
-        const scaleMultiplier = studentWidth / educatorWidth;
+        const studentHeight = wrapper ? wrapper.clientHeight : window.innerHeight;
+        
+        // 🚀 MASTER FIX: Smart Contain Scaling (Prevents Clipping on small screens)
+        const scaleX = studentWidth / educatorWidth;
+        const scaleY = studentHeight / educatorHeight;
+        
+        // Dono mein se jo sabse chhota scale hoga, uspe lock karenge
+        const scaleMultiplier = Math.min(scaleX, scaleY);
         
         canvas.setZoom(scaleMultiplier);
+
+        // NAYA: Canvas ka width aur height us scale ke hisaab se adjust karo
+        canvas.setWidth(educatorWidth * scaleMultiplier);
+        canvas.setHeight(educatorHeight * scaleMultiplier);
+
+        // CSS se us chhote hue canvas ko wrapper ke ekdum center mein set kar do
+        const canvasContainer = document.querySelector('.canvas-container');
+        if (canvasContainer) {
+            canvasContainer.style.margin = 'auto';
+            canvasContainer.style.position = 'absolute';
+            canvasContainer.style.top = '50%';
+            canvasContainer.style.left = '50%';
+            canvasContainer.style.transform = 'translate(-50%, -50%)';
+        }
 
         // Lock all incoming objects to prevent student tampering
         canvas.getObjects().forEach(obj => {
@@ -983,9 +1012,25 @@ setTimeout(syncLiveCanvasSize, 500);
 function renderLiveInk(dataString) {
     const data = JSON.parse(dataString);
     
-    // Scale coordinates from educator's screen to student's screen
+    // 🚀 MASTER FIX: Scale live ink properly using the Smart Contain Multiplier
     const educatorW = lastEducatorWidth || 1920; 
-    const scale = wrapper.clientWidth / educatorW;
+    const educatorH = (typeof lastEducatorHeight !== 'undefined') ? lastEducatorHeight : 1080;
+    
+    const studentWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
+    const studentHeight = wrapper ? wrapper.clientHeight : window.innerHeight;
+    
+    const scaleX = studentWidth / educatorW;
+    const scaleY = studentHeight / educatorH;
+    const scale = Math.min(scaleX, scaleY); // Wahi same logic
+    
+    // Live Ink Canvas ko bhi resize karke center kar lo
+    liveInkCanvas.width = educatorW * scale;
+    liveInkCanvas.height = educatorH * scale;
+    liveInkCanvas.style.margin = 'auto';
+    liveInkCanvas.style.position = 'absolute';
+    liveInkCanvas.style.top = '50%';
+    liveInkCanvas.style.left = '50%';
+    liveInkCanvas.style.transform = 'translate(-50%, -50%)';
     
     const currentX = data.x * scale;
     const currentY = data.y * scale;
@@ -1007,8 +1052,6 @@ function renderLiveInk(dataString) {
         lastX = currentX;
         lastY = currentY;
     } else if (data.a === 'end') {
-        // When educator lifts the pen, Firebase will send the final perfect vector object.
-        // So we clear our temporary pixel canvas!
         ctx.clearRect(0, 0, liveInkCanvas.width, liveInkCanvas.height);
     }
 }
