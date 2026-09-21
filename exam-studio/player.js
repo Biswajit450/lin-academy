@@ -185,12 +185,14 @@ function renderQuestion(index) {
     // Button States
     document.getElementById('btn-prev').disabled = (index === 0);
     
+    // 🚀 THE FIX: Strong Display Rules for Mobile Button Visibility
     if (index === state.questions.length - 1) {
-        document.getElementById('btn-next').classList.add('hidden');
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('btn-submit').style.display = 'flex';
         document.getElementById('btn-submit').classList.remove('hidden');
     } else {
-        document.getElementById('btn-next').classList.remove('hidden');
-        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('btn-next').style.display = 'flex';
+        document.getElementById('btn-submit').style.display = 'none';
     }
 
     updatePaletteSelection();
