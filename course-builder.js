@@ -880,23 +880,100 @@ window.deleteTestFromVault = async function() {
     }
 }
 
-// 🚀 NEW: SMART INJECTOR LOGIC
+// 🚀 NEW: SMART INJECTOR LOGIC (THE VAULT BROWSER)
 window.promptInsertExistingTest = async function() {
-    const vaultId = prompt("Enter the Vault ID of the Test you want to insert:");
-    if(!vaultId) return;
+    // 1. Pehle ek UI Modal (Popup) banate hain jo Vault jaisa dikhega
+    let pickerModal = document.getElementById('smart-test-picker-modal');
+    
+    // Agar modal pehle se nahi bana hai, toh usey DOM mein inject karo
+    if (!pickerModal) {
+        const modalHtml = `
+        <div id="smart-test-picker-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[85vh]">
+                <div class="p-5 md:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950/50">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> Smart Test Picker</h3>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Select a test from your Vault</p>
+                    </div>
+                    <button onclick="document.getElementById('smart-test-picker-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div class="p-6 flex-grow overflow-y-auto hide-scrollbar bg-slate-100/50 dark:bg-slate-900">
+                    <div id="smart-picker-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-emerald-500 text-2xl mb-2"></i><br><span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Scanning Vault...</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        pickerModal = document.getElementById('smart-test-picker-modal');
+    }
 
+    // 2. Modal ko show karo
+    pickerModal.classList.remove('hidden');
+    const grid = document.getElementById('smart-picker-grid');
+    grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-emerald-500 text-2xl mb-2"></i><br><span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Scanning Vault...</span></div>';
+
+    // 3. Vault se sirf '.test' files fetch karo
     try {
-        const snap = await getDoc(doc(db, "exams", vaultId));
-        if(snap.exists()) {
-            const data = snap.data();
-            const qCount = (data.questions || []).length;
-            // Render to canvas directly
-            window.renderTestBlockToCanvas(vaultId, data.settings.testTitle, qCount);
-        } else {
-            alert("Test not found! Please check the Vault ID.");
+        if (!auth.currentUser) return alert("Please login first!");
+        
+        const snap = await getDocs(collection(db, "PWOS_Vault", auth.currentUser.uid, "projects"));
+        let testFiles = [];
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            // Sirf wahi files lo jo delete nahi hui hain aur jinka type 'test' hai
+            if (!data.trashed && data.type === 'test') {
+                testFiles.push(data);
+            }
+        });
+
+        if (testFiles.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800">
+                    <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
+                    <p class="text-xs font-bold uppercase tracking-wider mb-3">No Tests Found in Vault</p>
+                    <button onclick="document.getElementById('smart-test-picker-modal').classList.add('hidden'); window.openTestModal('course')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-colors">Create New Test</button>
+                </div>`;
+            return;
         }
-    } catch(e) { 
-        console.error(e); alert("Error fetching test."); 
+
+        // Sort by newest first
+        testFiles.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        let html = '';
+        testFiles.forEach(f => {
+            const dateObj = new Date(f.timestamp);
+            const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric' });
+            const qCount = f.questions ? f.questions.length : 0;
+            const passPct = f.settings ? f.settings.passPercentage : 40;
+
+            // Safe Stringify to pass data via onclick
+            const safeTitle = f.name.replace(/'/g, "\\'");
+
+            html += `
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:border-emerald-500 hover:shadow-md transition-all group flex flex-col">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0"><i class="fa-solid fa-flask text-lg"></i></div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-regular fa-clock"></i> ${dateStr}</span>
+                </div>
+                <h4 class="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 mb-2" title="${f.name}">${f.name}</h4>
+                <div class="flex items-center gap-3 text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-auto mb-4">
+                    <span class="bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded"><i class="fa-solid fa-list-ol mr-1"></i> ${qCount} Qs</span>
+                    <span class="bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded"><i class="fa-solid fa-check-double mr-1"></i> ${passPct}% Pass</span>
+                </div>
+                <button onclick="document.getElementById('smart-test-picker-modal').classList.add('hidden'); window.renderTestBlockToCanvas('${f.id}', '${safeTitle}', ${qCount});" class="w-full bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white dark:bg-emerald-900/20 dark:hover:bg-emerald-600 font-bold py-2 rounded-lg transition-colors text-xs border border-emerald-200 dark:border-emerald-800 shadow-sm active:scale-95">
+                    Drop to Canvas
+                </button>
+            </div>`;
+        });
+        
+        grid.innerHTML = html;
+
+    } catch(e) {
+        console.error("Smart Picker Error:", e);
+        grid.innerHTML = '<div class="col-span-full text-center text-rose-500 font-bold py-10">Failed to fetch tests from Vault.</div>';
     }
 }
 
@@ -938,10 +1015,13 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
 // CONTENT CONSUMPTION ENGINE (PREMIUM PLAYER)
 // ==========================================
 window.consumeContent = async function(type, elementOrId) { // 🚀 Changed to async
-    if(type === 'test') { 
-        window.initStudentExam(elementOrId);
-        return; 
-    }
+    // 🚀 ROUTE TO NEW MOBILE-FRIENDLY EXAM PLAYER
+if(type === 'test') { 
+    const courseName = document.getElementById('course-view-title').innerText;
+    // Launch the new Exam Studio Player full-screen iframe/window
+    window.location.href = `exam-studio/player.html?testId=${elementOrId}&course=${encodeURIComponent(courseName)}`;
+    return; 
+}
     
     const block = elementOrId.closest('[id^="block-"]'); 
     const linkInput = block.querySelector('.link-input'); 

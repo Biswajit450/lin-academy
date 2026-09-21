@@ -2340,6 +2340,35 @@ window.addEventListener('load', () => {
     }, 2000);
 });
 
+// ==========================================
+// 🚀 EXAM STUDIO LAUNCHER ENGINE
+// ==========================================
+window.launchExamStudio = function(existingFileId = null) {
+    document.getElementById('vault-app-drawer').classList.add('hidden');
+    const container = document.getElementById('pwos-studio-container');
+    const frame = document.getElementById('pwos-studio-frame');
+    
+    // UI Setup for Top Bar
+    const indicator = document.getElementById('admin-live-indicator');
+    const titleEl = document.getElementById('admin-studio-title');
+    const closeText = document.getElementById('admin-studio-close-text');
+    if(indicator) indicator.className = 'w-3 h-3 rounded-full bg-emerald-500 shrink-0';
+    if(titleEl) { titleEl.innerText = 'Exam Studio'; titleEl.className = 'text-[10px] font-extrabold text-emerald-500 uppercase tracking-widest truncate'; }
+    if(closeText) closeText.innerText = 'Close Creator';
+    
+    let url = 'exam-studio/creator.html';
+    if(existingFileId) url += `?fileId=${existingFileId}`;
+    
+    frame.src = url;
+    container.classList.remove('hidden');
+    setTimeout(() => { container.classList.remove('translate-y-full'); }, 50);
+    
+    setTimeout(() => {
+        const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        frame.contentWindow.postMessage({ type: 'SYNC_THEME', theme: currentTheme }, '*');
+    }, 800); 
+}
+
 window.launchPWOSStudio = function(existingFileId = null) {
     document.getElementById('vault-app-drawer').classList.add('hidden');
     const container = document.getElementById('pwos-studio-container');
@@ -2537,7 +2566,7 @@ window.loadVaultFiles = async function() {
         let files = [];
         snap.forEach(doc => {
             const data = doc.data();
-            // 🚀 SMART FILTER: Only show files that are NOT trashed
+            // SMART FILTER: Only show files that are NOT trashed
             if (!data.trashed) files.push(data);
         });
 
@@ -2556,19 +2585,26 @@ window.loadVaultFiles = async function() {
         files.forEach(f => {
             const dateObj = new Date(f.timestamp);
             const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-            const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Slate+Canvas';
+            
+            // 🚀 NEW: Checking File Type (Slate vs Test)
+            const isTest = (f.type === 'test');
+            const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas');
+            const badgeColor = isTest ? 'bg-emerald-600' : 'bg-cyan-600';
+            const badgeIcon = isTest ? 'fa-flask' : 'fa-cloud';
+            const extText = isTest ? '.test' : '.slate';
+            const clickAction = isTest ? `window.launchExamStudio('${f.id}')` : `window.launchPWOSStudio('${f.id}')`;
             
             html += `
                 <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer relative flex flex-col">
                     <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-xs"></i></button>
                     
-                    <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="window.launchPWOSStudio('${f.id}')">
+                    <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
                         <img src="${thumb}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                            <span class="text-white text-[10px] font-bold bg-cyan-600 px-2 py-1 rounded shadow-sm"><i class="fa-solid fa-cloud text-[8px] mr-1"></i>.slate</span>
+                            <span class="text-white text-[10px] font-bold ${badgeColor} px-2 py-1 rounded shadow-sm"><i class="fa-solid ${badgeIcon} text-[8px] mr-1"></i>${extText}</span>
                         </div>
                     </div>
-                    <div class="p-4" onclick="window.launchPWOSStudio('${f.id}')">
+                    <div class="p-4" onclick="${clickAction}">
                         <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
                         <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
                     </div>

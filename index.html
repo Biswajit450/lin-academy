@@ -378,10 +378,10 @@
                                     <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-110 transition-transform"><i class="fa-solid fa-pen-nib"></i></div>
                                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Slate</span>
                                 </button>
-                                <!-- Future Apps Placeholders -->
-                                <button class="flex flex-col items-center gap-3 p-4 rounded-2xl opacity-50 cursor-not-allowed">
-                                    <div class="w-14 h-14 bg-slate-200 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 text-2xl"><i class="fa-solid fa-spell-check"></i></div>
-                                    <span class="text-xs font-bold text-slate-400">Quiz Maker</span>
+                                <!-- PWOS Exam Studio Trigger -->
+                                <button onclick="window.launchExamStudio()" class="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all group">
+                                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-110 transition-transform"><i class="fa-solid fa-flask"></i></div>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Exam Studio</span>
                                 </button>
                                 <button class="flex flex-col items-center gap-3 p-4 rounded-2xl opacity-50 cursor-not-allowed">
                                     <div class="w-14 h-14 bg-slate-200 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 text-2xl"><i class="fa-solid fa-file-lines"></i></div>
@@ -438,83 +438,6 @@
                     <button type="submit" id="auth-submit-btn" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all mt-2">Sign In</button>
                 </form>
                 <div class="mt-6 text-center"><button type="button" onclick="window.toggleAuthMode()" id="auth-toggle-btn" class="text-sm text-slate-500 hover:text-brand-blue font-semibold transition-colors">Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span></button></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="test-creator-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative hide-scrollbar">
-            <button onclick="window.closeTestModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
-            <div class="p-6 md:p-8">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> <span id="test-modal-title">Interactive Test Creator</span></h3>
-                        <p class="text-xs text-slate-500 mt-1">Configure your exam rules and build the question bank.</p>
-                    </div>
-                    <div class="flex items-center gap-3 w-full md:w-auto">
-                        <!-- 🚀 NEW: Search Bar for Vault ID -->
-                        <div id="test-manager-search-box" class="hidden relative flex-grow md:w-64">
-                            <input type="text" id="test-vault-search-id" placeholder="Paste Vault ID to load..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-10 py-1.5 text-xs font-mono focus:outline-none focus:border-emerald-500 dark:text-white">
-                            <button type="button" onclick="window.loadTestForEditing()" class="absolute right-1 top-1 w-6 h-6 bg-emerald-100 text-emerald-600 rounded flex items-center justify-center hover:bg-emerald-200 transition-colors" title="Load Test"><i class="fa-solid fa-magnifying-glass text-[10px]"></i></button>
-                        </div>
-                        <div class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-2 shadow-sm whitespace-nowrap"><span id="draft-counter">0</span> Drafted</div>
-                    </div>
-                </div>
-                <!-- Hidden input to store the current editing Test ID -->
-                <input type="hidden" id="editing-test-id" value="">
-                
-                <form id="exam-builder-form" class="space-y-6">
-                    <div class="bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative">
-                        <span class="absolute -top-2.5 left-4 bg-slate-100 dark:bg-slate-800 px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded shadow-sm">Global Exam Settings</span>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                            <div class="col-span-2 md:col-span-4"><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Exam Title</label><input type="text" id="exam-setting-title" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Duration (Mins)</label><input type="number" id="exam-setting-time" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider mb-2">Correct (+)</label><input type="number" step="0.1" id="exam-setting-pos" class="w-full bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Incorrect (-)</label><input type="number" step="0.1" id="exam-setting-neg" class="w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-white"></div>
-                            <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Pass %</label><input type="number" id="exam-setting-pass" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"></div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex justify-between">
-                                <span>Current Question Text</span> <span class="text-emerald-500 text-[10px]"><i class="fa-solid fa-square-root-variable"></i> Math Ready</span>
-                            </label>
-                            <div class="bg-white dark:bg-slate-950 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 transition-all border border-slate-200 dark:border-slate-800">
-                                <div id="q-text-editor"></div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 1</label><input type="text" id="q-opt1" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 2</label><input type="text" id="q-opt2" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 3</label><input type="text" id="q-opt3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option 4</label><input type="text" id="q-opt4" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"></div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <div><label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Correct Answer</label><select id="q-correct" class="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm focus:outline-none text-emerald-800 font-bold"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select></div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Explanation</label>
-                                <div class="bg-white dark:bg-slate-950 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 transition-all border border-slate-200 dark:border-slate-800">
-                                    <div id="q-exp-editor"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <button type="button" onclick="window.addDraftQuestion()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3.5 rounded-xl transition-all"><i class="fa-solid fa-plus mr-1"></i> Add Question to Draft</button>
-                        
-                        <!-- 🚀 NEW: Dynamic Action Buttons Container -->
-                        <div id="test-action-buttons" class="flex gap-2 w-full sm:w-auto">
-                            <!-- Default Create Button -->
-                            <button type="button" id="btn-publish-test" onclick="window.publishExamToFirebase()" class="w-full sm:w-auto px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> <span id="btn-publish-text">Save & Drop to Canvas</span></button>
-                            
-                            <!-- Manager Update/Delete Buttons (Hidden by default) -->
-                            <button type="button" id="btn-update-test" onclick="window.updateTestInVault()" class="hidden w-full sm:w-auto px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all items-center justify-center gap-2"><i class="fa-solid fa-satellite-dish"></i> Update Vault</button>
-                            <button type="button" id="btn-delete-test" onclick="window.deleteTestFromVault()" class="hidden px-4 bg-rose-100 hover:bg-rose-500 text-rose-600 hover:text-white font-bold py-3.5 rounded-xl shadow-sm transition-all items-center justify-center" title="Delete from Vault completely"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

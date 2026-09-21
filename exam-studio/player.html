@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lin Academy | Premium Test Player</title>
+
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- KaTeX for Math Rendering -->
+    <link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { brand: { blue: '#2563eb' } } } }
+        }
+    </script>
+
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; touch-action: manipulation; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Premium Radio Button Logic */
+        input[type="radio"]:checked + div { background-color: #eff6ff !important; border-color: #2563eb !important; }
+        .dark input[type="radio"]:checked + div { background-color: rgba(37, 99, 235, 0.2) !important; border-color: #3b82f6 !important; }
+        input[type="radio"]:checked + div .radio-circle { border-color: #2563eb !important; background-color: #2563eb !important; }
+        .dark input[type="radio"]:checked + div .radio-circle { border-color: #3b82f6 !important; background-color: #3b82f6 !important; }
+        
+        /* Rich Text Adjustments inside Questions */
+        .question-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin-top: 0.5rem; }
+        .question-content p { margin-bottom: 0.5rem; }
+
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-bounce-slow { animation: bounce-slow 3s infinite ease-in-out; }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- 🚀 TOP NAVIGATION (Always Visible) -->
+    <header class="h-14 lg:h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-8 shrink-0 shadow-sm z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-brand-blue text-white rounded-lg flex items-center justify-center font-bold text-sm shadow-sm shrink-0">LA</div>
+            <div class="overflow-hidden">
+                <h1 id="top-course-name" class="font-bold text-xs lg:text-sm text-slate-900 dark:text-white truncate">Connecting...</h1>
+                <p id="top-test-name" class="text-[9px] lg:text-[10px] text-slate-500 font-medium tracking-widest uppercase truncate">Premium Assessment</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+            <!-- Timer Display -->
+            <div id="exam-timer-display" class="hidden bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-clock text-slate-400" id="exam-clock-icon"></i>
+                <span id="exam-time-text" class="text-sm lg:text-base font-mono font-bold text-slate-700 dark:text-white tracking-wider">00:00</span>
+            </div>
+            <button id="btn-theme" class="w-8 h-8 rounded-full text-amber-500 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center justify-center border border-slate-200 dark:border-slate-700"><i class="fa-solid fa-moon"></i></button>
+            <button onclick="window.closePlayer()" class="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </header>
+
+    <!-- 🚀 SCREEN 1: INTRO & INSTRUCTIONS -->
+    <div id="screen-intro" class="flex-grow flex flex-col items-center justify-center p-6 overflow-y-auto hide-scrollbar">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 lg:p-10 shadow-xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full text-center relative overflow-hidden">
+            <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-brand-blue rounded-full flex items-center justify-center text-3xl mx-auto mb-6 shadow-inner border border-blue-100 dark:border-blue-800/50"><i class="fa-solid fa-clipboard-list"></i></div>
+            <h2 id="intro-title" class="text-2xl lg:text-4xl font-extrabold text-slate-900 dark:text-white mb-2 font-serif">Loading Test...</h2>
+            <p class="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mb-8 font-medium">Please read the instructions carefully before starting.</p>
+            
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-8">
+                <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <div id="intro-qs" class="text-xl lg:text-2xl font-black text-slate-800 dark:text-white">0</div>
+                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Questions</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <div id="intro-time" class="text-xl lg:text-2xl font-black text-slate-800 dark:text-white">0</div>
+                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Minutes</div>
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                    <div id="intro-pos" class="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400">+0</div>
+                    <div class="text-[9px] text-emerald-600 dark:text-emerald-500 font-bold uppercase tracking-widest mt-1">Correct</div>
+                </div>
+                <div class="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-2xl border border-rose-100 dark:border-rose-800/30">
+                    <div id="intro-neg" class="text-xl lg:text-2xl font-black text-rose-500">-0</div>
+                    <div class="text-[9px] text-rose-500 font-bold uppercase tracking-widest mt-1">Incorrect</div>
+                </div>
+            </div>
+
+            <button id="btn-start-test" onclick="window.startExam()" disabled class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95 text-sm lg:text-lg flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="start-test-text">Fetching Secure Data...</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 🚀 SCREEN 2: ACTIVE EXAM UI -->
+    <div id="screen-active" class="hidden flex-grow flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Top Progress Bar (Mobile) -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-slate-200 dark:bg-slate-800 z-10 lg:hidden">
+            <div id="mobile-progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Left Sidebar: Question Palette (Desktop/Tablet) -->
+        <aside class="hidden lg:flex w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col shrink-0">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest flex justify-between items-center">
+                    <i class="fa-solid fa-grip text-brand-blue"></i> Question Palette
+                </h3>
+            </div>
+            <div class="p-4 flex-grow overflow-y-auto hide-scrollbar">
+                <div id="desktop-palette-grid" class="grid grid-cols-5 gap-2">
+                    <!-- Buttons injected via JS -->
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                <div class="flex gap-2 text-[10px] font-bold text-slate-500 justify-center">
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-brand-blue rounded-full"></div> Answered</span>
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-full"></div> Unanswered</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Main Workspace: Question Area -->
+        <main class="flex-grow flex flex-col bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+            <!-- Question Content Scrollable Area -->
+            <div class="flex-grow overflow-y-auto hide-scrollbar p-4 lg:p-10 pb-28 lg:pb-32">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex justify-between items-end mb-4 lg:mb-6 border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <span id="active-q-number" class="text-xs lg:text-sm font-extrabold text-brand-blue uppercase tracking-wider bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-100 dark:border-blue-800/50 shadow-sm">Question 1</span>
+                        <span id="active-q-marks" class="text-[10px] lg:text-xs font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 px-2 py-1 rounded-md border border-emerald-100 dark:border-emerald-800/50">+0 Marks</span>
+                    </div>
+
+                    <div id="active-q-text" class="question-content text-base lg:text-xl font-semibold text-slate-900 dark:text-white mb-6 lg:mb-10 leading-relaxed">
+                        Loading Question...
+                    </div>
+
+                    <div id="active-options-container" class="space-y-3 lg:space-y-4">
+                        <!-- Options injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation Bar -->
+            <div class="absolute bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-3 lg:p-6 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-20">
+                <div class="max-w-4xl mx-auto flex justify-between items-center gap-2">
+                    <button id="btn-prev" onclick="window.prevQuestion()" class="flex-1 lg:flex-none lg:w-32 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-3 rounded-xl transition-colors text-xs lg:text-sm disabled:opacity-50 flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700">
+                        <i class="fa-solid fa-chevron-left"></i> Prev
+                    </button>
+                    
+                    <!-- Mobile Palette Trigger -->
+                    <button onclick="document.getElementById('mobile-palette-modal').classList.remove('hidden')" class="lg:hidden w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl flex items-center justify-center font-bold text-lg border border-slate-200 dark:border-slate-700"><i class="fa-solid fa-grip"></i></button>
+
+                    <button id="btn-next" onclick="window.nextQuestion()" class="flex-1 lg:flex-none lg:w-32 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-colors text-xs lg:text-sm flex items-center justify-center gap-2 shadow-md border border-transparent">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                    <button id="btn-submit" onclick="window.confirmSubmit()" class="hidden flex-1 lg:flex-none lg:w-40 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-transform active:scale-95 text-xs lg:text-sm items-center justify-center gap-2 shadow-lg shadow-emerald-500/30">
+                        <i class="fa-solid fa-check-double"></i> Submit Test
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 🚀 MOBILE PALETTE MODAL -->
+    <div id="mobile-palette-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex flex-col justify-end lg:hidden transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl border-t border-slate-200 dark:border-slate-800 p-5 pb-8 shadow-[0_-20px_25px_-5px_rgba(0,0,0,0.1)] flex flex-col max-h-[70vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider"><i class="fa-solid fa-grip text-brand-blue mr-1"></i> Question Palette</h3>
+                <button onclick="document.getElementById('mobile-palette-modal').classList.add('hidden')" class="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex-grow overflow-y-auto hide-scrollbar bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div id="mobile-palette-grid" class="grid grid-cols-5 gap-3">
+                    <!-- Buttons injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 SCREEN 3: RESULT & ANALYSIS -->
+    <div id="screen-result" class="hidden flex-grow flex-col overflow-y-auto hide-scrollbar pb-24">
+        <div class="bg-brand-blue dark:bg-slate-900 pt-8 pb-16 px-4 text-center rounded-b-[3rem] shadow-md border-b border-blue-700 dark:border-slate-800 relative overflow-hidden">
+            <!-- Decorative Background -->
+            <i class="fa-solid fa-trophy absolute -right-10 -bottom-10 text-9xl text-white opacity-5"></i>
+            
+            <div id="result-avatar" class="text-6xl lg:text-8xl mb-4 select-none animate-bounce-slow">🐴</div>
+            <h2 id="result-status" class="text-2xl lg:text-4xl font-extrabold text-white mb-2 tracking-wide font-serif">Evaluating...</h2>
+            <p id="result-msg" class="text-blue-100 dark:text-slate-400 text-xs lg:text-sm max-w-md mx-auto font-medium leading-relaxed"></p>
+        </div>
+
+        <div class="max-w-3xl w-full mx-auto px-4 -mt-10 relative z-10 space-y-6">
+            
+            <!-- Main Score Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 lg:p-8 shadow-xl border border-slate-200 dark:border-slate-700 text-center">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Score</p>
+                <div class="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white mb-2"><span id="res-score">0</span> <span class="text-lg lg:text-2xl text-slate-400 font-medium">/ <span id="res-max">0</span></span></div>
+                
+                <div class="grid grid-cols-2 gap-3 mt-6">
+                    <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                        <div id="res-rank" class="text-lg lg:text-2xl font-black text-brand-blue">...</div>
+                        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">All India Rank</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                        <div id="res-perc" class="text-lg lg:text-2xl font-black text-purple-500">...</div>
+                        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Percentile</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Breakdown -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800 text-center shadow-sm">
+                    <div id="res-correct" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">0</div>
+                    <div class="text-[9px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mt-1">Correct</div>
+                </div>
+                <div class="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-800 text-center shadow-sm">
+                    <div id="res-wrong" class="text-2xl font-black text-rose-600 dark:text-rose-400">0</div>
+                    <div class="text-[9px] font-bold text-rose-600 dark:text-rose-500 uppercase tracking-widest mt-1">Incorrect</div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+                    <div id="res-skip" class="text-2xl font-black text-slate-600 dark:text-slate-300">0</div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Skipped</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                <button onclick="window.buildReviewScreen()" class="flex-1 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white font-bold py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-list-check"></i> Review Answers
+                </button>
+                <button onclick="window.closePlayer()" class="flex-1 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 font-bold py-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-house"></i> Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 SCREEN 4: EXAM REVIEW -->
+    <div id="screen-review" class="hidden flex-grow flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
+        <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center z-10 shadow-sm shrink-0">
+            <div>
+                <h3 class="text-base lg:text-lg font-bold text-slate-900 dark:text-white font-serif">Solutions & Analysis</h3>
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Learn from your mistakes</p>
+            </div>
+            <button onclick="window.showScreen('result')" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Back to Score</button>
+        </div>
+        <div class="p-4 lg:p-8 overflow-y-auto flex-grow hide-scrollbar">
+            <div id="review-container" class="max-w-4xl mx-auto space-y-6 pb-20">
+                <!-- Explanations injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeout Overlay -->
+    <div id="timeout-overlay" class="fixed inset-0 bg-slate-900/95 z-[200] hidden flex-col items-center justify-center opacity-0 transition-opacity duration-500 backdrop-blur-md">
+        <div class="text-8xl mb-6 animate-bounce">⏱️</div>
+        <h2 class="text-4xl lg:text-5xl font-black text-rose-500 mb-3 tracking-widest uppercase">Time's Up!</h2>
+        <p class="text-sm lg:text-base text-slate-300 font-medium bg-slate-800 px-6 py-2 rounded-full border border-slate-700">Auto-submitting your script...</p>
+    </div>
+
+    <script type="module" src="player.js"></script>
+</body>
+</html>
