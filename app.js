@@ -2521,6 +2521,10 @@ window.closePWOSStudio = function() {
     setTimeout(() => {
         container.classList.add('hidden');
         document.getElementById('pwos-studio-frame').src = ''; 
+        // 🚀 THE FIX: Studio band hote hi Vault ko auto-refresh karo
+        if(!document.getElementById('screen-vault').classList.contains('hidden')) {
+            window.loadVaultFiles();
+        }
     }, 500);
 }
 

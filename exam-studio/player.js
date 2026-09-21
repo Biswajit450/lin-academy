@@ -48,11 +48,7 @@ window.addEventListener('load', () => {
 
 async function fetchTestData(testId) {
     try {
-        const snap = await getDoc(doc(db, "PWOS_Vault", getEducatorIdFromMagicLinkOrDirectDB(testId), "projects", testId)); 
-        // 💡 Note: In production, exams are copied to a public 'exams' collection.
-        // Assuming your backend copies `.test` to `exams` collection upon course publish (as per our previous logic)
-        
-        // We will fetch from the public 'exams' collection
+        // 🚀 THE FIX: Sirf public 'exams' collection se fetch karo!
         const examSnap = await getDoc(doc(db, "exams", testId));
 
         if (examSnap.exists()) {
@@ -83,9 +79,6 @@ async function fetchTestData(testId) {
         document.getElementById('start-test-text').innerText = "Cannot Load Data";
     }
 }
-
-// Just a helper if we needed direct vault access, but we use public 'exams' collection.
-function getEducatorIdFromMagicLinkOrDirectDB(testId) { return "public"; }
 
 window.showScreen = function(screenName) {
     ['intro', 'active', 'result', 'review'].forEach(id => {

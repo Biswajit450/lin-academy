@@ -880,6 +880,20 @@ window.deleteTestFromVault = async function() {
     }
 }
 
+// 🚀 THE MAGIC BRIDGE: Copy Test from Private Vault to Public Exams Collection
+window.insertAndPublishTest = async function(vaultId, title, qCount) {
+    try {
+        const snap = await getDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", vaultId));
+        if(snap.exists()) {
+            await setDoc(doc(db, "exams", vaultId), snap.data()); // Secured Copy
+            console.log("Test securely bridged for students.");
+        }
+    } catch(e) { console.error("Bridge Error:", e); }
+    
+    // Ab canvas par render karo
+    window.renderTestBlockToCanvas(vaultId, title, qCount);
+};
+
 // 🚀 NEW: SMART INJECTOR LOGIC (THE VAULT BROWSER)
 window.promptInsertExistingTest = async function() {
     // 1. Pehle ek UI Modal (Popup) banate hain jo Vault jaisa dikhega
@@ -963,7 +977,7 @@ window.promptInsertExistingTest = async function() {
                     <span class="bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded"><i class="fa-solid fa-list-ol mr-1"></i> ${qCount} Qs</span>
                     <span class="bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded"><i class="fa-solid fa-check-double mr-1"></i> ${passPct}% Pass</span>
                 </div>
-                <button onclick="document.getElementById('smart-test-picker-modal').classList.add('hidden'); window.renderTestBlockToCanvas('${f.id}', '${safeTitle}', ${qCount});" class="w-full bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white dark:bg-emerald-900/20 dark:hover:bg-emerald-600 font-bold py-2 rounded-lg transition-colors text-xs border border-emerald-200 dark:border-emerald-800 shadow-sm active:scale-95">
+                <button onclick="document.getElementById('smart-test-picker-modal').classList.add('hidden'); window.insertAndPublishTest('${f.id}', '${safeTitle}', ${qCount});" class="w-full bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white dark:bg-emerald-900/20 dark:hover:bg-emerald-600 font-bold py-2 rounded-lg transition-colors text-xs border border-emerald-200 dark:border-emerald-800 shadow-sm active:scale-95">
                     Drop to Canvas
                 </button>
             </div>`;
@@ -994,7 +1008,7 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
                         <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
-                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">Vault ID: ${vaultId} • ${qCount} Questions</div>
+                    <div class="text-[10px] text-slate-500 font-medium mt-0.5"><span class="admin-input-area inline-block mr-1">Vault ID: ${vaultId} • </span>${qCount} Questions</div>
                     <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${vaultId}')">📝 Start Mock Test</button>
                 </div>
             </div>`;
