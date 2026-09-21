@@ -291,23 +291,67 @@
                     <div id="generic-view-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
                 </div>
 
-                <!-- 🚀 NEW: THE VAULT SCREEN 🚀 -->
+                <!-- 🚀 VAULT 2.0 (SMART DRIVE) 🚀 -->
                 <div id="screen-vault" class="app-screen hidden space-y-6 h-[85vh] relative">
-                    <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                    
+                    <!-- Base Vault View (Recents + Folders) -->
+                    <div id="vault-main-view">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                            <div>
+                                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-3"><i class="fa-solid fa-vault text-brand-blue"></i> My Smart Vault</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wider">Educator Workspace & Drive</p>
+                            </div>
+                        </div>
+
+                        <!-- 🚀 TIER 1: The Quick Access Row (Recent Top 6) -->
+                        <div class="mb-8">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3"><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Quick Access (Recent)</h4>
+                            <div id="vault-recents-grid" class="flex overflow-x-auto hide-scrollbar gap-4 pb-2 snap-x">
+                                <!-- Recent Files will be injected here via JS -->
+                            </div>
+                        </div>
+
+                        <!-- 🚀 TIER 2: Permanent Smart Folders -->
                         <div>
-                            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-3"><i class="fa-solid fa-vault text-cyan-500"></i> My Vault</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wider">Educator Workspace & Drive</p>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3"><i class="fa-solid fa-folder-tree mr-1"></i> Smart Workspaces</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Slate Folder -->
+                                <div onclick="window.openVaultFolder('slate')" class="bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200 dark:border-cyan-800/50 rounded-3xl p-5 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-cyan-500 transition-all group">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-14 h-14 bg-cyan-100 dark:bg-cyan-900/40 rounded-2xl flex items-center justify-center text-cyan-600 dark:text-cyan-400 text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-pen-nib"></i></div>
+                                        <div>
+                                            <h4 class="text-lg font-bold text-slate-900 dark:text-white">Interactive Slates</h4>
+                                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-0.5"><span id="folder-count-slate">0</span> Files</p>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-cyan-300 dark:text-cyan-800 group-hover:text-cyan-500 transition-colors"></i>
+                                </div>
+                                <!-- Test Folder -->
+                                <div onclick="window.openVaultFolder('test')" class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/50 rounded-3xl p-5 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-emerald-500 transition-all group">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-flask"></i></div>
+                                        <div>
+                                            <h4 class="text-lg font-bold text-slate-900 dark:text-white">Exam Studio Mocks</h4>
+                                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-0.5"><span id="folder-count-test">0</span> Tests</p>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-emerald-300 dark:text-emerald-800 group-hover:text-emerald-500 transition-colors"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Recents Grid -->
-                    <div class="space-y-4">
-                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Recent Files</h4>
-                        <div id="vault-recents-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <!-- Files will be injected here via IndexedDB -->
-                            <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
-                                <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
-                                <p class="text-xs font-bold uppercase">Vault is Empty</p>
+
+                    <!-- 🚀 TIER 3: The Folder Deep Dive View -->
+                    <div id="vault-folder-view" class="hidden flex-col h-full">
+                        <div class="flex items-center gap-3 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+                            <button onclick="window.closeVaultFolder()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-colors"><i class="fa-solid fa-arrow-left"></i></button>
+                            <div>
+                                <h3 id="vault-folder-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">Folder Name</h3>
+                            </div>
+                        </div>
+                        <div class="flex-grow overflow-y-auto hide-scrollbar pb-10">
+                            <div id="vault-folder-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <!-- Deep Dive Files injected here -->
                             </div>
                         </div>
                     </div>
@@ -320,7 +364,6 @@
                     <!-- Floating Scrap Bin Icon (Bottom Left) -->
                     <div class="absolute bottom-8 left-8 flex flex-col items-center group z-40">
                         <button id="scrap-bin-btn" oncontextmenu="window.openScrapBinContext(event); return false;" onclick="window.openScrapBinModal()" class="w-14 h-14 bg-slate-100 dark:bg-slate-800/80 backdrop-blur border-2 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-slate-500 hover:text-emerald-500 rounded-2xl shadow-lg flex flex-col items-center justify-center text-2xl transition-all duration-300 relative overflow-hidden">
-                            <!-- Separate lid icon for the bounce animation -->
                             <i id="scrap-bin-lid" class="fa-solid fa-trash-can-arrow-up text-[10px] absolute top-3 transition-transform"></i>
                             <i class="fa-solid fa-trash-can mt-2"></i>
                         </button>
@@ -349,21 +392,14 @@
                                     <button onclick="window.closeScrapBinModal()" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
                                 </div>
                             </div>
-                            
-                            <!-- Bin Grid -->
                             <div class="flex-grow overflow-y-auto hide-scrollbar">
-                                <div id="scrap-bin-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div class="col-span-full text-center py-16 text-slate-400">
-                                        <i class="fa-solid fa-leaf text-4xl mb-3 opacity-30 text-emerald-500"></i>
-                                        <p class="text-xs font-bold uppercase tracking-widest">Bin is completely clean</p>
-                                    </div>
-                                </div>
+                                <div id="scrap-bin-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Floating Creator Node (+) -->
-                    <button onclick="document.getElementById('vault-app-drawer').classList.remove('hidden')" class="absolute bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-2xl shadow-lg shadow-cyan-500/40 flex items-center justify-center text-2xl transition-transform hover:scale-105 active:scale-95 z-40">
+                    <button onclick="document.getElementById('vault-app-drawer').classList.remove('hidden')" class="absolute bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-brand-blue to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl shadow-lg shadow-blue-500/40 flex items-center justify-center text-2xl transition-transform hover:scale-105 active:scale-95 z-40">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                     
@@ -373,12 +409,10 @@
                             <button onclick="document.getElementById('vault-app-drawer').classList.add('hidden')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
                             <h3 class="text-xl font-extrabold text-slate-900 dark:text-white font-serif mb-6 text-center">Create New</h3>
                             <div class="grid grid-cols-3 gap-4">
-                                <!-- Slate App Trigger -->
                                 <button onclick="window.launchPWOSStudio()" class="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all group">
-                                    <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-110 transition-transform"><i class="fa-solid fa-pen-nib"></i></div>
+                                    <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-110 transition-transform"><i class="fa-solid fa-pen-nib"></i></div>
                                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Slate</span>
                                 </button>
-                                <!-- PWOS Exam Studio Trigger -->
                                 <button onclick="window.launchExamStudio()" class="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all group">
                                     <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-110 transition-transform"><i class="fa-solid fa-flask"></i></div>
                                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Exam Studio</span>

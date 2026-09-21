@@ -2555,13 +2555,16 @@ window.endAdminLiveSession = async function() {
     window.closePWOSStudio();
 }
 
-// Render Cloud Files in Vault Dashboard (Filter out Trashed items)
+// Global cache for folder deep-dive
+window.cachedVaultFiles = [];
+
+// 🚀 NAYA: Smart Drive Renderer (Recents + Folder Counts)
 window.loadVaultFiles = async function() {
-    const grid = document.getElementById('vault-recents-grid');
-    if(!grid || !auth.currentUser) return;
+    const recentsGrid = document.getElementById('vault-recents-grid');
+    if(!recentsGrid || !auth.currentUser) return;
     const uid = auth.currentUser.uid;
     
-    grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-cyan-500 text-2xl"></i><br><span class="text-xs text-slate-400 font-bold">Syncing Vault...</span></div>';
+    recentsGrid.innerHTML = '<div class="text-center py-10 w-full"><i class="fa-solid fa-spinner fa-spin text-cyan-500 text-2xl"></i><br><span class="text-xs text-slate-400 font-bold">Syncing Smart Drive...</span></div>';
 
     try {
         const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
@@ -2570,56 +2573,123 @@ window.loadVaultFiles = async function() {
         let files = [];
         snap.forEach(doc => {
             const data = doc.data();
-            // SMART FILTER: Only show files that are NOT trashed
             if (!data.trashed) files.push(data);
         });
 
-        if(files.length === 0) {
-            grid.innerHTML = `
-                <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
-                    <i class="fa-solid fa-folder-open text-3xl mb-2 opacity-50"></i>
-                    <p class="text-xs font-bold uppercase tracking-wider">Vault is Empty</p>
+        // 1. Sort newest first & Save to Global Cache
+        files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        window.cachedVaultFiles = files; 
+
+        // 2. Update Smart Folder Counts
+        const testFiles = files.filter(f => f.type === 'test');
+        const slateFiles = files.filter(f => f.type !== 'test');
+        
+        const countSlateEl = document.getElementById('folder-count-slate');
+        const countTestEl = document.getElementById('folder-count-test');
+        if(countSlateEl) countSlateEl.innerText = slateFiles.length;
+        if(countTestEl) countTestEl.innerText = testFiles.length;
+
+        // 3. Render Top 6 Recents (Horizontal Row)
+        const recentFiles = files.slice(0, 6);
+        
+        if(recentFiles.length === 0) {
+            recentsGrid.innerHTML = `
+                <div class="w-full text-center py-8 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                    <i class="fa-solid fa-folder-open text-2xl mb-2 opacity-50"></i>
+                    <p class="text-[10px] font-bold uppercase tracking-wider">Vault is Empty</p>
                 </div>`;
             return;
         }
 
-        files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        
         let html = '';
-        files.forEach(f => {
+        recentFiles.forEach(f => {
             const dateObj = new Date(f.timestamp);
-            const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+            const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric' });
             
-            // 🚀 NEW: Checking File Type (Slate vs Test)
             const isTest = (f.type === 'test');
             const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas');
             const badgeColor = isTest ? 'bg-emerald-600' : 'bg-cyan-600';
-            const badgeIcon = isTest ? 'fa-flask' : 'fa-cloud';
-            const extText = isTest ? '.test' : '.slate';
+            const badgeIcon = isTest ? 'fa-flask' : 'fa-pen-nib';
             const clickAction = isTest ? `window.launchExamStudio('${f.id}')` : `window.launchPWOSStudio('${f.id}')`;
             
             html += `
-                <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer relative flex flex-col">
-                    <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-xs"></i></button>
-                    
-                    <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
+                <div id="vault-card-${f.id}" class="min-w-[200px] sm:min-w-[240px] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col snap-start">
+                    <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                    <div class="w-full h-28 bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
                         <img src="${thumb}" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                            <span class="text-white text-[10px] font-bold ${badgeColor} px-2 py-1 rounded shadow-sm"><i class="fa-solid ${badgeIcon} text-[8px] mr-1"></i>${extText}</span>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
+                            <span class="text-white text-[9px] font-bold ${badgeColor} px-1.5 py-0.5 rounded shadow-sm"><i class="fa-solid ${badgeIcon} mr-1"></i>${isTest ? '.test' : '.slate'}</span>
                         </div>
                     </div>
-                    <div class="p-4" onclick="${clickAction}">
-                        <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
-                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
+                    <div class="p-3" onclick="${clickAction}">
+                        <h4 class="font-bold text-xs text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
+                        <p class="text-[9px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
                     </div>
                 </div>
             `;
         });
-        grid.innerHTML = html;
+        recentsGrid.innerHTML = html;
     } catch(e) {
         console.error("Vault fetch error", e);
-        grid.innerHTML = '<div class="col-span-full text-center text-rose-500 font-bold py-10">Failed to sync cloud files.</div>';
+        recentsGrid.innerHTML = '<div class="w-full text-center text-rose-500 font-bold py-10">Failed to sync Smart Drive.</div>';
     }
+}
+
+// ==========================================
+// 🚀 VAULT 2.0 FOLDER NAVIGATION ENGINE
+// ==========================================
+window.openVaultFolder = function(folderType) {
+    document.getElementById('vault-main-view').classList.add('hidden');
+    document.getElementById('vault-folder-view').classList.remove('hidden');
+    document.getElementById('vault-folder-view').classList.add('flex');
+    
+    const titleEl = document.getElementById('vault-folder-title');
+    const gridEl = document.getElementById('vault-folder-grid');
+    
+    let filteredFiles = [];
+    if (folderType === 'test') {
+        titleEl.innerHTML = '<i class="fa-solid fa-flask text-emerald-500"></i> Exam Studio Mocks';
+        filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'test');
+    } else {
+        titleEl.innerHTML = '<i class="fa-solid fa-pen-nib text-cyan-500"></i> Interactive Slates';
+        filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test');
+    }
+
+    if (filteredFiles.length === 0) {
+        gridEl.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400"><i class="fa-solid fa-folder-open text-4xl mb-3 opacity-30"></i><p class="text-xs font-bold uppercase">Folder is Empty</p></div>';
+        return;
+    }
+
+    let html = '';
+    filteredFiles.forEach(f => {
+        const dateObj = new Date(f.timestamp);
+        const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+        
+        const isTest = (f.type === 'test');
+        const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas');
+        const clickAction = isTest ? `window.launchExamStudio('${f.id}')` : `window.launchPWOSStudio('${f.id}')`;
+        
+        html += `
+            <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col">
+                <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-xs"></i></button>
+                
+                <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
+                    <img src="${thumb}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-4" onclick="${clickAction}">
+                    <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
+                </div>
+            </div>
+        `;
+    });
+    gridEl.innerHTML = html;
+}
+
+window.closeVaultFolder = function() {
+    document.getElementById('vault-folder-view').classList.add('hidden');
+    document.getElementById('vault-folder-view').classList.remove('flex');
+    document.getElementById('vault-main-view').classList.remove('hidden');
 }
 
 // Send File to Scrap Bin (Soft Delete with Fly Animation)
