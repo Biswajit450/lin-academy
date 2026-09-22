@@ -2611,10 +2611,17 @@ window.loadVaultFiles = async function() {
             const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric' });
             
             const isTest = (f.type === 'test');
-            const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas');
-            const badgeColor = isTest ? 'bg-emerald-600' : 'bg-cyan-600';
-            const badgeIcon = isTest ? 'fa-flask' : 'fa-pen-nib';
-            const clickAction = isTest ? `window.launchExamStudio('${f.id}')` : `window.launchPWOSStudio('${f.id}')`;
+            const isPdf = (f.type === 'pdf'); // 🚀 PDF detection
+            
+            const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : (isPdf ? 'https://via.placeholder.com/300x169.png?text=PDF+Document' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas'));
+            const badgeColor = isTest ? 'bg-emerald-600' : (isPdf ? 'bg-rose-600' : 'bg-cyan-600');
+            const badgeIcon = isTest ? 'fa-flask' : (isPdf ? 'fa-file-pdf' : 'fa-pen-nib');
+            
+            let clickAction = '';
+            if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
+            else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
+            else clickAction = `window.launchPWOSStudio('${f.id}')`;
+
             
             html += `
                 <div id="vault-card-${f.id}" class="min-w-[200px] sm:min-w-[240px] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col snap-start">
@@ -2652,13 +2659,13 @@ window.openVaultFolder = function(folderType) {
     
     let filteredFiles = [];
     if (folderType === 'test') {
-        titleEl.innerHTML = '** Exam Studio Mocks';
+        titleEl.innerHTML = '<i class="fa-solid fa-flask text-emerald-500 mr-2"></i> Exam Studio Mocks';
         filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'test');
-    } else if (folderType === 'pdf') { // 🚀 NAYA: PDF Folder ka logic
-        titleEl.innerHTML = '** Document Library';
+    } else if (folderType === 'pdf') {
+        titleEl.innerHTML = '<i class="fa-solid fa-file-pdf text-rose-500 mr-2"></i> Document Library';
         filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'pdf');
     } else {
-        titleEl.innerHTML = '** Interactive Slates';
+        titleEl.innerHTML = '<i class="fa-solid fa-pen-nib text-cyan-500 mr-2"></i> Interactive Slates';
         filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test' && f.type !== 'pdf');
     }
 
