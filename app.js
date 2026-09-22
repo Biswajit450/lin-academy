@@ -3353,7 +3353,7 @@ window.uploadPdfToVault = async function(input) {
         
         // 1. Upload to Firebase Storage
         const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
-        const filename = `PWOS_Vault/\({uid}/library_assets/\){Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const filename = `PWOS_Vault/${uid}/library_assets/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const storageRef = ref(storage, filename);
         
         await uploadBytes(storageRef, file);
