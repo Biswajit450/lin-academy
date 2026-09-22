@@ -2582,12 +2582,16 @@ window.loadVaultFiles = async function() {
 
         // 2. Update Smart Folder Counts
         const testFiles = files.filter(f => f.type === 'test');
-        const slateFiles = files.filter(f => f.type !== 'test');
+        const pdfFiles = files.filter(f => f.type === 'pdf'); // 🚀 NEW: Filter PDF
+        const slateFiles = files.filter(f => f.type !== 'test' && f.type !== 'pdf'); // 🚀 FIX: Slate means not test and not pdf
         
         const countSlateEl = document.getElementById('folder-count-slate');
         const countTestEl = document.getElementById('folder-count-test');
+        const countPdfEl = document.getElementById('folder-count-pdf'); // 🚀 NEW
+        
         if(countSlateEl) countSlateEl.innerText = slateFiles.length;
         if(countTestEl) countTestEl.innerText = testFiles.length;
+        if(countPdfEl) countPdfEl.innerText = pdfFiles.length; // 🚀 NEW
 
         // 3. Render Top 6 Recents (Horizontal Row)
         const recentFiles = files.slice(0, 6);
@@ -2648,11 +2652,14 @@ window.openVaultFolder = function(folderType) {
     
     let filteredFiles = [];
     if (folderType === 'test') {
-        titleEl.innerHTML = '<i class="fa-solid fa-flask text-emerald-500"></i> Exam Studio Mocks';
+        titleEl.innerHTML = '** Exam Studio Mocks';
         filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'test');
+    } else if (folderType === 'pdf') { // 🚀 NAYA: PDF Folder ka logic
+        titleEl.innerHTML = '** Document Library';
+        filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'pdf');
     } else {
-        titleEl.innerHTML = '<i class="fa-solid fa-pen-nib text-cyan-500"></i> Interactive Slates';
-        filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test');
+        titleEl.innerHTML = '** Interactive Slates';
+        filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test' && f.type !== 'pdf');
     }
 
     if (filteredFiles.length === 0) {
@@ -2666,8 +2673,14 @@ window.openVaultFolder = function(folderType) {
         const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
         
         const isTest = (f.type === 'test');
-        const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas');
-        const clickAction = isTest ? `window.launchExamStudio('${f.id}')` : `window.launchPWOSStudio('${f.id}')`;
+        const isPdf = (f.type === 'pdf'); // 🚀 NAYA
+        
+        const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : (isPdf ? 'https://via.placeholder.com/300x169.png?text=PDF+Document' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas'));
+        
+        let clickAction = '';
+        if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
+        else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`; // 🚀 PDF naye tab mein open hogi
+        else clickAction = `window.launchPWOSStudio('${f.id}')`;
         
         html += `
             <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col">
@@ -2876,7 +2889,11 @@ window.loadScrapBinFiles = async function() {
                     // Evaporate (Perm-Delete) silently
                     
                     // 1. Delete PDF from Storage if it exists
-                    if (data.metaContent) {
+                    if (data.type === 'pdf' && data.metaContent) {
+                        // 🚀 NEW: Direct PDF folder deletion
+                        await window.nukeCloudStorageAsset(data.metaContent);
+                    } else if (data.metaContent) {
+                        // Old Slate Logic
                         try {
                             const meta = JSON.parse(data.metaContent);
                             if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
@@ -2944,8 +2961,13 @@ window.permanentDeleteFile = async function(id, encodedMeta) {
         if (encodedMeta) {
             try {
                 const metaContent = decodeURIComponent(encodedMeta);
-                const meta = JSON.parse(metaContent);
-                if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+                // 🚀 NEW: Check if it's a direct URL (for PDFs) or JSON (for Slate)
+                if (metaContent.startsWith('http')) {
+                    await window.nukeCloudStorageAsset(metaContent);
+                } else {
+                    const meta = JSON.parse(metaContent);
+                    if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+                }
             } catch(e){}
         }
 
@@ -2973,8 +2995,13 @@ window.emptyScrapBin = async function() {
                 // 1. Delete PDF from Storage
                 if (data.metaContent) {
                     try {
-                        const meta = JSON.parse(data.metaContent);
-                        if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+                        // 🚀 NEW: Direct URL vs JSON
+                        if (data.metaContent.startsWith('http')) {
+                            await window.nukeCloudStorageAsset(data.metaContent);
+                        } else {
+                            const meta = JSON.parse(data.metaContent);
+                            if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
+                        }
                     } catch(e){}
                 }
 
@@ -3299,3 +3326,55 @@ window.openSmartLobby = async function(sessionData) {
         console.error("Firebase lobby connection error:", e);
     }
 };
+
+// ==========================================
+// 🚀 THE DOCU-VAULT ENGINE (PDF UPLOADER)
+// ==========================================
+window.uploadPdfToVault = async function(input) {
+    if(!auth.currentUser) return alert("Please login first.");
+    const file = input.files[0];
+    if (!file) return;
+
+    // Loading State
+    const btn = input.nextElementSibling.querySelector('button');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '**';
+    btn.classList.add('animate-pulse');
+
+    try {
+        const uid = auth.currentUser.uid;
+        
+        // 1. Upload to Firebase Storage
+        const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
+        const filename = `PWOS_Vault/\({uid}/library_assets/\){Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const storageRef = ref(storage, filename);
+        
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        // 2. Save Reference to Vault Database
+        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const fileId = 'pdf_' + Date.now();
+        
+        await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
+            id: fileId,
+            name: file.name,
+            type: 'pdf', // 🚀 SMART FLAG: PDF
+            metaContent: downloadUrl, // Saving URL directly in metaContent for easy access
+            thumbnail: '', // We use placeholder for PDF
+            timestamp: new Date().toISOString(),
+            trashed: false
+        });
+
+        alert("PDF Uploaded and Secured in your Document Library!");
+        window.loadVaultFiles(); // Refresh UI instantly
+
+    } catch(e) {
+        console.error("PDF Vault Upload Error:", e);
+        alert("Failed to upload PDF. Check your connection.");
+    } finally {
+        input.value = ''; // Reset
+        btn.innerHTML = originalIcon;
+        btn.classList.remove('animate-pulse');
+    }
+}

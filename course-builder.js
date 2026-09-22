@@ -119,7 +119,8 @@ window.addBlock = function(type) {
             extraInputs = `
                 <div class="mt-2 flex items-center gap-2">
                     <input type="file" accept="application/pdf" class="hidden" onchange="window.uploadCoursePdf(this)">
-                    <button type="button" onclick="this.previousElementSibling.click()" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded font-bold hover:bg-slate-300 transition-colors flex items-center gap-1"><i class="fa-solid fa-cloud-arrow-up"></i> Upload PDF to Firebase</button>
+                    <button type="button" onclick="this.previousElementSibling.click()" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded font-bold hover:bg-slate-300 transition-colors flex items-center gap-1"><i class="fa-solid fa-upload"></i> Upload to Cloud</button>
+                    <button type="button" onclick="window.promptInsertVaultPdf(this)" class="text-[10px] bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded font-bold hover:bg-rose-200 transition-colors flex items-center gap-1"><i class="fa-solid fa-folder-open"></i> Pick from Vault</button>
                     <span class="upload-status text-[10px] text-emerald-500 font-bold hidden"><i class="fa-solid fa-check"></i> Uploaded Successfully</span>
                 </div>`;
         }
@@ -1195,5 +1196,148 @@ window.closeContentPlayer = function() {
         }
     } catch(e) {
         console.error("Mobile rotation fix failed", e);
+    }
+}
+
+// ==========================================
+// 🚀 THE SMART DOCUMENT PICKER (PDF VAULT TO CANVAS)
+// ==========================================
+window.promptInsertVaultPdf = async function(btn) {
+    const block = btn.closest('[id^="block-"]');
+    if (!block) return;
+    
+    const linkInput = block.querySelector('.link-input');
+    if (!linkInput) return;
+
+    let pickerModal = document.getElementById('smart-pdf-picker-modal');
+    
+    // Agar modal pehle se nahi bana hai, toh usey DOM mein inject karo
+    if (!pickerModal) {
+        const modalHtml = `
+        <div id="smart-pdf-picker-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[85vh]">
+                <div class="p-5 md:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-file-pdf text-rose-500"></i> Smart Document Library</h3>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Select a PDF from your Vault</p>
+                        </div>
+                        <button onclick="document.getElementById('smart-pdf-picker-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <!-- 🚀 Omni-Search Bar -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="pdf-picker-search" oninput="window.filterVaultPdfs(this.value)" placeholder="Search PDFs by name..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-rose-500 dark:text-white transition-colors shadow-sm font-bold">
+                    </div>
+                </div>
+                
+                <div class="p-6 flex-grow overflow-y-auto hide-scrollbar bg-slate-100/50 dark:bg-slate-900">
+                    <div id="pdf-picker-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Fetched PDFs will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        pickerModal = document.getElementById('smart-pdf-picker-modal');
+    }
+
+    // Modal ko show karo
+    pickerModal.classList.remove('hidden');
+    const grid = document.getElementById('pdf-picker-grid');
+    grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-rose-500 text-2xl mb-2"></i><br><span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Scanning Library...</span></div>';
+
+    // Store link input ID in a global variable for the click handler
+    window.currentActivePdfInputId = linkInput.id || ('pdf-input-' + Date.now());
+    linkInput.id = window.currentActivePdfInputId;
+
+    try {
+        if (!auth.currentUser) return alert("Please login first!");
+        
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "PWOS_Vault", auth.currentUser.uid, "projects"));
+        
+        window.cachedVaultPdfs = []; // Global Array for search filtering
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            // Sirf wahi files lo jo delete nahi hui hain aur jinka type 'pdf' hai
+            if (!data.trashed && data.type === 'pdf') {
+                window.cachedVaultPdfs.push(data);
+            }
+        });
+
+        window.renderVaultPdfs(window.cachedVaultPdfs); // Render UI
+
+    } catch(e) {
+        console.error("PDF Picker Error:", e);
+        grid.innerHTML = '<div class="col-span-full text-center text-rose-500 font-bold py-10">Failed to fetch PDFs from Vault.</div>';
+    }
+}
+
+// 🚀 NAYA: Renderer & Filter Function
+window.renderVaultPdfs = function(pdfList) {
+    const grid = document.getElementById('pdf-picker-grid');
+    
+    if (pdfList.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800">
+                <i class="fa-solid fa-file-pdf text-3xl mb-2 opacity-50 text-rose-400"></i>
+                <p class="text-xs font-bold uppercase tracking-wider mb-3">No PDFs found</p>
+                <p class="text-[10px]">Upload PDFs to your Document Library in the Vault.</p>
+            </div>`;
+        return;
+    }
+
+    // Sort by newest first
+    pdfList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    let html = '';
+    pdfList.forEach(f => {
+        const dateObj = new Date(f.timestamp);
+        const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric' });
+        
+        html += `
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:border-rose-500 hover:shadow-md transition-all group flex flex-col">
+            <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0"><i class="fa-solid fa-file-pdf text-lg"></i></div>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-regular fa-clock"></i> ${dateStr}</span>
+            </div>
+            <h4 class="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 mb-4" title="${f.name}">${f.name}</h4>
+            <button onclick="document.getElementById('smart-pdf-picker-modal').classList.add('hidden'); window.injectVaultPdfUrl('${f.metaContent}');" class="mt-auto w-full bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white dark:bg-rose-900/20 dark:hover:bg-rose-600 font-bold py-2 rounded-lg transition-colors text-xs border border-rose-200 dark:border-rose-800 shadow-sm active:scale-95">
+                Insert to Course
+            </button>
+        </div>`;
+    });
+    
+    grid.innerHTML = html;
+}
+
+// 🚀 Omni-Search Functionality
+window.filterVaultPdfs = function(query) {
+    const q = query.toLowerCase().trim();
+    if (q.length === 0) {
+        window.renderVaultPdfs(window.cachedVaultPdfs);
+        return;
+    }
+    
+    const filtered = window.cachedVaultPdfs.filter(pdf => pdf.name.toLowerCase().includes(q));
+    window.renderVaultPdfs(filtered);
+}
+
+// Inject URL into the Input Field
+window.injectVaultPdfUrl = function(url) {
+    const linkInput = document.getElementById(window.currentActivePdfInputId);
+    if (linkInput) {
+        linkInput.value = url;
+        window.autoSaveDraft(); // Save automatically!
+        
+        // UI Feedback
+        const status = linkInput.parentElement.querySelector('.upload-status');
+        if (status) {
+            status.innerHTML = '<i class="fa-solid fa-check"></i> Inserted from Vault';
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        }
     }
 }
