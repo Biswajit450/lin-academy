@@ -452,7 +452,15 @@ window.autoSaveDraft = async function() {
     if(!courseName) return;
     
     const dropzone = document.getElementById('editor-canvas-dropzone');
-    dropzone.querySelectorAll('input').forEach(input => input.setAttribute('value', input.value));
+    dropzone.querySelectorAll('input').forEach(input => {
+        if(input.type === 'checkbox') {
+            if(input.checked) input.setAttribute('checked', 'checked');
+            else input.removeAttribute('checked');
+        } else {
+            input.setAttribute('value', input.value);
+        }
+    });
+
     dropzone.querySelectorAll('textarea').forEach(ta => ta.innerHTML = ta.value);
     dropzone.querySelectorAll('th, td').forEach(cell => { 
         if(cell.contentEditable === "true") cell.setAttribute('data-content', cell.innerHTML); 
@@ -518,7 +526,15 @@ window.publishCourse = async function() {
     if(!courseName) { alert("Please select a course first!"); return; }
     
     const dropzone = document.getElementById('editor-canvas-dropzone'); 
-    dropzone.querySelectorAll('input').forEach(input => input.setAttribute('value', input.value)); 
+    dropzone.querySelectorAll('input').forEach(input => {
+        if(input.type === 'checkbox') {
+            if(input.checked) input.setAttribute('checked', 'checked');
+            else input.removeAttribute('checked');
+        } else {
+            input.setAttribute('value', input.value);
+        }
+    });
+ 
     dropzone.querySelectorAll('textarea').forEach(ta => ta.innerHTML = ta.value);
     
     try { 
@@ -625,6 +641,43 @@ window.openCourseView = async function(courseName) {
             // 🟢 4. Keep only action buttons clickable
             canvas.querySelectorAll('button').forEach(btn => {
                 btn.style.pointerEvents = 'auto';
+            });
+
+            // 🚀 NEW: STUDENT DOWNLOAD ENGINE
+            canvas.querySelectorAll('[id^="block-"]').forEach(block => {
+                const pdfToggle = block.querySelector('.pdf-download-toggle');
+                
+                // Agar PDF block hai aur toggle check (ON) hai
+                if (pdfToggle && pdfToggle.checked) {
+                    const actionBtn = block.querySelector('.student-action-btn');
+                    if (actionBtn) {
+                        const linkInput = block.querySelector('.link-input');
+                        const fileUrl = linkInput ? linkInput.value : '';
+                        
+                        // Extract Name for Download
+                        const titleInput = block.querySelector('input[placeholder*="Title"]');
+                        const safeName = titleInput && titleInput.value ? titleInput.value.replace(/'/g, "\\'") : 'Course_Document';
+                        
+                        // Naya Download Button Banaiye
+                        const downloadBtn = document.createElement('button');
+                        downloadBtn.className = "px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 bg-slate-800 hover:bg-slate-900 text-white flex w-full sm:w-1/2 text-center justify-center items-center gap-2";
+                        downloadBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Download PDF';
+                        
+                        // Download Trigger Helper
+                        downloadBtn.onclick = () => window.downloadVaultFile(fileUrl, safeName);
+                        
+                        // Dono buttons ko agal-bagal set kijiye
+                        const btnContainer = document.createElement('div');
+                        btnContainer.className = 'flex flex-col sm:flex-row gap-3 mt-4 w-full';
+                        
+                        actionBtn.classList.remove('mt-4', 'w-full');
+                        actionBtn.classList.add('w-full', 'sm:w-1/2');
+                        
+                        actionBtn.parentNode.insertBefore(btnContainer, actionBtn);
+                        btnContainer.appendChild(actionBtn);
+                        btnContainer.appendChild(downloadBtn);
+                    }
+                }
             });
 
             // 🚀 NEW: PROGRESS TRACKING RENDERER (PHASE 2) 🚀
