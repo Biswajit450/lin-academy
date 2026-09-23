@@ -2629,7 +2629,7 @@ window.loadVaultFiles = async function() {
                     <div class="w-full h-28 bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
                         <img src="${thumb}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                            <span class="text-white text-[9px] font-bold ${badgeColor} px-1.5 py-0.5 rounded shadow-sm"><i class="fa-solid ${badgeIcon} mr-1"></i>${isTest ? '.test' : '.slate'}</span>
+                            <span class="text-white text-[9px] font-bold ${badgeColor} px-1.5 py-0.5 rounded shadow-sm"><i class="fa-solid ${badgeIcon} mr-1"></i>${isTest ? '.test' : (isPdf ? '.pdf' : '.slate')}</span>
                         </div>
                     </div>
                     <div class="p-3" onclick="${clickAction}">
@@ -2731,7 +2731,9 @@ window.openVaultFolder = function(folderType) {
                 <div class="p-4" onclick="${clickAction}">
                     <h4 id="card-title-${f.id}" class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
                     <div class="flex justify-between items-center mt-1.5">
-                        <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold flex items-center gap-2">
+                            <span><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</span>${isPdf && f.fileSize ? `<span class="text-slate-300 dark:text-slate-600">•</span> <span><i class="fa-solid fa-hard-drive mr-1"></i> ${f.fileSize}</span>` : ''}
+                        </p>
                         ${isPdf ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase">PDF</span>` : ''}
                     </div>
                 </div>
@@ -3371,18 +3373,28 @@ window.openSmartLobby = async function(sessionData) {
 };
 
 // ==========================================
-// 🚀 THE DOCU-VAULT ENGINE (PDF UPLOADER)
+// 🚀 THE DOCU-VAULT ENGINE (PDF UPLOADER WITH PREMIUM LOADER)
 // ==========================================
 window.uploadPdfToVault = async function(input) {
     if(!auth.currentUser) return alert("Please login first.");
     const file = input.files[0];
     if (!file) return;
 
-    // Loading State
-    const btn = input.nextElementSibling.querySelector('button');
-    const originalIcon = btn.innerHTML;
-    btn.innerHTML = '**';
-    btn.classList.add('animate-pulse');
+    // 🚀 NEW: Awesome Full-Screen Loading Overlay
+    let loadingOverlay = document.getElementById('vault-upload-overlay');
+    if (!loadingOverlay) {
+        loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'vault-upload-overlay';
+        loadingOverlay.className = 'fixed inset-0 z-[300] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm transition-opacity';
+        loadingOverlay.innerHTML = `
+            <div class="w-16 h-16 border-4 border-slate-700 border-t-rose-500 rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(244,63,94,0.5)]"></div>
+            <h3 class="text-xl font-extrabold text-white mb-2 tracking-wide font-serif">Uploading Document</h3>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center animate-pulse">Securing in your Vault...</p>
+        `;
+        document.body.appendChild(loadingOverlay);
+    } else {
+        loadingOverlay.classList.remove('hidden');
+    }
 
     try {
         const uid = auth.currentUser.uid;
@@ -3402,23 +3414,23 @@ window.uploadPdfToVault = async function(input) {
         await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
             id: fileId,
             name: file.name,
-            type: 'pdf', // 🚀 SMART FLAG: PDF
-            metaContent: downloadUrl, // Saving URL directly in metaContent for easy access
-            thumbnail: '', // We use placeholder for PDF
+            type: 'pdf', 
+            metaContent: downloadUrl, 
+            fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+            thumbnail: '', 
             timestamp: new Date().toISOString(),
             trashed: false
         });
 
-        alert("PDF Uploaded and Secured in your Document Library!");
         window.loadVaultFiles(); // Refresh UI instantly
 
     } catch(e) {
         console.error("PDF Vault Upload Error:", e);
         alert("Failed to upload PDF. Check your connection.");
     } finally {
-        input.value = ''; // Reset
-        btn.innerHTML = originalIcon;
-        btn.classList.remove('animate-pulse');
+        input.value = ''; // Reset input
+        // Loading hatayein
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }
 }
 
