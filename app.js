@@ -2644,28 +2644,46 @@ window.loadVaultFiles = async function() {
         console.error("Vault fetch error", e);
         recentsGrid.innerHTML = '<div class="w-full text-center text-rose-500 font-bold py-10">Failed to sync Smart Drive.</div>';
     }
+    // 🚀 AUTO-REFRESH FIX: Agar folder view open hai, toh usko bhi refresh karo
+    if (window.currentOpenFolderType && !document.getElementById('vault-folder-view').classList.contains('hidden')) {
+        window.openVaultFolder(window.currentOpenFolderType);
+    }
+
 }
 
 // ==========================================
 // 🚀 VAULT 2.0 FOLDER NAVIGATION ENGINE
 // ==========================================
+window.currentOpenFolderType = null; // 🚀 Tracker for auto-refresh
+
 window.openVaultFolder = function(folderType) {
+    window.currentOpenFolderType = folderType;
     document.getElementById('vault-main-view').classList.add('hidden');
     document.getElementById('vault-folder-view').classList.remove('hidden');
     document.getElementById('vault-folder-view').classList.add('flex');
     
-    const titleEl = document.getElementById('vault-folder-title');
+    const titleContainer = document.getElementById('vault-folder-title').parentElement;
+    titleContainer.classList.add('flex-grow'); // Ensures button goes to right side
     const gridEl = document.getElementById('vault-folder-grid');
     
     let filteredFiles = [];
+    
+    // 🚀 PREMIUM ACTION BAR LOGIC
     if (folderType === 'test') {
-        titleEl.innerHTML = '<i class="fa-solid fa-flask text-emerald-500 mr-2"></i> Exam Studio Mocks';
+        titleContainer.innerHTML = '<h3 id="vault-folder-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-flask text-emerald-500"></i> Exam Studio Mocks</h3>';
         filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'test');
     } else if (folderType === 'pdf') {
-        titleEl.innerHTML = '<i class="fa-solid fa-file-pdf text-rose-500 mr-2"></i> Document Library';
+        titleContainer.innerHTML = `
+            <div class="flex justify-between items-center w-full">
+                <h3 id="vault-folder-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-file-pdf text-rose-500"></i> Document Library</h3>
+                <input type="file" id="inner-pdf-upload" accept="application/pdf" class="hidden" onchange="window.uploadPdfToVault(this)">
+                <button onclick="document.getElementById('inner-pdf-upload').click()" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-transform active:scale-95 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> <span class="hidden sm:inline">Upload PDF</span>
+                </button>
+            </div>`;
         filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'pdf');
     } else {
-        titleEl.innerHTML = '<i class="fa-solid fa-pen-nib text-cyan-500 mr-2"></i> Interactive Slates';
+        titleContainer.innerHTML = '<h3 id="vault-folder-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-pen-nib text-cyan-500"></i> Interactive Slates</h3>';
         filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test' && f.type !== 'pdf');
     }
 
@@ -2674,31 +2692,48 @@ window.openVaultFolder = function(folderType) {
         return;
     }
 
+    // 🚀 PREMIUM GRID VIEW WITH 3-DOT MENU
     let html = '';
     filteredFiles.forEach(f => {
         const dateObj = new Date(f.timestamp);
         const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
         
         const isTest = (f.type === 'test');
-        const isPdf = (f.type === 'pdf'); // 🚀 NAYA
+        const isPdf = (f.type === 'pdf');
         
         const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : (isPdf ? 'https://via.placeholder.com/300x169.png?text=PDF+Document' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas'));
         
         let clickAction = '';
         if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
-        else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`; // 🚀 PDF naye tab mein open hogi
+        else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
         else clickAction = `window.launchPWOSStudio('${f.id}')`;
         
+        let safeName = f.name.replace(/'/g, "\\'");
+        
         html += `
-            <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col">
-                <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-xs"></i></button>
+            <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col">
                 
-                <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
+                <!-- 🚀 3-Dot Menu Button -->
+                <div class="absolute top-2 right-2 z-20">
+                    <button onclick="event.stopPropagation(); window.toggleFileMenu('${f.id}')" class="w-8 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur transition-colors shadow-sm"><i class="fa-solid fa-ellipsis-vertical text-sm"></i></button>
+                    
+                    <!-- Context Menu Dropdown -->
+                    <div id="file-menu-${f.id}" class="hidden absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-30">
+                        ${isPdf ? `<button onclick="event.stopPropagation(); window.downloadVaultFile('${f.metaContent}', '${safeName}')" class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-blue transition-colors border-b border-slate-100 dark:border-slate-700"><i class="fa-solid fa-download mr-2"></i> Download</button>` : ''}
+                        <button onclick="event.stopPropagation(); window.renameVaultFile('${f.id}', '${safeName}')" class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-amber-500 transition-colors border-b border-slate-100 dark:border-slate-700"><i class="fa-solid fa-pen mr-2"></i> Rename</button>
+                        <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}'); window.toggleFileMenu('${f.id}')" class="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"><i class="fa-solid fa-trash mr-2"></i> Move to Bin</button>
+                    </div>
+                </div>
+                
+                <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden rounded-t-2xl" onclick="${clickAction}">
                     <img src="${thumb}" class="w-full h-full object-cover">
                 </div>
                 <div class="p-4" onclick="${clickAction}">
-                    <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
-                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
+                    <h4 id="card-title-${f.id}" class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
+                    <div class="flex justify-between items-center mt-1.5">
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold"><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</p>
+                        ${isPdf ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase">PDF</span>` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -2707,6 +2742,7 @@ window.openVaultFolder = function(folderType) {
 }
 
 window.closeVaultFolder = function() {
+    window.currentOpenFolderType = null;
     document.getElementById('vault-folder-view').classList.add('hidden');
     document.getElementById('vault-folder-view').classList.remove('flex');
     document.getElementById('vault-main-view').classList.remove('hidden');
@@ -3384,4 +3420,66 @@ window.uploadPdfToVault = async function(input) {
         btn.innerHTML = originalIcon;
         btn.classList.remove('animate-pulse');
     }
+}
+
+// ==========================================
+// 🚀 VAULT 3-DOT MENU & OPERATIONS
+// ==========================================
+window.toggleFileMenu = function(id) {
+    // Pehle baaki saare menus close karo
+    document.querySelectorAll('[id^="file-menu-"]').forEach(menu => {
+        if (menu.id !== `file-menu-${id}`) menu.classList.add('hidden');
+    });
+    const menu = document.getElementById(`file-menu-${id}`);
+    if (menu) menu.classList.toggle('hidden');
+}
+
+// Menu ke bahar click karne par usko hide karna
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('[id^="file-menu-"]') && !e.target.closest('button[onclick*="toggleFileMenu"]')) {
+        document.querySelectorAll('[id^="file-menu-"]').forEach(menu => menu.classList.add('hidden'));
+    }
+});
+
+// ✏️ Rename File
+window.renameVaultFile = async function(id, oldName) {
+    document.querySelectorAll('[id^="file-menu-"]').forEach(menu => menu.classList.add('hidden'));
+    const newName = prompt("Enter new name for the file:", oldName);
+    if (!newName || newName.trim() === '' || newName === oldName) return;
+
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
+            name: newName.trim()
+        });
+        
+        // Instant Local UI Update
+        const titleEl = document.getElementById(`card-title-${id}`);
+        if(titleEl) titleEl.innerText = newName.trim();
+        window.loadVaultFiles(); // Refresh DB in background
+    } catch(e) {
+        console.error(e);
+        alert("Failed to rename file.");
+    }
+}
+
+// 📥 Download File (Force Download via Blob)
+window.downloadVaultFile = function(url, fileName) {
+    document.querySelectorAll('[id^="file-menu-"]').forEach(menu => menu.classList.add('hidden'));
+    
+    // Force direct download using Fetch API (Prevents opening in new tab)
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+          const blobUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = blobUrl;
+          a.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(blobUrl);
+          document.body.removeChild(a);
+      })
+      .catch(() => window.open(url, '_blank')); // Fallback
 }
