@@ -117,11 +117,16 @@ window.addBlock = function(type) {
             actionBtnText = '📄 View Document'; actionColor = 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-600'; 
             
             extraInputs = `
-                <div class="mt-2 flex items-center gap-2">
-                    <input type="file" accept="application/pdf" class="hidden" onchange="window.uploadCoursePdf(this)">
-                    <button type="button" onclick="this.previousElementSibling.click()" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded font-bold hover:bg-slate-300 transition-colors flex items-center gap-1"><i class="fa-solid fa-upload"></i> Upload to Cloud</button>
-                    <button type="button" onclick="window.promptInsertVaultPdf(this)" class="text-[10px] bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded font-bold hover:bg-rose-200 transition-colors flex items-center gap-1"><i class="fa-solid fa-folder-open"></i> Pick from Vault</button>
-                    <span class="upload-status text-[10px] text-emerald-500 font-bold hidden"><i class="fa-solid fa-check"></i> Uploaded Successfully</span>
+                <div class="mt-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <button type="button" onclick="window.promptInsertVaultPdf(this)" class="text-[10px] bg-rose-500 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-rose-600 transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"><i class="fa-solid fa-folder-open"></i> Pick from Vault</button>
+                    
+                    <div class="flex items-center gap-2 pr-1">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest"><i class="fa-solid fa-download mr-1"></i> Allow Download</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer pdf-download-toggle" onchange="window.autoSaveDraft()">
+                            <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-slate-500 peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
                 </div>`;
         }
 
