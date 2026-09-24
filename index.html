@@ -146,6 +146,24 @@
             50% { transform: translateY(-8px); }
         }
         .animate-lid-bounce { animation: lid-bounce 0.3s ease-in-out; }
+        /* 🚀 PHASE 3: CRYO-FREEZE VAULT LOCKDOWN STYLES 🚀 */
+        .vault-frozen #vault-main-view, .vault-frozen #vault-folder-view {
+            filter: grayscale(100%); opacity: 0.85; pointer-events: none;
+        }
+        /* Sirf click action (Open) allow karenge, baaki sab band */
+        .vault-frozen [onclick*="window.launch"], .vault-frozen [onclick*="window.open('"] {
+            pointer-events: auto !important;
+        }
+        /* Hide all creation, deletion, and upload buttons */
+        .vault-frozen button[onclick*="deleteVaultFile"],
+        .vault-frozen button[onclick*="renameVaultFile"],
+        .vault-frozen button[onclick*="emptyScrapBin"],
+        .vault-frozen [onclick*="vault-app-drawer"],
+        .vault-frozen [onclick*="inner-pdf-upload"],
+        .vault-frozen [onclick*="vault-pdf-upload"],
+        .vault-frozen #scrap-bin-btn {
+            display: none !important;
+        }
     </style>
     <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
 </head>
@@ -294,13 +312,26 @@
                 <!-- 🚀 VAULT 2.0 (SMART DRIVE) 🚀 -->
                 <div id="screen-vault" class="app-screen hidden space-y-6 h-[85vh] relative">
                     
+                    <!-- ❄️ Cryo-Freeze Warning Banner (Hidden by Default) -->
+                    <div id="cryo-freeze-banner" class="hidden mb-2 bg-rose-500 text-white rounded-2xl p-4 shadow-lg flex items-center gap-4 justify-center animate-pulse border-2 border-rose-600 z-50 relative">
+                        <i class="fa-regular fa-snowflake text-2xl md:text-3xl"></i>
+                        <div class="text-left">
+                            <h4 class="font-black uppercase tracking-widest text-sm md:text-base shadow-sm">Workspace Frozen</h4>
+                            <p class="text-[10px] md:text-xs font-bold opacity-90">Under review by Superadmin. Read-only access granted. Modifications disabled.</p>
+                        </div>
+                    </div>
+
                     <!-- Base Vault View (Recents + Folders) -->
                     <div id="vault-main-view">
                         <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-4">
                             <div>
-                                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-3"><i class="fa-solid fa-vault text-cyan-500"></i> My Smart Vault</h3>
+                                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-3"><i class="fa-solid fa-vault text-cyan-500"></i> <span id="vault-owner-name">My Smart Vault</span></h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 uppercase tracking-wider">Educator Workspace & Drive</p>
                             </div>
+                            <!-- 👑 Omni-View Button (Superadmin Only) -->
+                            <button id="omni-view-btn" onclick="window.openOmniVaultModal()" class="hidden bg-purple-600 hover:bg-purple-700 text-white text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-xl shadow-[0_0_15px_rgba(147,51,234,0.5)] transition-all flex items-center gap-2 animate-pulse shrink-0">
+                                <i class="fa-solid fa-eye text-sm sm:text-base"></i> <span class="hidden sm:inline tracking-widest uppercase">Omni-View</span>
+                            </button>
                         </div>
 
                         <!-- 🚀 TIER 1: The Quick Access Row (Recent Top 6) -->
@@ -585,6 +616,31 @@
                 <span><i class="fa-solid fa-shield-halved mr-1 text-emerald-500"></i> Secure Local Index</span>
                 <span class="hidden md:inline">Powered by Lin Academy Engine</span>
             </div>
+        </div>
+    </div>
+    <!-- 👑 NAYA: OMNI-VAULT SWITCHER MODAL (SUPERADMIN GOD MODE) 🚀 -->
+    <div id="omni-vault-modal" class="fixed inset-0 z-[250] hidden flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-3xl shadow-2xl border border-purple-500/30 overflow-hidden flex flex-col max-h-[85vh]">
+            
+            <div class="p-5 md:p-6 border-b border-purple-100 dark:border-purple-900/50 flex justify-between items-center bg-purple-50 dark:bg-purple-900/20">
+                <div>
+                    <h3 class="text-lg md:text-xl font-bold text-purple-900 dark:text-purple-300 flex items-center gap-2"><i class="fa-solid fa-eye text-purple-500"></i> Omni-Vault Protocol</h3>
+                    <p class="text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-widest font-bold mt-1">Superadmin Control Panel</p>
+                </div>
+                <button onclick="document.getElementById('omni-vault-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-colors shadow-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Workspace: <span id="omni-active-workspace-name" class="text-brand-blue ml-1">My Own Vault</span></span>
+                <button onclick="window.resetToMyVault()" class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-300 hover:text-brand-blue transition-colors shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-house-user text-sm"></i> Return to My Vault</button>
+            </div>
+
+            <div class="p-6 flex-grow overflow-y-auto hide-scrollbar bg-slate-100/50 dark:bg-slate-900">
+                <div id="omni-admins-list" class="flex flex-col gap-3">
+                    <div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-purple-500 text-2xl mb-2"></i><br><span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Scanning Admins...</span></div>
+                </div>
+            </div>
+
         </div>
     </div>
     <script type="module" src="app.js?v=ultimate_launch_v1"></script>

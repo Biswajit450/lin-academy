@@ -2399,7 +2399,7 @@ window.launchPWOSStudio = function(existingFileId = null) {
 // THE FIREBASE SYNC ROUTER
 window.addEventListener('message', async (event) => {
     if (!auth.currentUser) return;
-    const uid = auth.currentUser.uid;
+    const uid = window.currentVaultUid || auth.currentUser.uid;
     
     // A. SAVE OR UPDATE REQUEST FROM SLATE
     if (event.data && event.data.type === 'SAVE_SLATE_FILE') {
@@ -2558,42 +2558,65 @@ window.endAdminLiveSession = async function() {
 // Global cache for folder deep-dive
 window.cachedVaultFiles = [];
 
-// 🚀 NAYA: Smart Drive Renderer (Recents + Folder Counts)
 window.loadVaultFiles = async function() {
     const recentsGrid = document.getElementById('vault-recents-grid');
     if(!recentsGrid || !auth.currentUser) return;
-    const uid = auth.currentUser.uid;
+    
+    // 👑 OMNI-VAULT LOGIC: Agar God-Mode active hai toh target UID lo, warna khud ki
+    const targetUid = window.currentVaultUid || auth.currentUser.uid;
+    // 👑 Reveal Omni-View button ONLY for Superadmin
+    const omniBtn = document.getElementById('omni-view-btn');
+    if(omniBtn) {
+        if(String(window.currentUserRole).toLowerCase().trim() === 'superadmin') {
+            omniBtn.classList.remove('hidden');
+        } else {
+            omniBtn.classList.add('hidden');
+        }
+    }
     
     recentsGrid.innerHTML = '<div class="text-center py-10 w-full"><i class="fa-solid fa-spinner fa-spin text-cyan-500 text-2xl"></i><br><span class="text-xs text-slate-400 font-bold">Syncing Smart Drive...</span></div>';
 
     try {
-        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        const snap = await getDocs(collection(db, "PWOS_Vault", uid, "projects"));
+        const { collection, getDocs, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        // ❄️ CRYO-FREEZE CHECK
+        const targetUserSnap = await getDoc(doc(db, "users", targetUid));
+        const isFrozen = targetUserSnap.exists() && targetUserSnap.data().isVaultFrozen === true;
+        
+        const vaultScreen = document.getElementById('screen-vault');
+        const freezeBanner = document.getElementById('cryo-freeze-banner');
+        if (isFrozen) {
+            if(vaultScreen) vaultScreen.classList.add('vault-frozen');
+            if(freezeBanner) freezeBanner.classList.remove('hidden');
+        } else {
+            if(vaultScreen) vaultScreen.classList.remove('vault-frozen');
+            if(freezeBanner) freezeBanner.classList.add('hidden');
+        }
+
+        // Fetch Data from the Omni Target
+        const snap = await getDocs(collection(db, "PWOS_Vault", targetUid, "projects"));
         
         let files = [];
-        snap.forEach(doc => {
-            const data = doc.data();
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
             if (!data.trashed) files.push(data);
         });
 
-        // 1. Sort newest first & Save to Global Cache
         files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         window.cachedVaultFiles = files; 
 
-        // 2. Update Smart Folder Counts
         const testFiles = files.filter(f => f.type === 'test');
-        const pdfFiles = files.filter(f => f.type === 'pdf'); // 🚀 NEW: Filter PDF
-        const slateFiles = files.filter(f => f.type !== 'test' && f.type !== 'pdf'); // 🚀 FIX: Slate means not test and not pdf
+        const pdfFiles = files.filter(f => f.type === 'pdf'); 
+        const slateFiles = files.filter(f => f.type !== 'test' && f.type !== 'pdf'); 
         
         const countSlateEl = document.getElementById('folder-count-slate');
         const countTestEl = document.getElementById('folder-count-test');
-        const countPdfEl = document.getElementById('folder-count-pdf'); // 🚀 NEW
+        const countPdfEl = document.getElementById('folder-count-pdf'); 
         
         if(countSlateEl) countSlateEl.innerText = slateFiles.length;
         if(countTestEl) countTestEl.innerText = testFiles.length;
-        if(countPdfEl) countPdfEl.innerText = pdfFiles.length; // 🚀 NEW
+        if(countPdfEl) countPdfEl.innerText = pdfFiles.length; 
 
-        // 3. Render Top 6 Recents (Horizontal Row)
         const recentFiles = files.slice(0, 6);
         
         if(recentFiles.length === 0) {
@@ -2611,7 +2634,7 @@ window.loadVaultFiles = async function() {
             const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric' });
             
             const isTest = (f.type === 'test');
-            const isPdf = (f.type === 'pdf'); // 🚀 PDF detection
+            const isPdf = (f.type === 'pdf'); 
             
             const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : (isPdf ? 'https://via.placeholder.com/300x169.png?text=PDF+Document' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas'));
             const badgeColor = isTest ? 'bg-emerald-600' : (isPdf ? 'bg-rose-600' : 'bg-cyan-600');
@@ -2622,7 +2645,6 @@ window.loadVaultFiles = async function() {
             else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
             else clickAction = `window.launchPWOSStudio('${f.id}')`;
 
-            
             html += `
                 <div id="vault-card-${f.id}" class="min-w-[200px] sm:min-w-[240px] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden group hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col snap-start">
                     <button onclick="event.stopPropagation(); window.deleteVaultFile('${f.id}')" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur"><i class="fa-solid fa-trash text-[10px]"></i></button>
@@ -2644,11 +2666,10 @@ window.loadVaultFiles = async function() {
         console.error("Vault fetch error", e);
         recentsGrid.innerHTML = '<div class="w-full text-center text-rose-500 font-bold py-10">Failed to sync Smart Drive.</div>';
     }
-    // 🚀 AUTO-REFRESH FIX: Agar folder view open hai, toh usko bhi refresh karo
+    
     if (window.currentOpenFolderType && !document.getElementById('vault-folder-view').classList.contains('hidden')) {
         window.openVaultFolder(window.currentOpenFolderType);
     }
-
 }
 
 // ==========================================
@@ -2783,7 +2804,7 @@ window.deleteVaultFile = async function(id) {
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         // Soft delete: Flag it as trashed
-        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
+        await updateDoc(doc(db, "PWOS_Vault", (window.currentVaultUid || auth.currentUser.uid), "projects", id), {
             trashed: true,
             trashedAt: new Date().toISOString()
         });
@@ -2910,50 +2931,27 @@ window.nukeCloudStorageAsset = async function(pdfUrl) {
 window.loadScrapBinFiles = async function() {
     const grid = document.getElementById('scrap-bin-grid');
     if(!grid || !auth.currentUser) return;
-    const uid = auth.currentUser.uid;
     
+    // 👑 OMNI-VAULT & RBAC CHECK
+    const targetUid = window.currentVaultUid || auth.currentUser.uid;
+    const isSuperadmin = String(window.currentUserRole).toLowerCase().trim() === 'superadmin';
+    
+    // UI Update: Only Superadmin sees "Empty All"
+    const emptyBtn = document.querySelector('button[onclick="window.emptyScrapBin()"]');
+    if(emptyBtn) emptyBtn.style.display = isSuperadmin ? 'inline-flex' : 'none';
+
     grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-emerald-500 text-xl"></i></div>';
 
     try {
-        const { collection, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        const snap = await getDocs(collection(db, "PWOS_Vault", uid, "projects"));
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "PWOS_Vault", targetUid, "projects"));
         
         let trashedFiles = [];
-        const now = new Date();
-        const EVAPORATE_DAYS = 30;
-
-        // 🧠 The 30-Day Auto Evaporator Scanner
-        for (const docSnap of snap.docs) {
+        
+        snap.forEach(docSnap => {
             const data = docSnap.data();
-            if (data.trashed && data.trashedAt) {
-                const trashedDate = new Date(data.trashedAt);
-                const diffTime = Math.abs(now - trashedDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                
-                if (diffDays > EVAPORATE_DAYS) {
-                    // Evaporate (Perm-Delete) silently
-                    
-                    // 1. Delete PDF from Storage if it exists
-                    if (data.type === 'pdf' && data.metaContent) {
-                        // 🚀 NEW: Direct PDF folder deletion
-                        await window.nukeCloudStorageAsset(data.metaContent);
-                    } else if (data.metaContent) {
-                        // Old Slate Logic
-                        try {
-                            const meta = JSON.parse(data.metaContent);
-                            if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
-                        } catch(e){}
-                    }
-                    
-                    // 2. Delete from Firestore
-                    await deleteDoc(doc(db, "PWOS_Vault", uid, "projects", data.id));
-                    console.log(`Auto-Evaporated file: ${data.id}`);
-                } else {
-                    data.daysLeft = EVAPORATE_DAYS - diffDays;
-                    trashedFiles.push(data);
-                }
-            }
-        }
+            if (data.trashed) trashedFiles.push(data); // 🚀 30-day rule completely REMOVED! (Forever Bin)
+        });
 
         if(trashedFiles.length === 0) {
             grid.innerHTML = `
@@ -2964,14 +2962,18 @@ window.loadScrapBinFiles = async function() {
             return;
         }
 
-        trashedFiles.sort((a, b) => new Date(b.trashedAt) - new Date(a.trashedAt));
+        trashedFiles.sort((a, b) => new Date(b.trashedAt || 0) - new Date(a.trashedAt || 0));
         
         let html = '';
         trashedFiles.forEach(f => {
             const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Deleted';
-            
-            // Pass the entire metadata to the delete function so we can find the PDF URL
             const safeMeta = f.metaContent ? encodeURIComponent(f.metaContent) : '';
+
+            // 👑 Fire Button (Permanent Delete) Only for Superadmin
+            let fireButtonHtml = '';
+            if (isSuperadmin) {
+                fireButtonHtml = `<button onclick="window.permanentDeleteFile('${f.id}', '${safeMeta}')" class="w-8 h-8 rounded-full bg-rose-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Delete Forever"><i class="fa-solid fa-fire"></i></button>`;
+            }
 
             html += `
                 <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 relative opacity-80 hover:opacity-100 transition-opacity">
@@ -2979,11 +2981,11 @@ window.loadScrapBinFiles = async function() {
                         <img src="${thumb}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
                             <button onclick="window.restoreFromBin('${f.id}')" class="w-8 h-8 rounded-full bg-emerald-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Restore to Vault"><i class="fa-solid fa-arrow-rotate-left"></i></button>
-                            <button onclick="window.permanentDeleteFile('${f.id}', '${safeMeta}')" class="w-8 h-8 rounded-full bg-rose-500 text-white hover:scale-110 transition-transform flex items-center justify-center" title="Delete Forever"><i class="fa-solid fa-fire"></i></button>
+                            ${fireButtonHtml}
                         </div>
                     </div>
                     <h4 class="font-bold text-xs text-slate-700 dark:text-slate-300 truncate">${f.name}</h4>
-                    <p class="text-[9px] text-rose-500 mt-1 font-bold uppercase tracking-wider">${f.daysLeft} days until evaporation</p>
+                    <p class="text-[9px] text-rose-500 mt-1 font-bold uppercase tracking-wider"><i class="fa-solid fa-lock text-[8px] mr-1"></i> Forever Bin</p>
                 </div>
             `;
         });
@@ -2997,67 +2999,69 @@ window.loadScrapBinFiles = async function() {
 
 window.permanentDeleteFile = async function(id, encodedMeta) {
     if(!confirm("Destroy this file permanently? This cannot be undone.")) return;
-    
+    const targetUid = window.currentVaultUid || auth.currentUser.uid;
     const shredSfx = document.getElementById('sfx-shredder');
     if(shredSfx) { shredSfx.currentTime = 0; shredSfx.play().catch(e=>console.log(e)); }
 
     try {
-        // 1. Delete PDF from Storage
         if (encodedMeta) {
             try {
                 const metaContent = decodeURIComponent(encodedMeta);
-                // 🚀 NEW: Check if it's a direct URL (for PDFs) or JSON (for Slate)
-                if (metaContent.startsWith('http')) {
-                    await window.nukeCloudStorageAsset(metaContent);
-                } else {
+                if (metaContent.startsWith('http')) { await window.nukeCloudStorageAsset(metaContent); } 
+                else {
                     const meta = JSON.parse(metaContent);
                     if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
                 }
             } catch(e){}
         }
 
-        // 2. Delete from Firestore
         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id));
-        
+        await deleteDoc(doc(db, "PWOS_Vault", targetUid, "projects", id));
         window.loadScrapBinFiles();
     } catch(e) { alert("Failed to delete."); }
 }
 
 window.emptyScrapBin = async function() {
     if(!confirm("Are you sure you want to evaporate ALL files in the Scrap Bin? This is permanent!")) return;
-    
+    const targetUid = window.currentVaultUid || auth.currentUser.uid;
     const shredSfx = document.getElementById('sfx-shredder');
     if(shredSfx) { shredSfx.currentTime = 0; shredSfx.play().catch(e=>console.log(e)); }
 
     try {
         const { collection, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        const snap = await getDocs(collection(db, "PWOS_Vault", auth.currentUser.uid, "projects"));
+        const snap = await getDocs(collection(db, "PWOS_Vault", targetUid, "projects"));
         
         for (const docSnap of snap.docs) {
             const data = docSnap.data();
             if (data.trashed) {
-                // 1. Delete PDF from Storage
                 if (data.metaContent) {
                     try {
-                        // 🚀 NEW: Direct URL vs JSON
-                        if (data.metaContent.startsWith('http')) {
-                            await window.nukeCloudStorageAsset(data.metaContent);
-                        } else {
+                        if (data.metaContent.startsWith('http')) { await window.nukeCloudStorageAsset(data.metaContent); } 
+                        else {
                             const meta = JSON.parse(data.metaContent);
                             if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
                         }
                     } catch(e){}
                 }
-
-                // 2. Delete from Firestore
-                await deleteDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", docSnap.id));
+                await deleteDoc(doc(db, "PWOS_Vault", targetUid, "projects", docSnap.id));
             }
         }
-        
         window.closeScrapBinContext();
         window.loadScrapBinFiles();
     } catch(e) { alert("Failed to empty Bin."); }
+}
+
+window.restoreFromBin = async function(id) {
+    try {
+        const targetUid = window.currentVaultUid || auth.currentUser.uid;
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        await updateDoc(doc(db, "PWOS_Vault", targetUid, "projects", id), {
+            trashed: false,
+            trashedAt: null
+        });
+        window.loadScrapBinFiles(); 
+        window.loadVaultFiles();    
+    } catch(e) { alert("Failed to restore."); }
 }
 
 // ==========================================
@@ -3397,7 +3401,7 @@ window.uploadPdfToVault = async function(input) {
     }
 
     try {
-        const uid = auth.currentUser.uid;
+        const uid = window.currentVaultUid || auth.currentUser.uid;
         
         // 1. Upload to Firebase Storage
         const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
@@ -3461,7 +3465,7 @@ window.renameVaultFile = async function(id, oldName) {
 
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        await updateDoc(doc(db, "PWOS_Vault", auth.currentUser.uid, "projects", id), {
+        await updateDoc(doc(db, "PWOS_Vault", (window.currentVaultUid || auth.currentUser.uid), "projects", id), {
             name: newName.trim()
         });
         
@@ -3494,4 +3498,97 @@ window.downloadVaultFile = function(url, fileName) {
           document.body.removeChild(a);
       })
       .catch(() => window.open(url, '_blank')); // Fallback
+}
+
+// ==========================================
+// 👑 PHASE 3: OMNI-VAULT PROTOCOL (GOD MODE ENGINE)
+// ==========================================
+window.currentVaultUid = null; 
+
+window.openOmniVaultModal = async function() {
+    document.getElementById('omni-vault-modal').classList.remove('hidden');
+    const listDiv = document.getElementById('omni-admins-list');
+    listDiv.innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-purple-500 text-2xl mb-2"></i><br><span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Scanning Admins...</span></div>';
+
+    try {
+        const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        // Superadmin ke alawa baaki Admins aur Educators ko fetch karo
+        const q = query(collection(db, "users"), where("role", "in", ["admin", "educator"]));
+        const snap = await getDocs(q);
+
+        let html = '';
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            const isFrozen = data.isVaultFrozen ? true : false;
+            const photo = data.photoURL || `https://ui-avatars.com/api/?name=${data.name || 'A'}&background=9333ea&color=fff`;
+            const safeName = data.name ? data.name.replace(/'/g, "\\'") : 'Admin';
+
+            html += `
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-purple-500 transition-colors">
+                <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
+                    <img src="${photo}" class="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 object-cover shrink-0">
+                    <div class="truncate">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">${data.name || 'Unknown Admin'}</h4>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate">${data.email}</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 shrink-0 ml-2">
+                    <button onclick="window.toggleVaultFreeze('${docSnap.id}', ${isFrozen})" class="${isFrozen ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-500' : 'bg-rose-100 text-rose-600 hover:bg-rose-500'} hover:text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm" title="${isFrozen ? 'Unfreeze Workspace' : 'Freeze Workspace'}">
+                        <i class="fa-solid ${isFrozen ? 'fa-fire' : 'fa-snowflake'}"></i>
+                    </button>
+                    <button onclick="window.switchOmniVault('${docSnap.id}', '${safeName}')" class="bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white px-3 md:px-4 py-2 rounded-xl text-[10px] md:text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 md:gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> <span class="hidden md:inline">Enter</span>
+                    </button>
+                </div>
+            </div>`;
+        });
+        if(html === '') html = '<div class="text-center text-slate-500 py-4 text-sm font-bold">No admins found.</div>';
+        listDiv.innerHTML = html;
+    } catch(e) {
+        console.error("Omni-Vault error", e);
+        listDiv.innerHTML = '<div class="text-center text-rose-500 py-4 text-sm font-bold">Failed to load admins. Check rules.</div>';
+    }
+}
+
+window.switchOmniVault = function(targetUid, targetName) {
+    window.currentVaultUid = targetUid; // Target ID set kardi
+    const titleText = targetName + "'s Vault";
+    
+    document.getElementById('vault-owner-name').innerText = titleText;
+    document.getElementById('omni-active-workspace-name').innerText = titleText;
+    
+    // UI Indicator (Purple glow)
+    document.getElementById('vault-owner-name').classList.add('text-purple-600', 'dark:text-purple-400');
+    
+    document.getElementById('omni-vault-modal').classList.add('hidden');
+    window.loadVaultFiles(); // Reload the drive dynamically!
+}
+
+window.resetToMyVault = function() {
+    window.currentVaultUid = null; // Wapas khud ke vault par
+    const titleText = "My Smart Vault";
+    
+    document.getElementById('vault-owner-name').innerText = titleText;
+    document.getElementById('omni-active-workspace-name').innerText = titleText;
+    
+    // Remove purple glow
+    document.getElementById('vault-owner-name').classList.remove('text-purple-600', 'dark:text-purple-400');
+    
+    document.getElementById('omni-vault-modal').classList.add('hidden');
+    window.loadVaultFiles();
+}
+
+window.toggleVaultFreeze = async function(targetUid, currentState) {
+    const actionText = currentState ? 'UNFREEZE' : 'FREEZE';
+    if(!confirm(`Are you sure you want to ${actionText} this workspace?`)) return;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        await updateDoc(doc(db, "users", targetUid), {
+            isVaultFrozen: !currentState
+        });
+        window.openOmniVaultModal(); // Refresh modal
+        alert(`Success! Workspace is now ${actionText}D.`);
+    } catch(e) {
+        alert("Failed to change freeze state.");
+    }
 }
