@@ -2336,6 +2336,7 @@ window.addEventListener('load', () => {
     setTimeout(() => {
         if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin' || window.currentUserRole === 'educator') {
             window.loadVaultFiles();
+            window.startCryoRadar(); // 🚀 NAYA: Instant Lockdown Radar Start!
         }
     }, 2000);
 });
@@ -3590,5 +3591,48 @@ window.toggleVaultFreeze = async function(targetUid, currentState) {
         alert(`Success! Workspace is now ${actionText}D.`);
     } catch(e) {
         alert("Failed to change freeze state.");
+    }
+}
+
+// ==========================================
+// ❄️ CRYO-RADAR: REAL-TIME LOCKDOWN LISTENER
+// ==========================================
+window.cryoRadarUnsubscribe = null;
+
+window.startCryoRadar = async function() {
+    if (!auth.currentUser) return;
+    
+    const role = String(window.currentUserRole || 'student').toLowerCase().trim();
+    // Superadmin aur Student ko freeze nahi karna, toh unpar radar mat lagao (Firebase Bill bachao)
+    if (role === 'superadmin' || role === 'student') return;
+
+    try {
+        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const userRef = doc(db, "users", auth.currentUser.uid);
+
+        // Agar purana radar chal raha hai toh usey band karo
+        if (window.cryoRadarUnsubscribe) window.cryoRadarUnsubscribe();
+
+        // 🚀 LIVE LISTENER 24/7
+        window.cryoRadarUnsubscribe = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const isFrozen = docSnap.data().isVaultFrozen === true;
+                const vaultScreen = document.getElementById('screen-vault');
+                const freezeBanner = document.getElementById('cryo-freeze-banner');
+
+                // Instant UI Lockdown (Bina page refresh kiye)
+                if (vaultScreen && freezeBanner) {
+                    if (isFrozen) {
+                        vaultScreen.classList.add('vault-frozen');
+                        freezeBanner.classList.remove('hidden');
+                    } else {
+                        vaultScreen.classList.remove('vault-frozen');
+                        freezeBanner.classList.add('hidden');
+                    }
+                }
+            }
+        });
+    } catch(e) {
+        console.error("Cryo-Radar failed to start:", e);
     }
 }
