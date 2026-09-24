@@ -160,11 +160,26 @@ canvas.on('mouse:up', function(opt) {
 });
 
 // =====================================
-// TIME MACHINE (UNDO / REDO)
+// TIME MACHINE (UNDO / REDO) & SMART SYNC
 // =====================================
 let canvasHistory = [];
 let historyIndex = -1;
 let isHistoryTracking = false;
+
+// 🚀 SMART SYNC ENGINE: Network Choke Protector
+let syncTimeout = null;
+function broadcastStateToFirebase(jsonContent, metaContent) {
+    clearTimeout(syncTimeout);
+    // 800ms ka delay: Jab pen rukega, tabhi heavy data Firebase par jayega!
+    syncTimeout = setTimeout(() => {
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'SYNC_BOARD_STATE',
+                payload: { jsonContent: jsonContent, metaContent: metaContent }
+            }, '*');
+        }
+    }, 800); 
+}
 
 function saveHistory() {
     if (!isHistoryTracking) return;
@@ -179,22 +194,17 @@ function saveHistory() {
     canvasHistory.push(jsonContent);
     historyIndex++;
 
-    // 🚀 NEW: LIVE SYNC BROADCASTER (Sends data to app.js instantly!)
-    if (window.parent !== window) {
-        const metaContent = JSON.stringify({
-            currentSlide: currentSlide,
-            totalSlides: totalSlides,
-            pdfUrl: currentPdfUrl,
-            // 🚀 THE RATIO FIX: Educator apne canvas ka size bhej raha hai
-            canvasWidth: wrapper.clientWidth,
-            canvasHeight: wrapper.clientHeight
-        });
+    const metaContent = JSON.stringify({
+        currentSlide: currentSlide,
+        totalSlides: totalSlides,
+        pdfUrl: currentPdfUrl,
+        // 🚀 THE RATIO FIX: Educator apne canvas ka size bhej raha hai
+        canvasWidth: wrapper.clientWidth,
+        canvasHeight: wrapper.clientHeight
+    });
 
-        window.parent.postMessage({
-            type: 'SYNC_BOARD_STATE',
-            payload: { jsonContent: jsonContent, metaContent: metaContent }
-        }, '*');
-    }
+    // 🚀 Purane direct postMessage ki jagah Smart Sync call hoga
+    broadcastStateToFirebase(jsonContent, metaContent);
 }
 
 // Initial Blank State

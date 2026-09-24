@@ -204,6 +204,12 @@ window.syncEducatorBoard = function(jsonContent, metaContent) {
         
         canvas.renderAll();
         window.applyStudentTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        
+        // 🚀 SMART CLEAR: Firebase se data aate hi live WebRTC layer saaf kar do
+        // Taaki double ink aur lag ka illusion na ho
+        if (typeof ctx !== 'undefined' && typeof liveInkCanvas !== 'undefined') {
+            ctx.clearRect(0, 0, liveInkCanvas.width, liveInkCanvas.height);
+        }
     });
 };
 
