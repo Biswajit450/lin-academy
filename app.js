@@ -2348,9 +2348,21 @@ setTimeout(() => { window.buildSearchIndex(); }, 4000);
 
 window.addEventListener('load', () => {
     setTimeout(() => {
-        if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin' || window.currentUserRole === 'educator') {
+        // 🚀 FIX: Sirf admin aur superadmin check
+        if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin') {
             window.loadVaultFiles();
-            window.startCryoRadar(); // 🚀 NAYA: Instant Lockdown Radar Start!
+            window.startCryoRadar(); 
+            
+            // 🚀 TIMING FIX: Firebase ke data aane ke baad buttons ko zinda karo!
+            const mobVault = document.getElementById('nav-mob-vault');
+            const deskVault = document.getElementById('nav-desk-vault');
+            
+            if(mobVault) { mobVault.classList.remove('hidden'); mobVault.classList.add('flex'); }
+            if(deskVault) { deskVault.classList.remove('hidden'); deskVault.classList.add('flex'); }
+            
+            // Re-run color highlight
+            const activeScreen = document.querySelector('.app-screen:not(.hidden)');
+            if (activeScreen) window.updateNavHighlight(activeScreen.id);
         }
     }, 2000);
 });
