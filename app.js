@@ -82,7 +82,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE (UPDATED FOR MOBILE VAULT)
+// 🚀 DYNAMIC COLOR NAV ENGINE
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -90,46 +90,31 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'enrollments', color: 'text-emerald-500' }, 
         { id: 'admin', color: 'text-rose-500' },          
         { id: 'profile', color: 'text-amber-500' },       
-        { id: 'vault', color: 'text-cyan-500' } // 🚀 Vault color 
+        { id: 'vault', color: 'text-cyan-500' } // 🚀 NEW: Vault color added
     ];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
-        if(deskBtn || mobBtn) { 
-            // 1. Clear old colors/glows
+        if(deskBtn || mobBtn) { // Changed && to || so it works even if mobile tab is missing
+            // 1. Purane sabhi colors aur glows ko saaf karo
             ['text-blue-500', 'text-emerald-500', 'text-rose-500', 'text-amber-500', 'text-cyan-500', 'opacity-40', 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
                 if(deskBtn) deskBtn.classList.remove(cls);
                 if(mobBtn) mobBtn.classList.remove(cls);
             });
             
-            // 2. Active Tab Logic (Glow)
+            // 2. Agar yeh tab ACTIVE hai (Glow & Bright Mode)
             if(`screen-${nav.id}` === activeScreenId) {
                 if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
                 if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
             } else {
-                // 3. Inactive Tab Logic (Dim)
+                // 3. Agar yeh tab INACTIVE hai (Dim Mode)
                 if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-40');
                 if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-40');
             }
         }
     });
-
-    // 🚀 MOBILE VAULT VISIBILITY LOGIC (RBAC Check)
-    const mobileVaultBtn = document.getElementById('nav-mob-vault');
-    // Ensure window.currentUserRole is available (fetched from Firebase) before deciding
-    if (mobileVaultBtn && window.currentUserRole) {
-        const currentRole = String(window.currentUserRole).toLowerCase().trim();
-        // Unhide Vault on mobile ONLY if user is Admin or Superadmin
-        if (currentRole === 'admin' || currentRole === 'superadmin') {
-            mobileVaultBtn.classList.remove('hidden');
-            mobileVaultBtn.style.display = 'flex'; // Forcefully apply flex
-        } else {
-            mobileVaultBtn.classList.add('hidden');
-            mobileVaultBtn.style.display = ''; // Reset display
-        }
-    }
 }
 // App start hote hi Home button ko active kar do
 setTimeout(() => window.updateNavHighlight('screen-dashboard'), 500);
@@ -2349,21 +2334,9 @@ setTimeout(() => { window.buildSearchIndex(); }, 4000);
 
 window.addEventListener('load', () => {
     setTimeout(() => {
-        // 🚀 FIX: Sirf admin aur superadmin check
-        if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin') {
+        if(window.currentUserRole === 'admin' || window.currentUserRole === 'superadmin' || window.currentUserRole === 'educator') {
             window.loadVaultFiles();
-            window.startCryoRadar(); 
-            
-            // 🚀 TIMING FIX: Firebase ke data aane ke baad buttons ko zinda karo!
-            const mobVault = document.getElementById('nav-mob-vault');
-            const deskVault = document.getElementById('nav-desk-vault');
-            
-            if(mobVault) { mobVault.classList.remove('hidden'); mobVault.classList.add('flex'); }
-            if(deskVault) { deskVault.classList.remove('hidden'); deskVault.classList.add('flex'); }
-            
-            // Re-run color highlight
-            const activeScreen = document.querySelector('.app-screen:not(.hidden)');
-            if (activeScreen) window.updateNavHighlight(activeScreen.id);
+            window.startCryoRadar(); // 🚀 NAYA: Instant Lockdown Radar Start!
         }
     }, 2000);
 });
