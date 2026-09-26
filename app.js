@@ -2673,7 +2673,7 @@ window.loadVaultFiles = async function() {
             const isTest = (f.type === 'test');
             const isPdf = (f.type === 'pdf'); 
             
-            const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : (isPdf ? 'https://via.placeholder.com/300x169.png?text=PDF+Document' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas'));
+            const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas'));
             const badgeColor = isTest ? 'bg-emerald-600' : (isPdf ? 'bg-rose-600' : 'bg-cyan-600');
             const badgeIcon = isTest ? 'fa-flask' : (isPdf ? 'fa-file-pdf' : 'fa-pen-nib');
             
@@ -2759,7 +2759,7 @@ window.openVaultFolder = function(folderType) {
         const isTest = (f.type === 'test');
         const isPdf = (f.type === 'pdf');
         
-        const thumb = f.thumbnail || (isTest ? 'https://via.placeholder.com/300x169.png?text=Exam+Studio' : (isPdf ? 'https://via.placeholder.com/300x169.png?text=PDF+Document' : 'https://via.placeholder.com/300x169.png?text=Slate+Canvas'));
+        const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas'));
         
         let clickAction = '';
         if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
@@ -2943,9 +2943,8 @@ window.restoreFromBin = async function(id) {
 }
 
 // ==========================================
-// 🚀 STORAGE DELETION HELPER
+// 🚀 STORAGE DELETION HELPER (UPGRADED PHANTOM SWEEPER)
 // ==========================================
-// Secret function to delete the orphaned PDF from Cloud Storage
 window.nukeCloudStorageAsset = async function(pdfUrl) {
     if (!pdfUrl) return;
     try {
@@ -2957,11 +2956,26 @@ window.nukeCloudStorageAsset = async function(pdfUrl) {
         if(filePath) {
             filePath = filePath.split('?')[0]; // Remove query params
             const fileRef = ref(storage, filePath);
-            await deleteObject(fileRef);
+            await deleteObject(fileRef).catch(e => console.log("File already removed from Storage"));
             console.log("Cloud Asset destroyed successfully:", filePath);
         }
+
+        // 🚀 THE PHANTOM SWEEPER: Delete the broken link from Document Library
+        const { collection, query, where, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const targetUid = window.currentVaultUid || auth.currentUser.uid;
+        
+        const q = query(collection(db, "PWOS_Vault", targetUid, "projects"), where("metaContent", "==", pdfUrl));
+        const snap = await getDocs(q);
+        
+        snap.forEach(async (docSnap) => {
+            await deleteDoc(doc(db, "PWOS_Vault", targetUid, "projects", docSnap.id));
+            console.log("Phantom Document removed from Library:", docSnap.id);
+        });
+
+        if(window.loadVaultFiles) window.loadVaultFiles(); // Silently refresh UI
+
     } catch(e) {
-        console.error("Failed to clean up Cloud Storage:", e);
+        console.error("Failed to clean up Cloud Storage or Vault:", e);
     }
 }
 
@@ -3003,7 +3017,7 @@ window.loadScrapBinFiles = async function() {
         
         let html = '';
         trashedFiles.forEach(f => {
-            const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Deleted';
+            const thumb = f.thumbnail || 'https://placehold.co/300x169/e2e8f0/475569?text=Deleted';
             const safeMeta = f.metaContent ? encodeURIComponent(f.metaContent) : '';
 
             // 👑 Fire Button (Permanent Delete) Only for Superadmin
@@ -3258,7 +3272,7 @@ window.openGreenRoom = async function(sessionData) {
         let html = '';
         
         files.forEach(f => {
-            const thumb = f.thumbnail || 'https://via.placeholder.com/300x169.png?text=Slate+Canvas';
+            const thumb = f.thumbnail || 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas';
             html += `
             <div id="gr-card-${f.id}" onclick="window.selectGreenRoomFile('${f.id}')" class="green-room-card bg-slate-800 rounded-xl overflow-hidden cursor-pointer border border-slate-700 hover:border-brand-blue transition-all relative">
                 <div class="w-full aspect-video bg-slate-900 relative">
