@@ -118,15 +118,16 @@ window.updateNavHighlight = function(activeScreenId) {
 
     // 🚀 MOBILE VAULT VISIBILITY LOGIC (RBAC Check)
     const mobileVaultBtn = document.getElementById('nav-mob-vault');
-    if (mobileVaultBtn) {
-        const currentRole = String(window.currentUserRole || 'student').toLowerCase().trim();
+    // Ensure window.currentUserRole is available (fetched from Firebase) before deciding
+    if (mobileVaultBtn && window.currentUserRole) {
+        const currentRole = String(window.currentUserRole).toLowerCase().trim();
         // Unhide Vault on mobile ONLY if user is Admin or Superadmin
-        if (['admin', 'superadmin'].includes(currentRole)) {
+        if (currentRole === 'admin' || currentRole === 'superadmin') {
             mobileVaultBtn.classList.remove('hidden');
-            mobileVaultBtn.classList.add('flex'); 
+            mobileVaultBtn.style.display = 'flex'; // Forcefully apply flex
         } else {
             mobileVaultBtn.classList.add('hidden');
-            mobileVaultBtn.classList.remove('flex');
+            mobileVaultBtn.style.display = ''; // Reset display
         }
     }
 }
