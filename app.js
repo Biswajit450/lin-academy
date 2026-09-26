@@ -2464,13 +2464,13 @@ window.addEventListener('message', async (event) => {
         }
     }
 
-    // E. 🚀 UPLOAD PDF TO FIREBASE STORAGE (CLOUD DRIVE)
+    // E. 🚀 UPLOAD PDF TO FIREBASE STORAGE (CLOUD DRIVE & DOCUMENT LIBRARY)
     if (event.data && event.data.type === 'UPLOAD_PDF') {
         const { file, fileName } = event.data.payload;
         try {
             const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
             
-            // Storage Path: User ki ID ke andar secure folder banega
+            // Storage Path: User ki ID ke andar secure folder banega (No changes here)
             const filePath = `PWOS_Vault/${uid}/pdf_assets/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
             const storageRef = ref(storage, filePath);
             
@@ -2478,23 +2478,59 @@ window.addEventListener('message', async (event) => {
             await uploadBytes(storageRef, file);
             const downloadUrl = await getDownloadURL(storageRef);
             
+            // 🚀 NEW: Create Document in Vault (So it shows in Document Library automatically)
+            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            const fileId = 'pdf_' + Date.now();
+            const fileSizeStr = file.size ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : 'Unknown Size';
+            
+            await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
+                id: fileId,
+                name: fileName,
+                type: 'pdf', 
+                metaContent: downloadUrl, 
+                fileSize: fileSizeStr,
+                thumbnail: '', 
+                timestamp: new Date().toISOString(),
+                trashed: false
+            });
+
+            // 🚀 Refresh Vault UI silently in background
+            window.loadVaultFiles(); 
+
             // URL wapas Slate ko bhej do
             document.getElementById('pwos-studio-frame').contentWindow.postMessage({
                 type: 'PDF_UPLOAD_SUCCESS',
                 url: downloadUrl
             }, '*');
             
-            console.log("PDF successfully secured in Firebase Storage!");
+            console.log("PDF successfully secured in Storage & Document Library!");
         } catch(e) {
             console.error("PDF Cloud Upload Error:", e);
             alert("Failed to upload PDF to Cloud Storage.");
         }
     }
 
-    // F. ORPHAN PDF CLEANUP FROM SLATE
+    // F. ORPHAN PDF CLEANUP FROM SLATE (STORAGE & VAULT SYNC)
     if (event.data && event.data.type === 'DELETE_ORPHAN_PDF') {
+        const pdfUrl = event.data.url;
+        
+        // 1. Delete actual file from Firebase Storage
         if (window.nukeCloudStorageAsset) {
-            window.nukeCloudStorageAsset(event.data.url);
+            window.nukeCloudStorageAsset(pdfUrl);
+        }
+        
+        // 2. 🚀 NEW: Remove the broken link from Document Library if Slate is closed without saving
+        try {
+            const { collection, query, where, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            const q = query(collection(db, "PWOS_Vault", uid, "projects"), where("metaContent", "==", pdfUrl));
+            const snap = await getDocs(q);
+            
+            snap.forEach(async (docSnap) => {
+                await deleteDoc(doc(db, "PWOS_Vault", uid, "projects", docSnap.id));
+            });
+            window.loadVaultFiles(); // Refresh Vault UI silently
+        } catch(e) {
+            console.error("Failed to clean up orphan from Document Library:", e);
         }
     }
 
