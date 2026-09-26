@@ -120,10 +120,10 @@ window.updateNavHighlight = function(activeScreenId) {
     const mobileVaultBtn = document.getElementById('nav-mob-vault');
     if (mobileVaultBtn) {
         const currentRole = String(window.currentUserRole || 'student').toLowerCase().trim();
-        // Unhide Vault on mobile ONLY if user is Admin, Superadmin, or Educator
-        if (['admin', 'superadmin', 'educator'].includes(currentRole)) {
+        // Unhide Vault on mobile ONLY if user is Admin or Superadmin
+        if (['admin', 'superadmin'].includes(currentRole)) {
             mobileVaultBtn.classList.remove('hidden');
-            mobileVaultBtn.classList.add('flex'); // Keep the flex layout
+            mobileVaultBtn.classList.add('flex'); 
         } else {
             mobileVaultBtn.classList.add('hidden');
             mobileVaultBtn.classList.remove('flex');
