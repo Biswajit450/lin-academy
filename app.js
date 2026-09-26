@@ -82,7 +82,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE
+// 🚀 DYNAMIC COLOR NAV ENGINE (UPDATED FOR MOBILE VAULT)
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -90,31 +90,45 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'enrollments', color: 'text-emerald-500' }, 
         { id: 'admin', color: 'text-rose-500' },          
         { id: 'profile', color: 'text-amber-500' },       
-        { id: 'vault', color: 'text-cyan-500' } // 🚀 NEW: Vault color added
+        { id: 'vault', color: 'text-cyan-500' } // 🚀 Vault color 
     ];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
-        if(deskBtn || mobBtn) { // Changed && to || so it works even if mobile tab is missing
-            // 1. Purane sabhi colors aur glows ko saaf karo
+        if(deskBtn || mobBtn) { 
+            // 1. Clear old colors/glows
             ['text-blue-500', 'text-emerald-500', 'text-rose-500', 'text-amber-500', 'text-cyan-500', 'opacity-40', 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
                 if(deskBtn) deskBtn.classList.remove(cls);
                 if(mobBtn) mobBtn.classList.remove(cls);
             });
             
-            // 2. Agar yeh tab ACTIVE hai (Glow & Bright Mode)
+            // 2. Active Tab Logic (Glow)
             if(`screen-${nav.id}` === activeScreenId) {
                 if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
                 if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
             } else {
-                // 3. Agar yeh tab INACTIVE hai (Dim Mode)
+                // 3. Inactive Tab Logic (Dim)
                 if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-40');
                 if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-40');
             }
         }
     });
+
+    // 🚀 MOBILE VAULT VISIBILITY LOGIC (RBAC Check)
+    const mobileVaultBtn = document.getElementById('nav-mob-vault');
+    if (mobileVaultBtn) {
+        const currentRole = String(window.currentUserRole || 'student').toLowerCase().trim();
+        // Unhide Vault on mobile ONLY if user is Admin, Superadmin, or Educator
+        if (['admin', 'superadmin', 'educator'].includes(currentRole)) {
+            mobileVaultBtn.classList.remove('hidden');
+            mobileVaultBtn.classList.add('flex'); // Keep the flex layout
+        } else {
+            mobileVaultBtn.classList.add('hidden');
+            mobileVaultBtn.classList.remove('flex');
+        }
+    }
 }
 // App start hote hi Home button ko active kar do
 setTimeout(() => window.updateNavHighlight('screen-dashboard'), 500);
