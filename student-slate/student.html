@@ -62,10 +62,8 @@
     <!-- Wrap entire active app to hide during portrait mode -->
     <div id="main-student-app" class="w-full h-full flex relative overflow-hidden">
         
-        <!-- ========================================== -->
-        <!-- LEFT: The Read-Only Infinite Canvas Area -->
-        <!-- ========================================== -->
-        <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-100 dark:bg-slate-900 z-10">
+        <!-- LEFT: The Read-Only 16:9 Canvas Area -->
+        <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-300 dark:bg-slate-950 z-10">
             
             <!-- 🚀 GAMIFIED LIVE POLLING UI -->
             <!-- FIX: Bottom-Center positioning & High Z-Index -->
@@ -115,8 +113,10 @@
                 </div>
             </div>
 
-            <!-- Canvas Background -->
-            <canvas id="student-canvas"></canvas>
+            <!-- 🚀 16:9 FIXED THEATER MODE BOARD -->
+            <div id="board-container" class="absolute shadow-2xl transition-all duration-300 z-0" style="aspect-ratio: 16/9; max-width: 100%; max-height: 100%; margin: auto; top: 0; bottom: 0; left: 0; right: 0;">
+                <canvas id="student-canvas"></canvas>
+            </div>
         </div>
 
         <!-- ========================================== -->

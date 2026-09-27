@@ -53,8 +53,8 @@
 </head>
 <body class="w-screen h-screen flex overflow-hidden bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
 
-    <!-- LEFT: The Infinite Canvas Area -->
-    <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden">
+    <!-- LEFT: The 16:9 Canvas Area -->
+    <div id="canvas-wrapper" class="flex-1 relative h-full overflow-hidden bg-slate-300 dark:bg-slate-950">
 
         <!-- 🚀 UPGRADED: Slate Command Center -->
         <div class="absolute top-4 left-4 z-50">
@@ -136,7 +136,10 @@
             <button id="btn-clear" class="text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Clear Board"><i class="fa-solid fa-trash"></i></button>
         </div>
 
-        <canvas id="studio-canvas"></canvas>
+        <!-- 🚀 16:9 FIXED THEATER MODE BOARD -->
+        <div id="board-container" class="absolute shadow-2xl transition-all duration-300 z-0" style="aspect-ratio: 16/9; max-width: 100%; max-height: 100%; margin: auto; top: 0; bottom: 0; left: 0; right: 0;">
+            <canvas id="studio-canvas"></canvas>
+        </div>
         <!-- 🚀 NEW: Floating Text Format Toolbar -->
         <div id="text-format-toolbar" class="hidden absolute top-20 left-1/2 -translate-x-1/2 glass-toolbar dark:bg-slate-800/90 dark:border-slate-700 px-4 py-2 rounded-xl flex gap-2 items-center z-40 shadow-xl transition-all">
             <button id="fmt-bold" class="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition" title="Bold">B</button>

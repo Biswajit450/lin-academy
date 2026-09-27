@@ -1,6 +1,6 @@
 // board-engine.js
 
-const wrapper = document.getElementById('canvas-wrapper');
+const wrapper = document.getElementById('board-container'); // 🚀 Fixed to 16:9 Container
 
 const canvas = new fabric.Canvas('studio-canvas', {
     isDrawingMode: true,
@@ -955,7 +955,7 @@ window.addEventListener('keydown', (e) => {
 // =====================================
 // NATIVE DRAG & DROP (IMAGE DROPPER)
 // =====================================
-const dropZone = document.getElementById('canvas-wrapper');
+const dropZone = document.getElementById('board-container'); // 🚀 Drop zone restricted to board
 
 // 1. Visual feedback when hovering with a file
 dropZone.addEventListener('dragover', (e) => {
