@@ -2,12 +2,19 @@
 
 const wrapper = document.getElementById('board-container'); // 🚀 Fixed to 16:9 Container
 
+// 🚀 FIXED 1080p RESOLUTION: Internal size never changes, preventing sync loops!
+const CANVAS_W = 1920;
+const CANVAS_H = 1080;
+
 const canvas = new fabric.Canvas('studio-canvas', {
     isDrawingMode: true,
-    width: wrapper.clientWidth,
-    height: wrapper.clientHeight,
+    width: CANVAS_W,
+    height: CANVAS_H,
     backgroundColor: '#ffffff'
 });
+
+// Tell Fabric to visually scale the 1080p board using CSS 100% width/height
+canvas.setDimensions({ width: '100%', height: '100%' }, { cssOnly: true });
 
 // Convert Hex to RGBA for Highlighter
 function hexToRgba(hex, alpha) {
@@ -23,30 +30,11 @@ canvas.freeDrawingBrush.width = 3;
 canvas.freeDrawingBrush.strokeLineCap = 'round';
 canvas.freeDrawingBrush.strokeLineJoin = 'round';
 
-// 🚀 FIX: Smooth Resize (Debounced) to prevent aspect-ratio breakage
-let resizeTimerAdmin;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimerAdmin);
-    resizeTimerAdmin = setTimeout(() => {
-        canvas.setWidth(wrapper.clientWidth);
-        canvas.setHeight(wrapper.clientHeight);
-        canvas.renderAll();
-    }, 150);
-});
-
-// 🚀 MASTER BUG FIX: Auto-Resize Trigger for Iframe Slide-Up Animation
-// Yeh ensure karega ki jab studio ka dabba poora upar aaye, tabhi canvas apna asli size measure kare!
-let bootResize = setInterval(() => {
-    if (wrapper.clientWidth > 0 && wrapper.clientHeight > 0) {
-        canvas.setWidth(wrapper.clientWidth);
-        canvas.setHeight(wrapper.clientHeight);
-        canvas.renderAll();
-    }
-}, 100);
-setTimeout(() => clearInterval(bootResize), 2000); // 2 second baad check karna automatically band ho jayega
+// 🛑 REMOVED ALL WINDOW RESIZE LISTENERS! 
+// CSS will automatically handle resizing cleanly without breaking coordinates.
 
 // =====================================
-// STATE & TOOLBAR MANAGEMENT (Keep your existing code below this line)
+// STATE & TOOLBAR MANAGEMENT
 // =====================================
 let currentMode = 'draw';
 // ... rest of the code remains exactly the same // Modes: draw, select, erase, pan
@@ -188,12 +176,10 @@ function broadcastStateToFirebase(jsonContent, metaContent) {
 function saveHistory() {
     if (!isHistoryTracking) return;
     
-    // If we undo and then draw something new, delete the future redo states
     if (historyIndex < canvasHistory.length - 1) {
         canvasHistory = canvasHistory.slice(0, historyIndex + 1);
     }
     
-    // Snapshot the board including our custom 'isSlide' tag
     const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
     canvasHistory.push(jsonContent);
     historyIndex++;
@@ -202,12 +188,11 @@ function saveHistory() {
         currentSlide: currentSlide,
         totalSlides: totalSlides,
         pdfUrl: currentPdfUrl,
-        // 🚀 THE RATIO FIX: Educator apne canvas ka size bhej raha hai
-        canvasWidth: wrapper.clientWidth,
-        canvasHeight: wrapper.clientHeight
+        // 🚀 THE FIX: Always send 1920x1080 so student never zooms out of bounds
+        canvasWidth: CANVAS_W,
+        canvasHeight: CANVAS_H
     });
 
-    // 🚀 Purane direct postMessage ki jagah Smart Sync call hoga
     broadcastStateToFirebase(jsonContent, metaContent);
 }
 
@@ -298,25 +283,23 @@ function renderSlide(slideNum) {
     const slideData = slideMap[slideNum];
     
     canvas.clear();
-    
     const isDark = document.documentElement.classList.contains('dark');
     canvas.backgroundColor = isDark ? '#0f172a' : '#ffffff';
 
     if (slideData.type === 'pdf') {
-        // 🚀 SAFETY NET: If PDF background is missing from memory
         if (!pdfDoc) {
-            const blankWidth = wrapper.clientWidth * 0.8;
+            const blankWidth = CANVAS_W * 0.8;
             const blankHeight = blankWidth * (9/16);
             const rect = new fabric.Rect({
                 width: blankWidth, height: blankHeight,
-                left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
+                left: CANVAS_W / 2, top: CANVAS_H / 2,
                 originX: 'center', originY: 'center',
                 fill: isDark ? '#1e293b' : '#ffffff',
                 stroke: '#cbd5e1', strokeWidth: 2,
                 selectable: false, evented: false, isSlide: true
             });
             const warningText = new fabric.Text("Loading Cloud PDF...\nPlease wait or check connection.", {
-                left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
+                left: CANVAS_W / 2, top: CANVAS_H / 2,
                 originX: 'center', originY: 'center', fontSize: 18,
                 fill: '#94a3b8', selectable: false, evented: false, textAlign: 'center'
             });
@@ -340,10 +323,10 @@ function renderSlide(slideNum) {
 
             page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
                 fabric.Image.fromURL(tempCanvas.toDataURL(), function(img) {
-                    const scale = Math.min((wrapper.clientWidth * 0.9) / img.width, (wrapper.clientHeight * 0.9) / img.height);
+                    const scale = Math.min((CANVAS_W * 0.9) / img.width, (CANVAS_H * 0.9) / img.height);
                     img.set({
                         scaleX: scale, scaleY: scale,
-                        left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
+                        left: CANVAS_W / 2, top: CANVAS_H / 2,
                         originX: 'center', originY: 'center',
                         selectable: false, evented: false, isSlide: true
                     });
@@ -358,11 +341,11 @@ function renderSlide(slideNum) {
             });
         });
     } else if (slideData.type === 'blank') {
-        const blankWidth = wrapper.clientWidth * 0.8;
+        const blankWidth = CANVAS_W * 0.8;
         const blankHeight = blankWidth * (9/16);
         const rect = new fabric.Rect({
             width: blankWidth, height: blankHeight,
-            left: wrapper.clientWidth / 2, top: wrapper.clientHeight / 2,
+            left: CANVAS_W / 2, top: CANVAS_H / 2,
             originX: 'center', originY: 'center',
             fill: isDark ? '#1e293b' : '#ffffff',
             stroke: '#cbd5e1', strokeWidth: 2,
@@ -521,11 +504,8 @@ toggleBtn.addEventListener('click', () => {
     isFullscreen = !isFullscreen;
     
     if (isFullscreen) {
-        // 1. Hide Panel Instantly
         rightPanel.style.display = 'none';
         toggleIcon.classList.replace('fa-expand', 'fa-compress');
-        
-        // 2. Detach Webcam & Apply Floating Classes
         document.body.appendChild(webcamContainer);
         webcamContainer.className = 'absolute z-50 shadow-2xl rounded-2xl overflow-hidden cursor-grab border border-slate-700 bg-slate-900 flex flex-col items-center justify-center text-slate-50 select-none';
         webcamContainer.style.width = '340px';
@@ -534,22 +514,12 @@ toggleBtn.addEventListener('click', () => {
         webcamContainer.style.right = '20px';
         webcamContainer.style.left = 'auto';
     } else {
-        // 1. Show Panel Instantly
         rightPanel.style.display = '';
         toggleIcon.classList.replace('fa-compress', 'fa-expand');
-        
-        // 2. Snap Webcam Back & Hard-Reset Classes
         webcamPlaceholder.appendChild(webcamContainer);
         webcamContainer.className = 'h-full w-full bg-slate-900 flex flex-col items-center justify-center text-slate-500 select-none';
-        webcamContainer.removeAttribute('style'); // Clears all dragging coordinates
+        webcamContainer.removeAttribute('style'); 
     }
-    
-    // 3. 🚀 FIX: Give the browser exact time (350ms) to finish the CSS slide animation before snapping canvas
-    setTimeout(() => {
-        canvas.setWidth(wrapper.clientWidth);
-        canvas.setHeight(wrapper.clientHeight);
-        canvas.renderAll();
-    }, 350);
 });
 
 // Dragging Logic (HYBRID: Mouse + Touch)
@@ -1060,8 +1030,8 @@ document.querySelectorAll('.asset-btn').forEach(btn => {
         // Define common properties for all shapes
         const strokeColor = isDark ? '#ffffff' : '#0f172a';
         const commonProps = {
-            left: wrapper.clientWidth / 2,
-            top: wrapper.clientHeight / 2,
+            left: CANVAS_W / 2,
+            top: CANVAS_H / 2,
             originX: 'center',
             originY: 'center',
             fill: 'transparent',
@@ -1829,13 +1799,15 @@ let isDrawingLive = false;
 canvas.on('mouse:down', function(opt) {
     if (currentMode === 'draw' || currentMode === 'highlight' || currentMode === 'laser') {
         isDrawingLive = true;
-        broadcastLiveInk('start', opt.e.clientX, opt.e.clientY);
+        const ptr = canvas.getPointer(opt.e); // Gets exact 1080p scaled coordinate
+        broadcastLiveInk('start', ptr.x, ptr.y);
     }
 });
 
 canvas.on('mouse:move', function(opt) {
     if (isDrawingLive) {
-        broadcastLiveInk('move', opt.e.clientX, opt.e.clientY);
+        const ptr = canvas.getPointer(opt.e);
+        broadcastLiveInk('move', ptr.x, ptr.y);
     }
 });
 
@@ -1846,29 +1818,17 @@ canvas.on('mouse:up', function(opt) {
     }
 });
 
-function broadcastLiveInk(action, clientX, clientY) {
-    // Only send if the high-speed channel is ready
+function broadcastLiveInk(action, x, y) {
     if (dataChannel && dataChannel.readyState === 'open') {
-        // Adjust coordinates relative to the canvas
-        const rect = wrapper.getBoundingClientRect();
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-
-        // Pack the data tightly to save bandwidth
         const inkData = JSON.stringify({
-            a: action, // action
-            x: x,      // x coord
-            y: y,      // y coord
-            c: canvas.freeDrawingBrush.color, // color
-            w: canvas.freeDrawingBrush.width, // width
-            m: currentMode // pen mode
+            a: action, 
+            x: x, 
+            y: y, 
+            c: canvas.freeDrawingBrush.color, 
+            w: canvas.freeDrawingBrush.width, 
+            m: currentMode
         });
-
-        try {
-            dataChannel.send(inkData);
-        } catch (e) {
-            console.log("Live ink dropped frame");
-        }
+        try { dataChannel.send(inkData); } catch (e) { console.log("Dropped frame"); }
     }
 }
 
