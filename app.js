@@ -2595,6 +2595,43 @@ window.endAdminLiveSession = async function() {
 // Global cache for folder deep-dive
 window.cachedVaultFiles = [];
 
+// ==========================================
+// 🚀 STORAGE USAGE CALCULATOR ENGINE
+// ==========================================
+window.calculateVaultStorage = function(allFiles) {
+    let totalBytes = 0;
+    
+    allFiles.forEach(f => {
+        // 1. Calculate Firestore String Size (JSON Canvas Data, Meta, Text)
+        const textData = (f.jsonContent || "") + (f.metaContent || "") + (f.name || "");
+        totalBytes += new Blob([textData]).size; // Gets exact byte size of text/json
+
+        // 2. Calculate Firebase Storage Size (PDF Files)
+        if (f.type === 'pdf' && f.fileSize) {
+            // Extracts numeric MB value from string like "1.25 MB"
+            const mbValue = parseFloat(f.fileSize.replace(/[^0-9.]/g, ''));
+            if (!isNaN(mbValue)) {
+                totalBytes += (mbValue * 1024 * 1024); // Convert MB back to Bytes
+            }
+        }
+    });
+
+    // 3. Smart Format Converter
+    let displaySize = "";
+    if (totalBytes < 1024 * 1024) {
+        displaySize = (totalBytes / 1024).toFixed(2) + " KB";
+    } else if (totalBytes < 1024 * 1024 * 1024) {
+        displaySize = (totalBytes / (1024 * 1024)).toFixed(2) + " MB";
+    } else {
+        displaySize = (totalBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+    }
+
+    const storageEl = document.getElementById('vault-storage-usage');
+    if (storageEl) {
+        storageEl.innerText = displaySize + " Used";
+    }
+}
+
 window.loadVaultFiles = async function() {
     const recentsGrid = document.getElementById('vault-recents-grid');
     if(!recentsGrid || !auth.currentUser) return;
@@ -2634,13 +2671,19 @@ window.loadVaultFiles = async function() {
         const snap = await getDocs(collection(db, "PWOS_Vault", targetUid, "projects"));
         
         let files = [];
+        let allFilesForStorage = []; // 🚀 Tracks everything, including Scrap Bin!
+
         snap.forEach(docSnap => {
             const data = docSnap.data();
+            allFilesForStorage.push(data); // Scrap Bin files also consume storage!
             if (!data.trashed) files.push(data);
         });
 
+        // 🚀 TRIGGER STORAGE CALCULATOR
+        if(window.calculateVaultStorage) window.calculateVaultStorage(allFilesForStorage);
+
         files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        window.cachedVaultFiles = files; 
+        window.cachedVaultFiles = files;  
 
         const testFiles = files.filter(f => f.type === 'test');
         const pdfFiles = files.filter(f => f.type === 'pdf'); 
