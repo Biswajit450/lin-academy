@@ -23,11 +23,15 @@ canvas.freeDrawingBrush.width = 3;
 canvas.freeDrawingBrush.strokeLineCap = 'round';
 canvas.freeDrawingBrush.strokeLineJoin = 'round';
 
-// Update resize listener to use the new wrapper size
+// 🚀 FIX: Smooth Resize (Debounced) to prevent aspect-ratio breakage
+let resizeTimerAdmin;
 window.addEventListener('resize', () => {
-    canvas.setWidth(wrapper.clientWidth);
-    canvas.setHeight(wrapper.clientHeight);
-    canvas.renderAll();
+    clearTimeout(resizeTimerAdmin);
+    resizeTimerAdmin = setTimeout(() => {
+        canvas.setWidth(wrapper.clientWidth);
+        canvas.setHeight(wrapper.clientHeight);
+        canvas.renderAll();
+    }, 150);
 });
 
 // 🚀 MASTER BUG FIX: Auto-Resize Trigger for Iframe Slide-Up Animation
@@ -540,12 +544,12 @@ toggleBtn.addEventListener('click', () => {
         webcamContainer.removeAttribute('style'); // Clears all dragging coordinates
     }
     
-    // 3. Give the browser exact time to reflow the DOM before snapping canvas
+    // 3. 🚀 FIX: Give the browser exact time (350ms) to finish the CSS slide animation before snapping canvas
     setTimeout(() => {
         canvas.setWidth(wrapper.clientWidth);
         canvas.setHeight(wrapper.clientHeight);
         canvas.renderAll();
-    }, 50);
+    }, 350);
 });
 
 // Dragging Logic (HYBRID: Mouse + Touch)
