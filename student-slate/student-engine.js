@@ -4,7 +4,7 @@
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { db } from "../firebase-config.js";
 
-const wrapper = document.getElementById('canvas-wrapper');
+const wrapper = document.getElementById('board-container'); // 🚀 Fixed to 16:9 Container
 const canvas = new fabric.Canvas('student-canvas', {
     selection: false, // Strict Read-Only Mode
     isDrawingMode: false,
@@ -275,13 +275,13 @@ if (btnTogglePanel) {
         isPanelHidden = !isPanelHidden;
         updatePanelUI();
 
-        // 🚀 FIX: Removed the heavy setInterval that was crashing iPhones!
-        // CSS panel slide animation (300ms) ko poora hone do, phir aaram se 1 baar canvas resize karo.
+        // 🚀 FIX: Give the browser exact time (350ms) to finish the CSS slide animation before snapping canvas
         setTimeout(() => {
-            if (typeof window.applySmartCanvasScaling === 'function') {
-                window.applySmartCanvasScaling();
-                canvas.renderAll();
-            }
+            canvas.setWidth(wrapper.clientWidth);
+            canvas.setHeight(wrapper.clientHeight);
+            canvas.renderAll();
+            // Agar WebRTC Live Ink (Ghost Pen) chal raha hai, usko bhi resize karo
+            if (typeof syncLiveCanvasSize === 'function') syncLiveCanvasSize();
         }, 350); 
     });
 }
