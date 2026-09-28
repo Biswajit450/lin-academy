@@ -13,25 +13,46 @@ import "./profile.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // ==========================================
-// 🎬 CINEMATIC BOOT SCREEN ENGINE
+// 🎬 CINEMATIC BOOT SCREEN ENGINE (With Fail-Safe for Low-End Devices)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     const splashScreen = document.getElementById('lin-splash-screen');
     const splashVideo = document.getElementById('lin-splash-video');
     
     if(splashScreen && splashVideo) {
+        let isDestroyed = false;
+        
         // Function to smoothly fade out and destroy the boot screen
         const clearSplashScreen = () => {
-            splashScreen.style.opacity = '0'; // Starts the 1-second CSS fade-out animation
+            if (isDestroyed) return;
+            isDestroyed = true;
+            splashScreen.style.opacity = '0'; 
             setTimeout(() => {
-                splashScreen.remove(); // Removes it from memory completely so app stays fast
+                if(splashScreen.parentNode) splashScreen.remove(); 
             }, 1000);
         };
         
-        // Trigger fade-out exactly when the 6-second video ends
+        // 1. PERFECT SCENARIO: Trigger fade-out when the 6-second video ends normally
         splashVideo.addEventListener('ended', clearSplashScreen);
         
-        // Safety Fallback: In case a very strict browser blocks video, it will still open the app after 7 seconds
+        // 2. ERROR HANDLER: If low-end tablet fails to load 4K/video, bypass instantly!
+        splashVideo.addEventListener('error', clearSplashScreen);
+        splashVideo.addEventListener('stalled', clearSplashScreen);
+        
+        // 3. SMART SENSOR: If video gets stuck and doesn't play within 1.5 seconds, remove it.
+        let playTimeout = setTimeout(() => {
+            if (splashVideo.currentTime === 0 || splashVideo.paused) {
+                console.log("Device too slow or video blocked, bypassing splash...");
+                clearSplashScreen();
+            }
+        }, 1500);
+
+        // Cancel the sensor if video successfully starts playing
+        splashVideo.addEventListener('playing', () => {
+            clearTimeout(playTimeout);
+        });
+        
+        // 4. ULTIMATE FALLBACK: Safety net for 7 seconds
         setTimeout(clearSplashScreen, 7000);
     }
 });
