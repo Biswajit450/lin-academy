@@ -1146,7 +1146,6 @@ window.consumeContent = async function(type, elementOrId) {
     } 
     else if(type === 'video' || type === 'pdf') {
         document.getElementById('content-player-modal').classList.remove('hidden');
-        document.getElementById('player-title').innerText = title;
         
         const playerBox = document.getElementById('player-container-box');
         const iframePlayer = document.getElementById('player-iframe');
@@ -1155,7 +1154,8 @@ window.consumeContent = async function(type, elementOrId) {
         const pdfControls = document.getElementById('pdf-controls'); 
         const loader = document.getElementById('player-loading');
         const loaderText = document.getElementById('player-loading-text');
-        const headerBar = document.getElementById('player-header-bar'); // 🚀 NAYA HEADER CONTROL
+        const headerBar = document.getElementById('player-header-bar'); 
+        const playerTitle = document.getElementById('player-title'); 
 
         // Reset UI initially
         iframePlayer.classList.add('hidden');
@@ -1165,13 +1165,28 @@ window.consumeContent = async function(type, elementOrId) {
         loader.style.display = 'flex';
         iframePlayer.src = '';
         if(window.resetZoomPdf) window.resetZoomPdf(); 
+        
+        // 🚀 RESET HEADER (in case it was hidden by Video earlier)
+        if(headerBar) {
+            headerBar.classList.remove('hidden');
+            headerBar.classList.remove('bg-transparent');
+            headerBar.classList.add('bg-gradient-to-b');
+        }
+        if(playerTitle) {
+            playerTitle.classList.remove('hidden');
+            playerTitle.innerText = title;
+        }
 
         if (type === 'video') {
             loaderText.innerText = "Buffering Engine...";
             iframePlayer.classList.remove('hidden');
             
-            // 🚀 BEZEL-LESS MAGIC: Video me custom header gayab kardo!
-            if(headerBar) headerBar.classList.add('hidden');
+            // 🚀 BEZEL-LESS FIX: Only hide Title and Gradient, KEEP Close Button!
+            if(headerBar) {
+                headerBar.classList.remove('bg-gradient-to-b');
+                headerBar.classList.add('bg-transparent');
+            }
+            if(playerTitle) playerTitle.classList.add('hidden');
 
             if (val.includes('<iframe') && val.includes('src="')) {
                 const urlMatch = val.match(/src="([^"]+)"/);
@@ -1193,11 +1208,12 @@ window.consumeContent = async function(type, elementOrId) {
             }
             iframePlayer.src = val;
 
-            // 🚀 PURE NATIVE FULLSCREEN ENGINE (Direct on iframe)
+            // 🚀 PURE NATIVE FULLSCREEN ENGINE (Direct on Entire Modal)
             try {
-                const reqFullscreen = iframePlayer.requestFullscreen || iframePlayer.webkitRequestFullscreen || iframePlayer.msRequestFullscreen;
+                const modalWrapper = document.getElementById('content-player-modal');
+                const reqFullscreen = modalWrapper.requestFullscreen || modalWrapper.webkitRequestFullscreen || modalWrapper.msRequestFullscreen;
                 if (reqFullscreen) {
-                    reqFullscreen.call(iframePlayer).then(() => {
+                    reqFullscreen.call(modalWrapper).then(() => {
                         if (screen.orientation && screen.orientation.lock) {
                             screen.orientation.lock('landscape').catch(e => console.log("Orientation lock warning:", e));
                         }
@@ -1211,8 +1227,6 @@ window.consumeContent = async function(type, elementOrId) {
             loaderText.innerText = "Securing Document & Encrypting Pages...";
             pdfContainer.classList.remove('hidden');
             
-            // 🚀 PDF me header aur zoom controls wapas dikhao!
-            if(headerBar) headerBar.classList.remove('hidden');
             if(pdfControls) { pdfControls.classList.remove('hidden'); pdfControls.classList.add('flex'); }
 
             if (playerBox) {
@@ -1233,7 +1247,6 @@ window.consumeContent = async function(type, elementOrId) {
                     const ctx = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    // 🛡️ mx-auto ensures canvas is always centered inside wrapper
                     canvas.className = 'w-[95%] md:w-3/4 lg:w-[800px] h-auto bg-white mb-6 shadow-2xl mx-auto rounded-md pointer-events-none select-none';
                     
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
@@ -1257,12 +1270,21 @@ window.closeContentPlayer = function() {
     const iframe = document.getElementById('player-iframe');
     const pdfZoomWrapper = document.getElementById('pdf-zoom-wrapper');
     const pdfControls = document.getElementById('pdf-controls');
+    const headerBar = document.getElementById('player-header-bar');
+    const playerTitle = document.getElementById('player-title');
     
     if (iframe) iframe.src = ''; 
-    if (pdfZoomWrapper) pdfZoomWrapper.innerHTML = ''; // Canvas gayab!
+    if (pdfZoomWrapper) pdfZoomWrapper.innerHTML = ''; 
     if (pdfControls) { pdfControls.classList.add('hidden'); pdfControls.classList.remove('flex'); }
     if (window.resetZoomPdf) window.resetZoomPdf();
     
+    // 🚀 RESET HEADER UI
+    if(headerBar) {
+        headerBar.classList.remove('bg-transparent');
+        headerBar.classList.add('bg-gradient-to-b');
+    }
+    if(playerTitle) playerTitle.classList.remove('hidden');
+
     // 📱 ROBUST MOBILE MAGIC: The Android Fullscreen & Portrait Fix
     try {
         const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || document.mozCancelFullScreen;
