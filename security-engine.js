@@ -85,19 +85,30 @@ const securityEngine = {
     // 3. KEYBOARD & MOUSE EXECUTIONER
     // ==========================================
     initExecutioner: function() {
+        // 🚀 THE ULTIMATE PRINT BLOCKER (Failsafe)
+        // Agar koi zabardasti print dialog kholta bhi hai, toh print hoke sirf BLANK page aayega!
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @media print { 
+                html, body, iframe, video, img, canvas { display: none !important; opacity: 0 !important; visibility: hidden !important; } 
+                body::after { content: "Security Protocol: Unauthorized Print Attempt Logged."; display: block !important; font-family: monospace; font-size: 18px; text-align: center; margin-top: 20px; color: black; }
+            }
+        `;
+        document.head.appendChild(style);
+
         document.addEventListener('contextmenu', event => event.preventDefault());
 
         document.addEventListener('keydown', event => {
-            if (event.ctrlKey && (event.key === 'p' || event.key === 'P')) {
+            // 🚀 FIX: Blocks both Ctrl+P (Windows) and Command+P (Mac)
+            if ((event.ctrlKey || event.metaKey) && (event.key === 'p' || event.key === 'P')) {
                 event.preventDefault();
+                this.clearClipboard();
                 alert("Printing is strictly disabled by Lin Academy.");
             }
-            if (event.ctrlKey && (event.key === 's' || event.key === 'S')) event.preventDefault();
-            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'i' || event.key === 'C' || event.key === 'c'))) event.preventDefault();
-
-            if (event.key === 'PrintScreen') {
-                this.clearClipboard();
-                alert("Screenshots are disabled. Clipboard wiped.");
+            // 🚀 FIX: Blocks Save As (Ctrl+S / Cmd+S)
+            if ((event.ctrlKey || event.metaKey) && (event.key === 's' || event.key === 'S')) {
+                event.preventDefault();
+                alert("Saving files is strictly disabled.");
             }
         });
 
