@@ -1087,14 +1087,13 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
 // ==========================================
 // CONTENT CONSUMPTION ENGINE (PREMIUM PLAYER)
 // ==========================================
-window.consumeContent = async function(type, elementOrId) { // 🚀 Changed to async
+window.consumeContent = async function(type, elementOrId) { 
     // 🚀 ROUTE TO NEW MOBILE-FRIENDLY EXAM PLAYER
-if(type === 'test') { 
-    const courseName = document.getElementById('course-view-title').innerText;
-    // Launch the new Exam Studio Player full-screen iframe/window
-    window.location.href = `exam-studio/player.html?testId=${elementOrId}&course=${encodeURIComponent(courseName)}`;
-    return; 
-}
+    if(type === 'test') { 
+        const courseName = document.getElementById('course-view-title').innerText;
+        window.location.href = `exam-studio/player.html?testId=${elementOrId}&course=${encodeURIComponent(courseName)}`;
+        return; 
+    }
     
     const block = elementOrId.closest('[id^="block-"]'); 
     const linkInput = block.querySelector('.link-input'); 
@@ -1109,64 +1108,39 @@ if(type === 'test') {
         return; 
     }
 
-    // 🚀 NEW: PROGRESS SAVER ENGINE (PHASE 1) 🚀
+    // 🚀 NEW: PROGRESS SAVER (BACKGROUND MODE - Ensures Fullscreen Gesture isn't lost) 🚀
     if (auth.currentUser && block && block.id) {
-        try {
-            // 🚨 BUG FIX: Ab hum exact Database ID padh rahe hain!
-            const courseName = document.getElementById('course-view-title').innerText;
-            // Humne merge: true use kiya hai taaki user ka purana data delete na ho
-            await setDoc(doc(db, "users", auth.currentUser.uid), {
-                course_progress: {
-                    [courseName]: {
-                        [block.id]: true
-                    }
+        const courseName = document.getElementById('course-view-title').innerText;
+        // Background Promise execution (No await)
+        import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js").then(({ doc, setDoc }) => {
+            setDoc(doc(db, "users", auth.currentUser.uid), {
+                course_progress: { [courseName]: { [block.id]: true } }
+            }, { merge: true }).then(() => {
+                const btn = elementOrId;
+                if (!btn.innerText.includes("Completed")) {
+                    btn.innerHTML = '✅ Completed (Watch Again)';
+                    btn.classList.remove('bg-brand-blue', 'bg-rose-500', 'hover:bg-blue-700', 'hover:bg-rose-600', 'border-blue-700', 'border-rose-600');
+                    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'border-emerald-700');
+                    const iconBox = block.querySelector('.w-12.h-12');
+                    if(iconBox) iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 text-xl shadow-inner text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800';
                 }
-            }, { merge: true });
-
-            const btn = elementOrId;
-            if (!btn.innerText.includes("Completed")) {
-                btn.innerHTML = '✅ Completed (Watch Again)';
-                btn.classList.remove('bg-brand-blue', 'bg-rose-500', 'hover:bg-blue-700', 'hover:bg-rose-600', 'border-blue-700', 'border-rose-600');
-                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'border-emerald-700');
-                
-                const iconBox = block.querySelector('.w-12.h-12');
-                if(iconBox) iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 text-xl shadow-inner text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800';
-            }
-        } catch (e) {
-            console.error("Failed to save progress", e);
-        }
+            });
+        });
     }
 
-    // --- (Baaki ka purana video/pdf logic same rahega) ---
     if(type === 'live') { 
         const role = String(window.currentUserRole).toLowerCase().trim();
         const courseName = document.getElementById('course-view-title').innerText;
         
-        // Extract scheduled time to pass along (for countdowns)
         const timeInputs = block.querySelectorAll('input[type="datetime-local"]');
         const startTime = timeInputs[0] ? timeInputs[0].value : null;
         
-        const sessionData = {
-            blockId: block.id,
-            courseName: courseName,
-            title: title,
-            startTime: startTime
-        };
+        const sessionData = { blockId: block.id, courseName: courseName, title: title, startTime: startTime };
 
         if (role === 'admin' || role === 'superadmin' || role === 'educator') {
-            // Route Educator to Phase 2: Green Room
-            if (window.openGreenRoom) {
-                window.openGreenRoom(sessionData);
-            } else {
-                console.warn("Green Room UI not implemented yet.");
-            }
+            if (window.openGreenRoom) window.openGreenRoom(sessionData);
         } else {
-            // Route Student to Phase 2: Smart Lobby
-            if (window.openSmartLobby) {
-                window.openSmartLobby(sessionData);
-            } else {
-                console.warn("Smart Lobby UI not implemented yet.");
-            }
+            if (window.openSmartLobby) window.openSmartLobby(sessionData);
         }
         return; 
     } 
@@ -1181,6 +1155,7 @@ if(type === 'test') {
         const pdfControls = document.getElementById('pdf-controls'); 
         const loader = document.getElementById('player-loading');
         const loaderText = document.getElementById('player-loading-text');
+        const headerBar = document.getElementById('player-header-bar'); // 🚀 NAYA HEADER CONTROL
 
         // Reset UI initially
         iframePlayer.classList.add('hidden');
@@ -1190,24 +1165,13 @@ if(type === 'test') {
         loader.style.display = 'flex';
         iframePlayer.src = '';
         if(window.resetZoomPdf) window.resetZoomPdf(); 
-        
-        if (window.innerWidth < 768) {
-            try {
-                const modal = document.getElementById('content-player-modal');
-                const reqFullscreen = modal.requestFullscreen || modal.webkitRequestFullscreen || modal.msRequestFullscreen;
-                if (reqFullscreen) {
-                    reqFullscreen.call(modal).then(() => {
-                        if (screen.orientation && screen.orientation.lock) {
-                            screen.orientation.lock('landscape').catch(e => console.log("Orientation lock warning:", e));
-                        }
-                    }).catch(e => console.log("Fullscreen request failed:", e));
-                }
-            } catch(e) {}
-        }
 
         if (type === 'video') {
             loaderText.innerText = "Buffering Engine...";
             iframePlayer.classList.remove('hidden');
+            
+            // 🚀 BEZEL-LESS MAGIC: Video me custom header gayab kardo!
+            if(headerBar) headerBar.classList.add('hidden');
 
             if (val.includes('<iframe') && val.includes('src="')) {
                 const urlMatch = val.match(/src="([^"]+)"/);
@@ -1228,11 +1192,27 @@ if(type === 'test') {
                 playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
             }
             iframePlayer.src = val;
+
+            // 🚀 PURE NATIVE FULLSCREEN ENGINE (Direct on iframe)
+            try {
+                const reqFullscreen = iframePlayer.requestFullscreen || iframePlayer.webkitRequestFullscreen || iframePlayer.msRequestFullscreen;
+                if (reqFullscreen) {
+                    reqFullscreen.call(iframePlayer).then(() => {
+                        if (screen.orientation && screen.orientation.lock) {
+                            screen.orientation.lock('landscape').catch(e => console.log("Orientation lock warning:", e));
+                        }
+                    }).catch(e => console.log("Fullscreen request failed:", e));
+                }
+            } catch(e) {}
+
             setTimeout(() => { loader.style.display = 'none'; }, 1500);
 
         } else if (type === 'pdf') { 
             loaderText.innerText = "Securing Document & Encrypting Pages...";
             pdfContainer.classList.remove('hidden');
+            
+            // 🚀 PDF me header aur zoom controls wapas dikhao!
+            if(headerBar) headerBar.classList.remove('hidden');
             if(pdfControls) { pdfControls.classList.remove('hidden'); pdfControls.classList.add('flex'); }
 
             if (playerBox) {
@@ -1253,6 +1233,7 @@ if(type === 'test') {
                     const ctx = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
+                    // 🛡️ mx-auto ensures canvas is always centered inside wrapper
                     canvas.className = 'w-[95%] md:w-3/4 lg:w-[800px] h-auto bg-white mb-6 shadow-2xl mx-auto rounded-md pointer-events-none select-none';
                     
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
@@ -1449,19 +1430,23 @@ window.injectVaultPdfUrl = function(url) {
 }
 
 // ==========================================
-// 🚀 NATIVE PDF ZOOM CONTROLS
+// 🚀 NATIVE PDF ZOOM CONTROLS (Mobile Pan Fix)
 // ==========================================
 window.currentPdfScale = 1;
 
 window.zoomPdf = function(step) {
     window.currentPdfScale += step;
-    if(window.currentPdfScale < 0.5) window.currentPdfScale = 0.5;
+    if(window.currentPdfScale < 0.6) window.currentPdfScale = 0.6;
     if(window.currentPdfScale > 3.0) window.currentPdfScale = 3.0; // Max Zoom 300%
     
     const wrapper = document.getElementById('pdf-zoom-wrapper');
     const label = document.getElementById('pdf-zoom-level');
     
-    if(wrapper) wrapper.style.transform = `scale(${window.currentPdfScale})`;
+    if(wrapper) {
+        // 🚀 THE FIX: Physical width change triggers native browser scrolling/panning!
+        wrapper.style.transform = 'none';
+        wrapper.style.width = Math.round(window.currentPdfScale * 100) + '%';
+    }
     if(label) label.innerText = Math.round(window.currentPdfScale * 100) + '%';
 }
 
@@ -1470,6 +1455,9 @@ window.resetZoomPdf = function() {
     const wrapper = document.getElementById('pdf-zoom-wrapper');
     const label = document.getElementById('pdf-zoom-level');
     
-    if(wrapper) wrapper.style.transform = `scale(1)`;
+    if(wrapper) {
+        wrapper.style.transform = 'none';
+        wrapper.style.width = '100%';
+    }
     if(label) label.innerText = '100%';
 }
