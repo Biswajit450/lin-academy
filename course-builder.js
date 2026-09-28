@@ -1175,6 +1175,17 @@ if(type === 'test') {
         document.getElementById('player-title').innerText = title;
         
         const playerBox = document.getElementById('player-container-box');
+        const iframePlayer = document.getElementById('player-iframe');
+        const pdfContainer = document.getElementById('native-pdf-container');
+        const loader = document.getElementById('player-loading');
+        const loaderText = document.getElementById('player-loading-text');
+
+        // Reset UI initially
+        iframePlayer.classList.add('hidden');
+        pdfContainer.classList.add('hidden');
+        loader.style.display = 'flex';
+        iframePlayer.src = '';
+        pdfContainer.innerHTML = '';
         
         if (window.innerWidth < 768) {
             try {
@@ -1191,17 +1202,18 @@ if(type === 'test') {
         }
 
         if (type === 'video') {
+            loaderText.innerText = "Buffering Engine...";
+            iframePlayer.classList.remove('hidden');
+
             if (val.includes('<iframe') && val.includes('src="')) {
                 const urlMatch = val.match(/src="([^"]+)"/);
                 if (urlMatch && urlMatch[1]) val = urlMatch[1]; 
             }
-            
             if (val.includes('youtube.com/watch?v=')) {
                 val = val.replace('watch?v=', 'embed/');
             } else if (val.includes('youtu.be/')) {
                 val = val.replace('youtu.be/', 'www.youtube.com/embed/');
             }
-            
             if (val.includes('iframe.mediadelivery.net') || val.includes('bunny.net')) {
                 const separator = val.includes('?') ? '&' : '?';
                 val = val + separator + 'autoplay=true&loop=false&muted=false&preload=true&responsive=true';
@@ -1211,41 +1223,72 @@ if(type === 'test') {
                 playerBox.classList.remove('sm:h-[85vh]');
                 playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
             }
+            iframePlayer.src = val;
+            setTimeout(() => { loader.style.display = 'none'; }, 1500);
+
         } else if (type === 'pdf') { 
+            loaderText.innerText = "Securing Document & Encrypting Pages...";
+            pdfContainer.classList.remove('hidden');
+
             if (playerBox) {
                 playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
                 playerBox.classList.add('sm:h-[85vh]');
             }
-            if (val.includes('firebasestorage.googleapis.com') && !val.includes('docs.google.com')) {
-                val = `https://docs.google.com/gview?url=${encodeURIComponent(val)}&embedded=true`;
-            }
+            
+            // 🚀 THE MAGIC: Native PDF to Canvas Engine
+            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+            const loadingTask = pdfjsLib.getDocument(val);
+            loadingTask.promise.then(async function(pdf) {
+                // Async loop ensures pages render in exact order (1, 2, 3...)
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1.5 }); // Premium HD Quality
+                    
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    // 🛡️ SECURITY CLASSES: 'pointer-events-none' blocks right-click & saving!
+                    canvas.className = 'w-[95%] md:w-3/4 lg:w-[800px] h-auto bg-white mb-6 shadow-2xl mx-auto rounded-md pointer-events-none select-none';
+                    
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    pdfContainer.appendChild(canvas);
+                    
+                    // Hide loader as soon as the first page appears
+                    if(pageNum === 1) loader.style.display = 'none'; 
+                }
+            }).catch(function(error) {
+                console.error("Native PDF Error:", error);
+                loaderText.innerHTML = "Error securing document. Please check connection.";
+                loaderText.classList.add('text-rose-500');
+            });
         }
-        
-        document.getElementById('player-iframe').src = val;
     }
 }
 
 window.closeContentPlayer = function() {
     document.getElementById('content-player-modal').classList.add('hidden');
-    document.getElementById('player-iframe').src = ''; 
+    
+    // 🧹 SECURITY & MEMORY CLEANUP
+    const iframe = document.getElementById('player-iframe');
+    const pdfContainer = document.getElementById('native-pdf-container');
+    if (iframe) iframe.src = ''; 
+    if (pdfContainer) pdfContainer.innerHTML = ''; // Destroys all decrypted canvases immediately!
     
     // 📱 ROBUST MOBILE MAGIC: The Android Fullscreen & Portrait Fix
     try {
-        // 1. Pehle Fullscreen se bahar aao
         const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || document.mozCancelFullScreen;
         if (exitFS && (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement)) {
             exitFS.call(document).catch(err => console.log("Exit FS Error:", err));
         }
         
-        // 2. Zabardasti Portrait mode mein laao, phir Unlock karo
         if (screen.orientation) {
             if (screen.orientation.lock) {
-                // Force portrait
                 screen.orientation.lock('portrait').then(() => {
-                    // 1 second baad lock hata do taaki device naturally behave kare
                     setTimeout(() => screen.orientation.unlock(), 1000);
                 }).catch(e => {
-                    // Agar browser restrict kare, toh directly unlock chala do
                     screen.orientation.unlock();
                 });
             } else if (screen.orientation.unlock) {
