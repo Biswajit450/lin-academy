@@ -13,6 +13,30 @@ import "./profile.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 // ==========================================
+// 🎬 CINEMATIC BOOT SCREEN ENGINE
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    const splashScreen = document.getElementById('lin-splash-screen');
+    const splashVideo = document.getElementById('lin-splash-video');
+    
+    if(splashScreen && splashVideo) {
+        // Function to smoothly fade out and destroy the boot screen
+        const clearSplashScreen = () => {
+            splashScreen.style.opacity = '0'; // Starts the 1-second CSS fade-out animation
+            setTimeout(() => {
+                splashScreen.remove(); // Removes it from memory completely so app stays fast
+            }, 1000);
+        };
+        
+        // Trigger fade-out exactly when the 6-second video ends
+        splashVideo.addEventListener('ended', clearSplashScreen);
+        
+        // Safety Fallback: In case a very strict browser blocks video, it will still open the app after 7 seconds
+        setTimeout(clearSplashScreen, 7000);
+    }
+});
+
+// ==========================================
 // 🧮 KaTeX & Quill.js RICH EDITOR ENGINE (WITH SMART IMAGE UPLOADER)
 // ==========================================
 window.questionEditor = null;

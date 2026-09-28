@@ -171,6 +171,21 @@
 </head>
 
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 antialiased pb-24 md:pb-0 md:pl-24">
+    <!-- 🎬 PREMIUM CINEMATIC BOOT SCREEN (Z-Index 99999 ensures it's on top of everything) -->
+    <div id="lin-splash-screen" class="fixed inset-0 z-[99999] bg-black transition-opacity duration-1000 ease-in-out flex items-center justify-center pointer-events-none">
+        <!-- object-cover handles the Smart Crop automatically without stretching -->
+        <video id="lin-splash-video" class="w-full h-full object-cover" autoplay muted playsinline preload="auto"></video>
+        
+        <!-- Smart Engine: Detects screen and loads exact video instantly -->
+        <script>
+            (function() {
+                const video = document.getElementById('lin-splash-video');
+                // Agar screen 768px se chhoti hai (Mobile), toh mobile wala video do, nahi toh Desktop wala
+                const isMobile = window.innerWidth < 768;
+                video.src = isMobile ? './assets/splash-mobile.mp4' : './assets/splash-desktop.mp4';
+            })();
+        </script>
+    </div>
 
     <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-24 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 py-8 items-center justify-between z-50 transition-colors duration-300">
         <div id="desktop-logo-container" class="w-12 h-12 rounded-full flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800 bg-brand-blue text-white font-bold text-xl relative">
