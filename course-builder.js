@@ -1177,15 +1177,19 @@ if(type === 'test') {
         const playerBox = document.getElementById('player-container-box');
         const iframePlayer = document.getElementById('player-iframe');
         const pdfContainer = document.getElementById('native-pdf-container');
+        const pdfZoomWrapper = document.getElementById('pdf-zoom-wrapper'); 
+        const pdfControls = document.getElementById('pdf-controls'); 
         const loader = document.getElementById('player-loading');
         const loaderText = document.getElementById('player-loading-text');
 
         // Reset UI initially
         iframePlayer.classList.add('hidden');
         pdfContainer.classList.add('hidden');
+        if(pdfControls) { pdfControls.classList.add('hidden'); pdfControls.classList.remove('flex'); }
+        if(pdfZoomWrapper) pdfZoomWrapper.innerHTML = ''; 
         loader.style.display = 'flex';
         iframePlayer.src = '';
-        pdfContainer.innerHTML = '';
+        if(window.resetZoomPdf) window.resetZoomPdf(); 
         
         if (window.innerWidth < 768) {
             try {
@@ -1229,34 +1233,31 @@ if(type === 'test') {
         } else if (type === 'pdf') { 
             loaderText.innerText = "Securing Document & Encrypting Pages...";
             pdfContainer.classList.remove('hidden');
+            if(pdfControls) { pdfControls.classList.remove('hidden'); pdfControls.classList.add('flex'); }
 
             if (playerBox) {
                 playerBox.classList.remove('sm:aspect-video', 'sm:h-auto');
                 playerBox.classList.add('sm:h-[85vh]');
             }
             
-            // 🚀 THE MAGIC: Native PDF to Canvas Engine
             const pdfjsLib = window['pdfjs-dist/build/pdf'];
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
             const loadingTask = pdfjsLib.getDocument(val);
             loadingTask.promise.then(async function(pdf) {
-                // Async loop ensures pages render in exact order (1, 2, 3...)
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 1.5 }); // Premium HD Quality
+                    const viewport = page.getViewport({ scale: 1.5 }); 
                     
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    // 🛡️ SECURITY CLASSES: 'pointer-events-none' blocks right-click & saving!
                     canvas.className = 'w-[95%] md:w-3/4 lg:w-[800px] h-auto bg-white mb-6 shadow-2xl mx-auto rounded-md pointer-events-none select-none';
                     
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-                    pdfContainer.appendChild(canvas);
+                    if(pdfZoomWrapper) pdfZoomWrapper.appendChild(canvas); 
                     
-                    // Hide loader as soon as the first page appears
                     if(pageNum === 1) loader.style.display = 'none'; 
                 }
             }).catch(function(error) {
@@ -1273,9 +1274,13 @@ window.closeContentPlayer = function() {
     
     // 🧹 SECURITY & MEMORY CLEANUP
     const iframe = document.getElementById('player-iframe');
-    const pdfContainer = document.getElementById('native-pdf-container');
+    const pdfZoomWrapper = document.getElementById('pdf-zoom-wrapper');
+    const pdfControls = document.getElementById('pdf-controls');
+    
     if (iframe) iframe.src = ''; 
-    if (pdfContainer) pdfContainer.innerHTML = ''; // Destroys all decrypted canvases immediately!
+    if (pdfZoomWrapper) pdfZoomWrapper.innerHTML = ''; // Canvas gayab!
+    if (pdfControls) { pdfControls.classList.add('hidden'); pdfControls.classList.remove('flex'); }
+    if (window.resetZoomPdf) window.resetZoomPdf();
     
     // 📱 ROBUST MOBILE MAGIC: The Android Fullscreen & Portrait Fix
     try {
@@ -1441,4 +1446,30 @@ window.injectVaultPdfUrl = function(url) {
             setTimeout(() => status.classList.add('hidden'), 3000);
         }
     }
+}
+
+// ==========================================
+// 🚀 NATIVE PDF ZOOM CONTROLS
+// ==========================================
+window.currentPdfScale = 1;
+
+window.zoomPdf = function(step) {
+    window.currentPdfScale += step;
+    if(window.currentPdfScale < 0.5) window.currentPdfScale = 0.5;
+    if(window.currentPdfScale > 3.0) window.currentPdfScale = 3.0; // Max Zoom 300%
+    
+    const wrapper = document.getElementById('pdf-zoom-wrapper');
+    const label = document.getElementById('pdf-zoom-level');
+    
+    if(wrapper) wrapper.style.transform = `scale(${window.currentPdfScale})`;
+    if(label) label.innerText = Math.round(window.currentPdfScale * 100) + '%';
+}
+
+window.resetZoomPdf = function() {
+    window.currentPdfScale = 1;
+    const wrapper = document.getElementById('pdf-zoom-wrapper');
+    const label = document.getElementById('pdf-zoom-level');
+    
+    if(wrapper) wrapper.style.transform = `scale(1)`;
+    if(label) label.innerText = '100%';
 }
