@@ -3274,10 +3274,21 @@ window.permanentDeleteFile = async function(id, encodedMeta) {
     if(shredSfx) { shredSfx.currentTime = 0; shredSfx.play().catch(e=>console.log(e)); }
 
     try {
+        const { doc, getDoc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        
+        // 🚀 NEW: Destroy from Bunny.net Server
+        const snap = await getDoc(doc(db, "PWOS_Vault", targetUid, "projects", id));
+        if(snap.exists() && snap.data().type === 'video' && snap.data().bunnyVideoId) {
+            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
+            const deleteBunny = httpsCallable(getFunctions(auth.app), 'deleteBunnyVideo');
+            await deleteBunny({ videoId: snap.data().bunnyVideoId });
+            console.log("Video evaporated from Bunny.net!");
+        }
+
         if (encodedMeta) {
             try {
                 const metaContent = decodeURIComponent(encodedMeta);
-                if (metaContent.startsWith('http')) { await window.nukeCloudStorageAsset(metaContent); } 
+                if (metaContent.startsWith('http') && metaContent.includes('firebasestorage')) { await window.nukeCloudStorageAsset(metaContent); } 
                 else {
                     const meta = JSON.parse(metaContent);
                     if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
@@ -3285,10 +3296,9 @@ window.permanentDeleteFile = async function(id, encodedMeta) {
             } catch(e){}
         }
 
-        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         await deleteDoc(doc(db, "PWOS_Vault", targetUid, "projects", id));
         window.loadScrapBinFiles();
-    } catch(e) { alert("Failed to delete."); }
+    } catch(e) { console.error(e); alert("Failed to delete."); }
 }
 
 window.emptyScrapBin = async function() {
@@ -3301,12 +3311,21 @@ window.emptyScrapBin = async function() {
         const { collection, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
         const snap = await getDocs(collection(db, "PWOS_Vault", targetUid, "projects"));
         
+        const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
+        const deleteBunny = httpsCallable(getFunctions(auth.app), 'deleteBunnyVideo');
+
         for (const docSnap of snap.docs) {
             const data = docSnap.data();
             if (data.trashed) {
+                
+                // 🚀 NEW: Clear all trashed videos from Bunny.net
+                if (data.type === 'video' && data.bunnyVideoId) {
+                    try { await deleteBunny({ videoId: data.bunnyVideoId }); } catch(err) { console.error("Bunny Delete Error", err); }
+                }
+
                 if (data.metaContent) {
                     try {
-                        if (data.metaContent.startsWith('http')) { await window.nukeCloudStorageAsset(data.metaContent); } 
+                        if (data.metaContent.startsWith('http') && data.metaContent.includes('firebasestorage')) { await window.nukeCloudStorageAsset(data.metaContent); } 
                         else {
                             const meta = JSON.parse(data.metaContent);
                             if (meta.pdfUrl) await window.nukeCloudStorageAsset(meta.pdfUrl);
@@ -3318,7 +3337,7 @@ window.emptyScrapBin = async function() {
         }
         window.closeScrapBinContext();
         window.loadScrapBinFiles();
-    } catch(e) { alert("Failed to empty Bin."); }
+    } catch(e) { console.error(e); alert("Failed to empty Bin."); }
 }
 
 window.restoreFromBin = async function(id) {
@@ -3734,15 +3753,24 @@ window.renameVaultFile = async function(id, oldName) {
     if (!newName || newName.trim() === '' || newName === oldName) return;
 
     try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-        await updateDoc(doc(db, "PWOS_Vault", (window.currentVaultUid || auth.currentUser.uid), "projects", id), {
+        const { doc, getDoc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const uid = window.currentVaultUid || auth.currentUser.uid;
+        
+        // 🚀 NEW: Sync Rename with Bunny.net!
+        const snap = await getDoc(doc(db, "PWOS_Vault", uid, "projects", id));
+        if (snap.exists() && snap.data().type === 'video' && snap.data().bunnyVideoId) {
+            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
+            const renameBunny = httpsCallable(getFunctions(auth.app), 'renameBunnyVideo');
+            await renameBunny({ videoId: snap.data().bunnyVideoId, newTitle: newName.trim() });
+        }
+
+        await updateDoc(doc(db, "PWOS_Vault", uid, "projects", id), {
             name: newName.trim()
         });
         
-        // Instant Local UI Update
         const titleEl = document.getElementById(`card-title-${id}`);
         if(titleEl) titleEl.innerText = newName.trim();
-        window.loadVaultFiles(); // Refresh DB in background
+        window.loadVaultFiles(); 
     } catch(e) {
         console.error(e);
         alert("Failed to rename file.");

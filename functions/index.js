@@ -223,3 +223,54 @@ exports.getBunnyVideoToken = onCall(async (request) => {
         throw new HttpsError("internal", "Failed to generate secure upload coordinates.");
     }
 });
+
+// ============================================================================
+// API 4: RENAME BUNNY.NET VIDEO (Triggered from Vault)
+// ============================================================================
+exports.renameBunnyVideo = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Access Denied.");
+    
+    const { videoId, newTitle } = request.data;
+    if (!videoId || !newTitle) throw new HttpsError("invalid-argument", "Missing details.");
+
+    const BUNNY_LIBRARY_ID = "673982";
+    const BUNNY_API_KEY = "287095c5-0307-472c-a1e5ba3a3501-8929-4180";
+
+    try {
+        const response = await fetch(`https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`, {
+            method: 'POST', // Bunny uses POST to update titles
+            headers: { 'AccessKey': BUNNY_API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ title: newTitle })
+        });
+        if (!response.ok) throw new Error("Bunny Rename API Failed");
+        return { success: true };
+    } catch (error) { throw new HttpsError("internal", error.message); }
+});
+
+// ============================================================================
+// API 5: PERMANENT DELETE BUNNY.NET VIDEO (SUPERADMIN ONLY)
+// ============================================================================
+exports.deleteBunnyVideo = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Access Denied.");
+
+    // 🚀 Strict Security: Only Superadmin can destroy video files
+    const userSnap = await db.collection("users").doc(request.auth.uid).get();
+    if (String(userSnap.data().role).toLowerCase() !== "superadmin") {
+        throw new HttpsError("permission-denied", "Only Superadmin can permanently delete videos.");
+    }
+
+    const { videoId } = request.data;
+    if (!videoId) throw new HttpsError("invalid-argument", "Missing video ID.");
+
+    const BUNNY_LIBRARY_ID = "673982";
+    const BUNNY_API_KEY = "287095c5-0307-472c-a1e5ba3a3501-8929-4180";
+
+    try {
+        const response = await fetch(`https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`, {
+            method: 'DELETE',
+            headers: { 'AccessKey': BUNNY_API_KEY, 'Accept': 'application/json' }
+        });
+        if (!response.ok) throw new Error("Bunny Delete API Failed");
+        return { success: true };
+    } catch (error) { throw new HttpsError("internal", error.message); }
+});
