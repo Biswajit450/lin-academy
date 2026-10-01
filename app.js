@@ -2595,7 +2595,7 @@ window.addEventListener('message', async (event) => {
         }
     }
 
-    // H. 🚀 SMART CLOUD UPLOADER (BUNNY.NET + FIREBASE VAULT)
+    // H. 🚀 SMART CLOUD UPLOADER (FIREBASE STORAGE + VAULT + REAL-TIME PROGRESS)
     if (event.data && event.data.type === 'START_CLOUD_UPLOAD') {
         const { blob, fileName, blockId } = event.data.payload;
         
@@ -2605,111 +2605,136 @@ window.addEventListener('message', async (event) => {
 
         try {
             console.log("Cloud Upload Started: ", fileName);
-            if(window.showLiveToastNotification) {
-                window.showLiveToastNotification(`🚀 Uploading ${fileName} to secure cloud... Please don't close the app.`);
-            }
-
-            // 1. Firebase Backend se Bunny.net ka Secure Upload Token mangenge
-            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
-            const functions = getFunctions(auth.app);
-            const getBunnyToken = httpsCallable(functions, 'getBunnyVideoToken');
             
-            const response = await getBunnyToken({ title: fileName });
-            const bunnyData = response.data; 
-
-            // 2. Direct PUT request to Bunny.net Edge Servers (Fastest Upload)
-            const uploadRes = await fetch(bunnyData.uploadUrl, {
-                method: 'PUT',
-                headers: { 
-                    'AccessKey': bunnyData.apiKey,
-                    'Content-Type': 'application/octet-stream' 
-                },
-                body: blob
-            });
-
-            if (!uploadRes.ok) throw new Error("Bunny.net Stream API failed");
-
-            // 3. Vault mein Metadata aur Video Link Save karenge
-            const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-            const fileId = 'video_' + Date.now();
-            const hlsUrl = `https://iframe.mediadelivery.net/embed/${bunnyData.libraryId}/${bunnyData.videoId}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`;
-
-            await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
-                id: fileId,
-                name: fileName,
-                type: 'video', 
-                metaContent: hlsUrl,
-                bunnyVideoId: bunnyData.videoId,
-                thumbnail: '', 
-                timestamp: new Date().toISOString(),
-                trashed: false
-            });
-
-            if(window.showLiveToastNotification) {
-                window.showLiveToastNotification(`✅ ${fileName} successfully processed & secured in Vault!`);
+            // 🌟 1. DYNAMIC PROGRESS BAR UI GENERATION 🌟
+            let progressWrapper = document.getElementById('global-upload-progress');
+            if (!progressWrapper) {
+                progressWrapper = document.createElement('div');
+                progressWrapper.id = 'global-upload-progress';
+                // Premium floating UI design
+                progressWrapper.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-[90%] md:w-[400px] bg-slate-900 border border-slate-700 p-5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all duration-300';
+                progressWrapper.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-brand-blue animate-bounce"></i> 
+                            <span id="upload-filename" class="truncate max-w-[200px]">${fileName}</span>
+                        </span>
+                        <span id="upload-percentage" class="text-sm font-extrabold text-emerald-400 font-mono">0%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden shadow-inner border border-slate-700/50">
+                        <div id="upload-progress-bar" class="h-full bg-gradient-to-r from-brand-blue via-cyan-400 to-emerald-400 transition-all duration-200" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[9px] text-slate-400 mt-3 text-center uppercase tracking-widest font-bold flex justify-center items-center gap-1.5 animate-pulse">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Please do not close this window
+                    </p>
+                `;
+                document.body.appendChild(progressWrapper);
+            } else {
+                progressWrapper.classList.remove('hidden');
+                document.getElementById('upload-filename').innerText = fileName;
+                document.getElementById('upload-percentage').innerText = '0%';
+                document.getElementById('upload-progress-bar').style.width = '0%';
             }
-            window.loadVaultFiles(); // UI ko refresh kar do
 
-            // 4. 🚀 THE MAGIC FINISH: Auto-Pilot VOD Conversion 🚀
-            if (activeBlockId && activeCourseName) {
-                // Hum Draft aur Published dono jagah se Live Block ko Video Block mein convert karenge
-                for (let collectionName of ["course_drafts", "published_courses"]) {
-                    const docRef = doc(db, collectionName, activeCourseName);
-                    const snap = await getDoc(docRef);
+            // 2. Import tools & start Resumable Upload
+            const { ref, uploadBytesResumable, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
+            const storagePath = `PWOS_Vault/${uid}/recorded_videos/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}.webm`;
+            const storageRef = ref(storage, storagePath);
+            
+            // 🚀 The Magic: Resumable Task tracks progress
+            const uploadTask = uploadBytesResumable(storageRef, blob);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    // 📈 Calculate Progress Percentage and Update UI
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    document.getElementById('upload-percentage').innerText = Math.round(progress) + '%';
+                    document.getElementById('upload-progress-bar').style.width = progress + '%';
+                }, 
+                (error) => {
+                    // ❌ On Error
+                    console.error("Cloud Upload Pipeline Failed:", error);
+                    progressWrapper.classList.add('hidden');
+                    if(window.showLiveToastNotification) window.showLiveToastNotification(`❌ Upload Failed. Check console.`);
+                }, 
+                async () => {
+                    // ✅ On Success (Upload 100% Complete)
+                    progressWrapper.classList.add('hidden'); // Hide the progress bar
                     
-                    if (snap.exists() && snap.data().canvasHtml) {
-                        // DOMParser se raw HTML string ko edit karenge bina screen par render kiye
-                        const parser = new DOMParser();
-                        const docParsed = parser.parseFromString(snap.data().canvasHtml, 'text/html');
-                        const block = docParsed.getElementById(activeBlockId);
+                    const videoUrl = await getDownloadURL(uploadTask.snapshot.ref);
+
+                    // 3. Vault mein Metadata aur Video Link Save karenge
+                    const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                    const fileId = 'video_' + Date.now();
+
+                    await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
+                        id: fileId,
+                        name: fileName,
+                        type: 'video', 
+                        metaContent: videoUrl,
+                        thumbnail: '', 
+                        timestamp: new Date().toISOString(),
+                        trashed: false
+                    });
+
+                    if(window.showLiveToastNotification) {
+                        window.showLiveToastNotification(`✅ ${fileName} successfully processed & secured in Vault!`);
+                    }
+                    window.loadVaultFiles(); // UI ko refresh kar do
+
+                    // 4. 🚀 THE MAGIC FINISH: Auto-Pilot VOD Conversion 🚀
+                    if (activeBlockId && activeCourseName) {
+                        for (let collectionName of ["course_drafts", "published_courses"]) {
+                            const docRef = doc(db, collectionName, activeCourseName);
+                            const snap = await getDoc(docRef);
+                            
+                            if (snap.exists() && snap.data().canvasHtml) {
+                                const parser = new DOMParser();
+                                const docParsed = parser.parseFromString(snap.data().canvasHtml, 'text/html');
+                                const block = docParsed.getElementById(activeBlockId);
+                                
+                                if (block) {
+                                    const iconBox = block.querySelector('.w-12.h-12');
+                                    if (iconBox) {
+                                        iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shrink-0 text-xl shadow-inner';
+                                        iconBox.innerHTML = '<i class="fa-solid fa-play"></i>';
+                                    }
+                                    
+                                    const typeSpan = block.querySelector('span.text-\\[10px\\]');
+                                    if (typeSpan) typeSpan.innerText = 'VIDEO LECTURE';
+                                    
+                                    const adminArea = block.querySelector('.admin-input-area');
+                                    if (adminArea) {
+                                        adminArea.innerHTML = `<input type="text" placeholder="Video Link" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono" value="${videoUrl}">
+                                        <div class="mt-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                            <button type="button" onclick="window.promptInsertVaultVideo(this)" class="text-[10px] bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"><i class="fa-solid fa-folder-open"></i> Pick Video from Vault</button>
+                                        </div>`;
+                                    }
+                                    
+                                    const dateGrid = block.querySelector('.grid.grid-cols-2');
+                                    if (dateGrid) dateGrid.remove();
+                                    
+                                    const actionBtn = block.querySelector('.student-action-btn');
+                                    if (actionBtn) {
+                                        actionBtn.className = 'student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 bg-brand-blue hover:bg-blue-700 text-white border border-blue-700 flex w-full sm:w-auto text-center justify-center items-center gap-2';
+                                        actionBtn.innerHTML = '▶ Watch Lecture';
+                                        actionBtn.setAttribute('onclick', "window.consumeContent('video', this)");
+                                    }
+                                    
+                                    await setDoc(docRef, { canvasHtml: docParsed.body.innerHTML }, { merge: true });
+                                }
+                            }
+                        }
                         
-                        if (block) {
-                            // Step A: Convert Icon & Colors
-                            const iconBox = block.querySelector('.w-12.h-12');
-                            if (iconBox) {
-                                iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shrink-0 text-xl shadow-inner';
-                                iconBox.innerHTML = '<i class="fa-solid fa-play"></i>';
-                            }
-                            
-                            // Step B: Convert Title Badge
-                            const typeSpan = block.querySelector('span.text-\\[10px\\]');
-                            if (typeSpan) typeSpan.innerText = 'VIDEO LECTURE';
-                            
-                            // Step C: Swap Admin Controls & Inject URL
-                            const adminArea = block.querySelector('.admin-input-area');
-                            if (adminArea) {
-                                adminArea.innerHTML = `<input type="text" placeholder="Video Link (Bunny.net, YouTube, etc.)" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono" value="${hlsUrl}">
-                                <div class="mt-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                                    <button type="button" onclick="window.promptInsertVaultVideo(this)" class="text-[10px] bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"><i class="fa-solid fa-folder-open"></i> Pick Video from Vault</button>
-                                </div>`;
-                            }
-                            
-                            // Step D: Remove Schedule Dates
-                            const dateGrid = block.querySelector('.grid.grid-cols-2');
-                            if (dateGrid) dateGrid.remove();
-                            
-                            // Step E: Update Student View Button
-                            const actionBtn = block.querySelector('.student-action-btn');
-                            if (actionBtn) {
-                                actionBtn.className = 'student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 bg-brand-blue hover:bg-blue-700 text-white border border-blue-700 flex w-full sm:w-auto text-center justify-center items-center gap-2';
-                                actionBtn.innerHTML = '▶ Watch Lecture';
-                                actionBtn.setAttribute('onclick', "window.consumeContent('video', this)");
-                            }
-                            
-                            // Step F: Save it back to Firebase silently
-                            await setDoc(docRef, { canvasHtml: docParsed.body.innerHTML }, { merge: true });
+                        if(window.showLiveToastNotification) {
+                            window.showLiveToastNotification(`✨ Auto-Pilot: Live Class automatically converted to Video Lecture!`);
                         }
                     }
                 }
-                
-                if(window.showLiveToastNotification) {
-                    window.showLiveToastNotification(`✨ Auto-Pilot: Live Class automatically converted to Video Lecture!`);
-                }
-            }
-            
+            );
+
         } catch (e) {
-            console.error("Cloud Upload Pipeline Failed:", e);
-            if(window.showLiveToastNotification) window.showLiveToastNotification(`❌ Upload Failed. Check console.`);
+            console.error("Cloud Upload Initialization Failed:", e);
         }
     }
 
