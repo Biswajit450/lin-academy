@@ -215,7 +215,7 @@ exports.getBunnyVideoToken = onCall(async (request) => {
             libraryId: BUNNY_LIBRARY_ID,
             videoId: videoId,
             apiKey: BUNNY_API_KEY, 
-            uploadUrl: `https://video.bunnycdn.com/library/\({BUNNY_LIBRARY_ID}/videos/\){videoId}`
+            uploadUrl: `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`
         };
 
     } catch (error) {

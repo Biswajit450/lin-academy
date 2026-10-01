@@ -89,8 +89,15 @@
         <div class="absolute top-4 left-1/2 -translate-x-1/2 glass-toolbar px-6 py-3 rounded-full flex gap-4 items-center z-10 transition-all shadow-lg overflow-x-auto whitespace-nowrap scrollbar-hide max-w-[95%]">
 
             
-            <!-- 🔴 Screen Recorder Button -->
-            <button id="btn-record" class="text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Start HD Recording"><i class="fa-solid fa-circle text-rose-500"></i></button>
+            <!-- 🔴 Local Screen Recorder Button (Purana) -->
+            <button id="btn-record" class="text-slate-500 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Save Video to Device"><i class="fa-solid fa-circle text-rose-500"></i></button>
+            
+            <!-- 🚀 NEW: Smart Cloud Recorder (Bunny.net + Vault) -->
+            <button id="btn-cloud-record" class="text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center relative shadow-sm" title="Cloud Record to Vault">
+                <i id="cloud-record-icon" class="fa-solid fa-cloud text-emerald-500 text-lg transition-colors"></i>
+                <span id="cloud-record-indicator" class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full hidden animate-pulse"></span>
+            </button>
+            
             <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
 
             <!-- Slide / PDF Import -->
