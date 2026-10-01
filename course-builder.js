@@ -1094,10 +1094,23 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
 // CONTENT CONSUMPTION ENGINE (PREMIUM PLAYER)
 // ==========================================
 window.consumeContent = async function(type, elementOrId) { 
+    // 🚀 THE BUG FIX: Smart Course Name Detector (Handles both Admin Builder and Student View)
+    let activeCourseName = 'Unknown Course';
+    const adminScreen = document.getElementById('screen-admin');
+    const adminSelector = document.getElementById('admin-course-selector');
+    
+    if (adminScreen && !adminScreen.classList.contains('hidden') && adminSelector && adminSelector.value) {
+        // Agar Admin Builder mein test kar raha hai, toh Dropdown se naam lo
+        activeCourseName = adminSelector.value;
+    } else {
+        // Agar Student dekh raha hai, toh upar title se naam lo
+        const titleEl = document.getElementById('course-view-title');
+        if (titleEl) activeCourseName = titleEl.innerText;
+    }
+
     // 🚀 ROUTE TO NEW MOBILE-FRIENDLY EXAM PLAYER
     if(type === 'test') { 
-        const courseName = document.getElementById('course-view-title').innerText;
-        window.location.href = `exam-studio/player.html?testId=${elementOrId}&course=${encodeURIComponent(courseName)}`;
+        window.location.href = `exam-studio/player.html?testId=${elementOrId}&course=${encodeURIComponent(activeCourseName)}`;
         return; 
     }
     
@@ -1114,13 +1127,11 @@ window.consumeContent = async function(type, elementOrId) {
         return; 
     }
 
-    // 🚀 NEW: PROGRESS SAVER (BACKGROUND MODE - Ensures Fullscreen Gesture isn't lost) 🚀
-    if (auth.currentUser && block && block.id) {
-        const courseName = document.getElementById('course-view-title').innerText;
-        // Background Promise execution (No await)
+    // 🚀 NEW: PROGRESS SAVER (BACKGROUND MODE) 🚀
+    if (auth.currentUser && block && block.id && !(adminScreen && !adminScreen.classList.contains('hidden'))) {
         import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js").then(({ doc, setDoc }) => {
             setDoc(doc(db, "users", auth.currentUser.uid), {
-                course_progress: { [courseName]: { [block.id]: true } }
+                course_progress: { [activeCourseName]: { [block.id]: true } }
             }, { merge: true }).then(() => {
                 const btn = elementOrId;
                 if (!btn.innerText.includes("Completed")) {
@@ -1136,12 +1147,11 @@ window.consumeContent = async function(type, elementOrId) {
 
     if(type === 'live') { 
         const role = String(window.currentUserRole).toLowerCase().trim();
-        const courseName = document.getElementById('course-view-title').innerText;
         
         const timeInputs = block.querySelectorAll('input[type="datetime-local"]');
         const startTime = timeInputs[0] ? timeInputs[0].value : null;
         
-        const sessionData = { blockId: block.id, courseName: courseName, title: title, startTime: startTime };
+        const sessionData = { blockId: block.id, courseName: activeCourseName, title: title, startTime: startTime };
 
         if (role === 'admin' || role === 'superadmin' || role === 'educator') {
             if (window.openGreenRoom) window.openGreenRoom(sessionData);
