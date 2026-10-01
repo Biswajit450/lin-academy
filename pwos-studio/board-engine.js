@@ -662,7 +662,8 @@ offscreenCanvas.height = 1080;
 const offCtx = offscreenCanvas.getContext('2d');
 
 function drawFrame() {
-    if (!isRecording) return;
+    // 🚀 THE FIX: Agar local ya cloud dono mein se koi bhi recording on hai, toh frames draw karo
+    if (!isRecording && !window.isCloudRecording) return;
     
     // Fill background (Dark Mode Support)
     offCtx.fillStyle = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
@@ -752,6 +753,82 @@ btnRecord.addEventListener('click', () => {
         mediaRecorder.stop();
     }
 });
+
+// =====================================
+// 🚀 SMART CLOUD RECORDER ENGINE (BUNNY.NET + VAULT)
+// =====================================
+let cloudMediaRecorder;
+let cloudRecordedChunks = [];
+window.isCloudRecording = false; // Global scope for drawFrame check
+
+const btnCloudRecord = document.getElementById('btn-cloud-record');
+const cloudRecordIcon = document.getElementById('cloud-record-icon');
+const cloudRecordIndicator = document.getElementById('cloud-record-indicator');
+
+if (btnCloudRecord) {
+    btnCloudRecord.addEventListener('click', () => {
+        if (!window.isCloudRecording) {
+            // 🔴 START CLOUD RECORDING
+            window.isCloudRecording = true;
+            cloudRecordedChunks = [];
+            
+            // UI Update: Icon ko red karo aur pulse indicator on karo
+            cloudRecordIcon.classList.replace('text-emerald-500', 'text-rose-500');
+            cloudRecordIndicator.classList.remove('hidden');
+
+            const canvasStream = offscreenCanvas.captureStream(30);
+            if (localStream && localStream.getAudioTracks().length > 0) {
+                canvasStream.addTrack(localStream.getAudioTracks()[0]);
+            }
+
+            // Smart Format Detector (MP4/WebM)
+            let options = { mimeType: 'video/webm; codecs=vp9' };
+            if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.424028, mp4a.40.2"')) {
+                options = { mimeType: 'video/mp4; codecs="avc1.424028, mp4a.40.2"' };
+            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                options = { mimeType: 'video/mp4' };
+            }
+
+            cloudMediaRecorder = new MediaRecorder(canvasStream, options);
+            
+            cloudMediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) cloudRecordedChunks.push(e.data);
+            };
+            
+            cloudMediaRecorder.onstop = () => {
+                // 🚀 THE MAGIC: Bypass Local Download & Send to App.js Background Uploader
+                const blob = new Blob(cloudRecordedChunks, { type: options.mimeType });
+                
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'START_CLOUD_UPLOAD',
+                        payload: { 
+                            blob: blob, 
+                            fileName: currentFileName, 
+                            blockId: (typeof currentLiveSessionData !== 'undefined' && currentLiveSessionData ? currentLiveSessionData.blockId : null)
+                        }
+                    }, '*');
+                }
+            };
+            
+            if (!isRecording) drawFrame(); // Agar local record band hai, toh loop start karo
+            cloudMediaRecorder.start();
+            
+        } else {
+            // ⬛ STOP CLOUD RECORDING
+            window.isCloudRecording = false;
+            
+            // UI Update: Reset to default
+            cloudRecordIcon.classList.replace('text-rose-500', 'text-emerald-500');
+            cloudRecordIndicator.classList.add('hidden');
+            
+            if (!isRecording) cancelAnimationFrame(animationFrameId); // Loop band karo
+            cloudMediaRecorder.stop();
+            
+            alert("✅ Cloud Recording Stopped!\nProcessing and uploading to your Vault in the background...");
+        }
+    });
+}
 
 // =====================================
 // TYPOGRAPHY & TEXT ENGINE

@@ -164,3 +164,62 @@ exports.razorpayWebhook = functions.https.onRequest((req, res) => {
         }
     });
 });
+
+// ============================================================================
+// API 3: BUNNY.NET SECURE UPLOAD TOKEN (For Cloud VOD Recording)
+// ============================================================================
+exports.getBunnyVideoToken = onCall(async (request) => {
+    // 1. The Bouncer (Layer 1): Check if user is logged in
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Access Denied: Please login first.");
+    }
+
+    // 2. Role-Based Shield (Layer 2): Check if user is actually an Admin/Educator in Database
+    const userSnap = await db.collection("users").doc(request.auth.uid).get();
+    if (!userSnap.exists) {
+        throw new HttpsError("permission-denied", "User profile not found.");
+    }
+    const role = String(userSnap.data().role).toLowerCase();
+    if (role !== "admin" && role !== "superadmin" && role !== "educator") {
+        throw new HttpsError("permission-denied", "Access Denied: Only educators can upload videos.");
+    }
+
+    const videoTitle = request.data.title || `Lecture_${Date.now()}`;
+
+    // 🚨 YOUR BUNNY.NET SECRETS (Backend mein 100% safe hain) 🚨
+    // TODO: Inhe apne asli Bunny.net credentials se replace karein
+    const BUNNY_LIBRARY_ID = "673982"; // Aapki Stream Library ID (Numbers)
+    const BUNNY_API_KEY = "287095c5-0307-472c-a1e5ba3a3501-8929-4180"; // Stream Library ki API Key
+
+    try {
+        // 3. API Bridge: Tell Bunny.net to create an empty video shell
+        const response = await fetch(`https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos`, {
+            method: 'POST',
+            headers: {
+                'AccessKey': BUNNY_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ title: videoTitle })
+        });
+
+        if (!response.ok) {
+            throw new Error("Bunny.net API Error: Failed to create video slot.");
+        }
+
+        const data = await response.json();
+        const videoId = data.guid; // Bunny.net returns the unique Video ID as 'guid'
+
+        // 4. Send Upload Coordinates back to app.js
+        return {
+            libraryId: BUNNY_LIBRARY_ID,
+            videoId: videoId,
+            apiKey: BUNNY_API_KEY, 
+            uploadUrl: `https://video.bunnycdn.com/library/\({BUNNY_LIBRARY_ID}/videos/\){videoId}`
+        };
+
+    } catch (error) {
+        console.error("Bunny Token Error:", error);
+        throw new HttpsError("internal", "Failed to generate secure upload coordinates.");
+    }
+});

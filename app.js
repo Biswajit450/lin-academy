@@ -2594,6 +2594,125 @@ window.addEventListener('message', async (event) => {
             } catch(e) { console.error("Live Sync Error:", e); }
         }
     }
+
+    // H. 🚀 SMART CLOUD UPLOADER (BUNNY.NET + FIREBASE VAULT)
+    if (event.data && event.data.type === 'START_CLOUD_UPLOAD') {
+        const { blob, fileName, blockId } = event.data.payload;
+        
+        // 🚀 Capture active live session data before it gets cleared
+        const activeBlockId = window.currentLiveSessionData ? window.currentLiveSessionData.blockId : blockId;
+        const activeCourseName = window.currentLiveSessionData ? window.currentLiveSessionData.courseName : null;
+
+        try {
+            console.log("Cloud Upload Started: ", fileName);
+            if(window.showLiveToastNotification) {
+                window.showLiveToastNotification(`🚀 Uploading ${fileName} to secure cloud... Please don't close the app.`);
+            }
+
+            // 1. Firebase Backend se Bunny.net ka Secure Upload Token mangenge
+            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js");
+            const functions = getFunctions(auth.app);
+            const getBunnyToken = httpsCallable(functions, 'getBunnyVideoToken');
+            
+            const response = await getBunnyToken({ title: fileName });
+            const bunnyData = response.data; 
+
+            // 2. Direct PUT request to Bunny.net Edge Servers (Fastest Upload)
+            const uploadRes = await fetch(bunnyData.uploadUrl, {
+                method: 'PUT',
+                headers: { 
+                    'AccessKey': bunnyData.apiKey,
+                    'Content-Type': 'application/octet-stream' 
+                },
+                body: blob
+            });
+
+            if (!uploadRes.ok) throw new Error("Bunny.net Stream API failed");
+
+            // 3. Vault mein Metadata aur Video Link Save karenge
+            const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            const fileId = 'video_' + Date.now();
+            const hlsUrl = `https://iframe.mediadelivery.net/embed/${bunnyData.libraryId}/${bunnyData.videoId}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`;
+
+            await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
+                id: fileId,
+                name: fileName,
+                type: 'video', 
+                metaContent: hlsUrl,
+                bunnyVideoId: bunnyData.videoId,
+                thumbnail: '', 
+                timestamp: new Date().toISOString(),
+                trashed: false
+            });
+
+            if(window.showLiveToastNotification) {
+                window.showLiveToastNotification(`✅ ${fileName} successfully processed & secured in Vault!`);
+            }
+            window.loadVaultFiles(); // UI ko refresh kar do
+
+            // 4. 🚀 THE MAGIC FINISH: Auto-Pilot VOD Conversion 🚀
+            if (activeBlockId && activeCourseName) {
+                // Hum Draft aur Published dono jagah se Live Block ko Video Block mein convert karenge
+                for (let collectionName of ["course_drafts", "published_courses"]) {
+                    const docRef = doc(db, collectionName, activeCourseName);
+                    const snap = await getDoc(docRef);
+                    
+                    if (snap.exists() && snap.data().canvasHtml) {
+                        // DOMParser se raw HTML string ko edit karenge bina screen par render kiye
+                        const parser = new DOMParser();
+                        const docParsed = parser.parseFromString(snap.data().canvasHtml, 'text/html');
+                        const block = docParsed.getElementById(activeBlockId);
+                        
+                        if (block) {
+                            // Step A: Convert Icon & Colors
+                            const iconBox = block.querySelector('.w-12.h-12');
+                            if (iconBox) {
+                                iconBox.className = 'w-12 h-12 rounded-xl flex items-center justify-center border text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shrink-0 text-xl shadow-inner';
+                                iconBox.innerHTML = '<i class="fa-solid fa-play"></i>';
+                            }
+                            
+                            // Step B: Convert Title Badge
+                            const typeSpan = block.querySelector('span.text-\\[10px\\]');
+                            if (typeSpan) typeSpan.innerText = 'VIDEO LECTURE';
+                            
+                            // Step C: Swap Admin Controls & Inject URL
+                            const adminArea = block.querySelector('.admin-input-area');
+                            if (adminArea) {
+                                adminArea.innerHTML = `<input type="text" placeholder="Video Link (Bunny.net, YouTube, etc.)" class="link-input w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 outline-none text-xs text-slate-500 dark:text-slate-400 font-mono" value="${hlsUrl}">
+                                <div class="mt-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                    <button type="button" onclick="window.promptInsertVaultVideo(this)" class="text-[10px] bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"><i class="fa-solid fa-folder-open"></i> Pick Video from Vault</button>
+                                </div>`;
+                            }
+                            
+                            // Step D: Remove Schedule Dates
+                            const dateGrid = block.querySelector('.grid.grid-cols-2');
+                            if (dateGrid) dateGrid.remove();
+                            
+                            // Step E: Update Student View Button
+                            const actionBtn = block.querySelector('.student-action-btn');
+                            if (actionBtn) {
+                                actionBtn.className = 'student-action-btn mt-4 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5 active:scale-95 bg-brand-blue hover:bg-blue-700 text-white border border-blue-700 flex w-full sm:w-auto text-center justify-center items-center gap-2';
+                                actionBtn.innerHTML = '▶ Watch Lecture';
+                                actionBtn.setAttribute('onclick', "window.consumeContent('video', this)");
+                            }
+                            
+                            // Step F: Save it back to Firebase silently
+                            await setDoc(docRef, { canvasHtml: docParsed.body.innerHTML }, { merge: true });
+                        }
+                    }
+                }
+                
+                if(window.showLiveToastNotification) {
+                    window.showLiveToastNotification(`✨ Auto-Pilot: Live Class automatically converted to Video Lecture!`);
+                }
+            }
+            
+        } catch (e) {
+            console.error("Cloud Upload Pipeline Failed:", e);
+            if(window.showLiveToastNotification) window.showLiveToastNotification(`❌ Upload Failed. Check console.`);
+        }
+    }
+
 });
 
 // Close iframe animation (The "Back" visual effect)
@@ -2732,15 +2851,18 @@ window.loadVaultFiles = async function() {
 
         const testFiles = files.filter(f => f.type === 'test');
         const pdfFiles = files.filter(f => f.type === 'pdf'); 
-        const slateFiles = files.filter(f => f.type !== 'test' && f.type !== 'pdf'); 
+        const videoFiles = files.filter(f => f.type === 'video'); // 🚀 NEW: Filter Videos
+        const slateFiles = files.filter(f => f.type !== 'test' && f.type !== 'pdf' && f.type !== 'video'); 
         
         const countSlateEl = document.getElementById('folder-count-slate');
         const countTestEl = document.getElementById('folder-count-test');
         const countPdfEl = document.getElementById('folder-count-pdf'); 
+        const countVideoEl = document.getElementById('folder-count-video'); // 🚀 NEW
         
         if(countSlateEl) countSlateEl.innerText = slateFiles.length;
         if(countTestEl) countTestEl.innerText = testFiles.length;
         if(countPdfEl) countPdfEl.innerText = pdfFiles.length; 
+        if(countVideoEl) countVideoEl.innerText = videoFiles.length; // 🚀 NEW 
 
         const recentFiles = files.slice(0, 6);
         
@@ -2760,14 +2882,17 @@ window.loadVaultFiles = async function() {
             
             const isTest = (f.type === 'test');
             const isPdf = (f.type === 'pdf'); 
+            const isVideo = (f.type === 'video'); // 🚀 NEW LOGIC
             
-            const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas'));
-            const badgeColor = isTest ? 'bg-emerald-600' : (isPdf ? 'bg-rose-600' : 'bg-cyan-600');
-            const badgeIcon = isTest ? 'fa-flask' : (isPdf ? 'fa-file-pdf' : 'fa-pen-nib');
+            const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : (isVideo ? 'https://placehold.co/300x169/e2e8f0/475569?text=Recorded+Video' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas')));
+            
+            const badgeColor = isTest ? 'bg-emerald-600' : (isPdf ? 'bg-rose-600' : (isVideo ? 'bg-indigo-600' : 'bg-cyan-600'));
+            const badgeIcon = isTest ? 'fa-flask' : (isPdf ? 'fa-file-pdf' : (isVideo ? 'fa-video' : 'fa-pen-nib'));
             
             let clickAction = '';
             if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
             else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
+            else if (isVideo) clickAction = `window.open('${f.metaContent}', '_blank')`; // Temporary action, aage badh kar hum isko Course Builder mein integrate karenge
             else clickAction = `window.launchPWOSStudio('${f.id}')`;
 
             html += `
@@ -2828,9 +2953,15 @@ window.openVaultFolder = function(folderType) {
                 </button>
             </div>`;
         filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'pdf');
+        
+    // 🚀 NEW: Handling Video Folder Deep Dive
+    } else if (folderType === 'video') {
+        titleContainer.innerHTML = '<h3 id="vault-folder-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-video text-indigo-500"></i> Video Lectures</h3>';
+        filteredFiles = window.cachedVaultFiles.filter(f => f.type === 'video');
+        
     } else {
         titleContainer.innerHTML = '<h3 id="vault-folder-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-pen-nib text-cyan-500"></i> Interactive Slates</h3>';
-        filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test' && f.type !== 'pdf');
+        filteredFiles = window.cachedVaultFiles.filter(f => f.type !== 'test' && f.type !== 'pdf' && f.type !== 'video');
     }
 
     if (filteredFiles.length === 0) {

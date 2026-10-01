@@ -110,6 +110,12 @@ window.addBlock = function(type) {
         if(type === 'video') { 
             icon = 'fa-play'; color = 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'; typeName = 'Video Lecture'; placeholderText = 'Video Link (Bunny.net, YouTube, etc.)'; 
             actionBtnText = '▶ Watch Lecture'; actionColor = 'bg-brand-blue hover:bg-blue-700 text-white border border-blue-700'; 
+            
+            // 🚀 NEW: Vault Picker Button for Videos
+            extraInputs = `
+                <div class="mt-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <button type="button" onclick="window.promptInsertVaultVideo(this)" class="text-[10px] bg-brand-blue text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"><i class="fa-solid fa-folder-open"></i> Pick Video from Vault</button>
+                </div>`;
         }
         
         if(type === 'pdf') { 
@@ -1482,4 +1488,138 @@ window.resetZoomPdf = function() {
         wrapper.style.width = '100%';
     }
     if(label) label.innerText = '100%';
+}
+
+// ==========================================
+// 🚀 THE SMART VIDEO PICKER (VAULT TO CANVAS)
+// ==========================================
+window.promptInsertVaultVideo = async function(btn) {
+    const block = btn.closest('[id^="block-"]');
+    if (!block) return;
+    
+    const linkInput = block.querySelector('.link-input');
+    if (!linkInput) return;
+
+    let pickerModal = document.getElementById('smart-video-picker-modal');
+    
+    // Create modal if it doesn't exist
+    if (!pickerModal) {
+        const modalHtml = `
+        <div id="smart-video-picker-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[85vh]">
+                <div class="p-5 md:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-video text-brand-blue"></i> Smart Video Library</h3>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Select a recorded lecture from your Vault</p>
+                        </div>
+                        <button onclick="document.getElementById('smart-video-picker-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" oninput="window.filterVaultVideos(this.value)" placeholder="Search recordings by name..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-brand-blue dark:text-white transition-colors shadow-sm font-bold">
+                    </div>
+                </div>
+                
+                <div class="p-6 flex-grow overflow-y-auto hide-scrollbar bg-slate-100/50 dark:bg-slate-900">
+                    <div id="video-picker-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Fetched Videos will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        pickerModal = document.getElementById('smart-video-picker-modal');
+    }
+
+    pickerModal.classList.remove('hidden');
+    const grid = document.getElementById('video-picker-grid');
+    grid.innerHTML = '<div class="col-span-full text-center py-10"><i class="fa-solid fa-spinner fa-spin text-brand-blue text-2xl mb-2"></i><br><span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Scanning Vault...</span></div>';
+
+    window.currentActiveVideoInputId = linkInput.id || ('video-input-' + Date.now());
+    linkInput.id = window.currentActiveVideoInputId;
+
+    try {
+        if (!auth.currentUser) return;
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "PWOS_Vault", auth.currentUser.uid, "projects"));
+        
+        window.cachedVaultVideos = []; 
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            if (!data.trashed && data.type === 'video') {
+                window.cachedVaultVideos.push(data);
+            }
+        });
+
+        window.renderVaultVideos(window.cachedVaultVideos); 
+
+    } catch(e) {
+        console.error("Video Picker Error:", e);
+        grid.innerHTML = '<div class="col-span-full text-center text-rose-500 font-bold py-10">Failed to fetch videos from Vault.</div>';
+    }
+}
+
+window.renderVaultVideos = function(videoList) {
+    const grid = document.getElementById('video-picker-grid');
+    
+    if (videoList.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800">
+                <i class="fa-solid fa-video-slash text-3xl mb-2 opacity-50 text-blue-400"></i>
+                <p class="text-xs font-bold uppercase tracking-wider mb-3">No Recorded Videos Found</p>
+                <p class="text-[10px]">Use the 'Cloud Record' button in your Slate to record lectures.</p>
+            </div>`;
+        return;
+    }
+
+    videoList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    let html = '';
+    videoList.forEach(f => {
+        const dateObj = new Date(f.timestamp);
+        const dateStr = isNaN(dateObj) ? 'Just now' : dateObj.toLocaleDateString('en-IN', { month:'short', day:'numeric' });
+        
+        html += `
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:border-brand-blue hover:shadow-md transition-all group flex flex-col">
+            <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0"><i class="fa-solid fa-play text-lg"></i></div>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-regular fa-clock"></i> ${dateStr}</span>
+            </div>
+            <h4 class="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 mb-4" title="${f.name}">${f.name}</h4>
+            <button onclick="document.getElementById('smart-video-picker-modal').classList.add('hidden'); window.injectVaultVideoUrl('${f.metaContent}');" class="mt-auto w-full bg-blue-50 hover:bg-brand-blue text-brand-blue hover:text-white dark:bg-blue-900/20 dark:hover:bg-brand-blue font-bold py-2 rounded-lg transition-colors text-xs border border-blue-200 dark:border-blue-800 shadow-sm active:scale-95">
+                Insert to Course
+            </button>
+        </div>`;
+    });
+    
+    grid.innerHTML = html;
+}
+
+window.filterVaultVideos = function(query) {
+    const q = query.toLowerCase().trim();
+    if (q.length === 0) return window.renderVaultVideos(window.cachedVaultVideos);
+    const filtered = window.cachedVaultVideos.filter(vid => vid.name.toLowerCase().includes(q));
+    window.renderVaultVideos(filtered);
+}
+
+window.injectVaultVideoUrl = function(url) {
+    const linkInput = document.getElementById(window.currentActiveVideoInputId);
+    if (linkInput) {
+        linkInput.value = url;
+        window.autoSaveDraft(); 
+        
+        const status = linkInput.parentElement.querySelector('.upload-status');
+        if (!status) {
+            // Agar HTML mein upload-status pehle se nahi tha, toh dynamically add kar dete hain
+            const statusHtml = '<span class="upload-status text-[10px] font-bold text-emerald-500 ml-2"><i class="fa-solid fa-check"></i> Inserted from Vault</span>';
+            linkInput.insertAdjacentHTML('afterend', statusHtml);
+            setTimeout(() => { linkInput.parentElement.querySelector('.upload-status').remove(); }, 3000);
+        } else {
+            status.innerHTML = '<i class="fa-solid fa-check"></i> Inserted from Vault';
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        }
+    }
 }

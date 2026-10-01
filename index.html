@@ -366,8 +366,8 @@
                         <!-- 🚀 TIER 2: Permanent Smart Folders -->
                         <div>
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3"><i class="fa-solid fa-folder-tree mr-1"></i> Smart Workspaces</h4>
-                            <!-- 🚀 FIX: grid-cols-2 ko grid-cols-3 kiya taaki 3 folder aa sakein -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- 🚀 FIX: grid-cols-3 ko grid-cols-4 kiya taaki 4 folder aa sakein -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 
                                 <!-- 1. Slate Folder -->
                                 <div onclick="window.openVaultFolder('slate')" class="bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200 dark:border-cyan-800/50 rounded-3xl p-5 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-cyan-500 transition-all group">
@@ -404,6 +404,17 @@
                                         <button onclick="event.stopPropagation(); document.getElementById('vault-pdf-upload').click();" class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-700 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-colors shadow-sm" title="Upload New PDF">
                                             <i class="fa-solid fa-cloud-arrow-up"></i>
                                         </button>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Video Lectures Folder -->
+                                <div onclick="window.openVaultFolder('video')" class="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-5 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-indigo-500 transition-all group relative overflow-hidden">
+                                    <div class="flex items-center gap-4 relative z-10 w-full">
+                                        <div class="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-video"></i></div>
+                                        <div class="flex-grow">
+                                            <h4 class="text-lg font-bold text-slate-900 dark:text-white">Video Lectures</h4>
+                                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-0.5"><span id="folder-count-video">0</span> Videos</p>
+                                        </div>
                                     </div>
                                 </div>
 
