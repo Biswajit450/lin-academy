@@ -233,11 +233,13 @@ function updatePanelUI() {
         // 🛑 PANEL HIDDEN STATE
         if (chatDrawer) {
             if (isMobile) {
+                // Mobile: Sirf slide karke bahar bhejo (flex zaroori hai animation ke liye)
+                chatDrawer.classList.remove('hidden'); 
                 chatDrawer.classList.add('translate-x-full');
             } else {
-                // Desktop: Completely hide the panel space
+                // Desktop: Space free karne ke liye completely hide kar do
                 chatDrawer.classList.add('hidden');
-                chatDrawer.classList.remove('lg:flex');
+                chatDrawer.classList.add('translate-x-full');
             }
         }
         
@@ -267,12 +269,11 @@ function updatePanelUI() {
     } else {
         // 🟢 PANEL VISIBLE STATE
         if (chatDrawer) {
+            chatDrawer.classList.remove('hidden'); // Dono devices par dikhna zaroori hai
             if (isMobile) {
-                chatDrawer.classList.remove('translate-x-full');
+                chatDrawer.classList.remove('translate-x-full'); // Slide In
             } else {
-                // Desktop: Show the panel and claim space
-                chatDrawer.classList.remove('hidden');
-                chatDrawer.classList.add('lg:flex');
+                chatDrawer.classList.remove('translate-x-full');
             }
         }
         
