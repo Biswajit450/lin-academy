@@ -123,9 +123,9 @@
         <!-- RIGHT: Overlay Drawer & Fixed Toolbar Setup -->
         <!-- ========================================== -->
 
-        <!-- 🚀 THE SLIDING CHAT DRAWER (Separated from Toolbar) -->
-        <!-- FIX: Width reduced to 250px for mobile -->
-        <div id="chat-drawer" class="absolute right-12 lg:right-14 top-0 w-[250px] lg:w-[400px] h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-40 transition-transform duration-300 transform translate-x-full border-l border-slate-200 dark:border-slate-700">
+        <!-- 🚀 THE SLIDING CHAT DRAWER (Responsive Flex Engine) -->
+        <!-- Mobile: Floating Absolute Overlay | Desktop: Solid Flex Panel -->
+        <div id="chat-drawer" class="absolute lg:relative right-12 lg:right-0 top-0 w-[250px] lg:w-[400px] shrink-0 h-full flex flex-col bg-white dark:bg-slate-900 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] dark:shadow-none z-40 transition-all duration-300 transform translate-x-full lg:translate-x-0 lg:mr-14 border-l border-slate-200 dark:border-slate-700 hidden lg:flex">
             
             <!-- Camera Container (16:9 Ratio for Mobile: h-[140px] for w-[250px]) -->
             <div id="webcam-placeholder" class="h-[140px] lg:h-[220px] shrink-0 bg-slate-900 dark:bg-black relative border-b border-slate-800">

@@ -230,7 +230,17 @@ function updatePanelUI() {
     const isMobile = window.innerWidth < 1024; 
     
     if (isPanelHidden) {
-        if (chatDrawer) chatDrawer.classList.add('translate-x-full');
+        // 🛑 PANEL HIDDEN STATE
+        if (chatDrawer) {
+            if (isMobile) {
+                chatDrawer.classList.add('translate-x-full');
+            } else {
+                // Desktop: Completely hide the panel space
+                chatDrawer.classList.add('hidden');
+                chatDrawer.classList.remove('lg:flex');
+            }
+        }
+        
         if (togglePanelIcon) {
             togglePanelIcon.classList.replace('fa-arrow-right-to-bracket', 'fa-message');
             togglePanelIcon.classList.replace('fa-xmark', 'fa-message'); 
@@ -255,9 +265,20 @@ function updatePanelUI() {
         }
 
     } else {
-        if (chatDrawer) chatDrawer.classList.remove('translate-x-full');
+        // 🟢 PANEL VISIBLE STATE
+        if (chatDrawer) {
+            if (isMobile) {
+                chatDrawer.classList.remove('translate-x-full');
+            } else {
+                // Desktop: Show the panel and claim space
+                chatDrawer.classList.remove('hidden');
+                chatDrawer.classList.add('lg:flex');
+            }
+        }
+        
         if (togglePanelIcon) {
             togglePanelIcon.classList.replace('fa-message', 'fa-arrow-right-to-bracket');
+            if(isMobile) togglePanelIcon.classList.replace('fa-message', 'fa-xmark');
         }
         
         if (webcamPlaceholder && webcamContainer) {
