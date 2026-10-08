@@ -1131,17 +1131,62 @@ document.querySelectorAll('.asset-btn').forEach(btn => {
             case 'triangle':
                 newObject = new fabric.Triangle({ ...commonProps, width: 150, height: 150 });
                 break;
+            case 'diamond':
+                newObject = new fabric.Polygon([
+                    {x: 75, y: 0}, {x: 150, y: 75}, {x: 75, y: 150}, {x: 0, y: 75}
+                ], { ...commonProps });
+                break;
+            case 'star':
+                // Perfect 5-point star path
+                newObject = new fabric.Polygon([
+                    {x: 75, y: 0}, {x: 91, y: 52}, {x: 147, y: 52}, {x: 102, y: 85}, 
+                    {x: 119, y: 137}, {x: 75, y: 104}, {x: 31, y: 137}, {x: 48, y: 85}, 
+                    {x: 3, y: 52}, {x: 59, y: 52}
+                ], { ...commonProps, strokeLineJoin: 'round' });
+                break;
             case 'line':
                 newObject = new fabric.Line([0, 0, 200, 0], { ...commonProps });
                 break;
+            case 'arrow-right':
+                newObject = new fabric.Polygon([
+                    {x: 0, y: 30}, {x: 80, y: 30}, {x: 80, y: 10}, 
+                    {x: 140, y: 45}, {x: 80, y: 80}, {x: 80, y: 60}, {x: 0, y: 60}
+                ], { ...commonProps, strokeLineJoin: 'round' });
+                break;
+            case 'arrow-left':
+                newObject = new fabric.Polygon([
+                    {x: 140, y: 30}, {x: 60, y: 30}, {x: 60, y: 10}, 
+                    {x: 0, y: 45}, {x: 60, y: 80}, {x: 60, y: 60}, {x: 140, y: 60}
+                ], { ...commonProps, strokeLineJoin: 'round' });
+                break;
+            case 'arrow-double':
+                newObject = new fabric.Polygon([
+                    {x: 40, y: 30}, {x: 100, y: 30}, {x: 100, y: 10}, {x: 140, y: 45}, 
+                    {x: 100, y: 80}, {x: 100, y: 60}, {x: 40, y: 60}, {x: 40, y: 80}, 
+                    {x: 0, y: 45}, {x: 40, y: 10}
+                ], { ...commonProps, strokeLineJoin: 'round' });
+                break;
+            case 'speech-bubble':
+                // Classic Comic Callout
+                newObject = new fabric.Path('M 0 0 L 150 0 L 150 100 L 50 100 L 20 140 L 30 100 L 0 100 Z', { ...commonProps, fill: 'transparent', strokeLineJoin: 'round' });
+                break;
+            case 'cloud':
+                newObject = new fabric.Path('M 50 50 A 20 20 0 0 1 90 50 A 30 30 0 0 1 150 50 A 25 25 0 0 1 150 100 L 50 100 A 25 25 0 0 1 50 50 Z', { ...commonProps, fill: 'transparent', strokeLineJoin: 'round' });
+                break;
+            case 'cylinder':
+                // Math 3D Cylinder
+                const ellipseTop = new fabric.Ellipse({ rx: 50, ry: 20, left: 50, top: 20, fill: 'transparent', stroke: strokeColor, strokeWidth: 3 });
+                const ellipseBottom = new fabric.Ellipse({ rx: 50, ry: 20, left: 50, top: 120, fill: 'transparent', stroke: strokeColor, strokeWidth: 3 });
+                const bodyL = new fabric.Line([0, 20, 0, 120], { stroke: strokeColor, strokeWidth: 3 });
+                const bodyR = new fabric.Line([100, 20, 100, 120], { stroke: strokeColor, strokeWidth: 3 });
+                newObject = new fabric.Group([ellipseBottom, bodyL, bodyR, ellipseTop], { ...commonProps });
+                break;
             case 'axis':
-                // X and Y Coordinate Graph Axis
                 const xAxis = new fabric.Line([-150, 0, 150, 0], { stroke: strokeColor, strokeWidth: 3 });
                 const yAxis = new fabric.Line([0, -150, 0, 150], { stroke: strokeColor, strokeWidth: 3 });
                 newObject = new fabric.Group([xAxis, yAxis], { ...commonProps });
                 break;
             case 'benzene':
-                // Proper Hexagonal Benzene Ring with inner circle
                 const hexagon = new fabric.Polygon([
                     {x: 50, y: 0}, {x: 100, y: 28}, {x: 100, y: 86},
                     {x: 50, y: 115}, {x: 0, y: 86}, {x: 0, y: 28}
@@ -1150,19 +1195,15 @@ document.querySelectorAll('.asset-btn').forEach(btn => {
                 newObject = new fabric.Group([hexagon, innerCircle], { ...commonProps });
                 break;
             case 'resistor':
-                // Physics zigzag resistor path
                 newObject = new fabric.Path('M 0 50 L 20 50 L 30 20 L 50 80 L 70 20 L 90 80 L 100 50 L 120 50', { ...commonProps, fill: 'transparent', strokeLineJoin: 'round' });
                 break;
             case 'battery':
-                // Physics battery circuit symbol
                 newObject = new fabric.Path('M 0 50 L 40 50 M 40 20 L 40 80 M 60 35 L 60 65 M 60 50 L 100 50', { ...commonProps, fill: 'transparent' });
                 break;
             case 'beaker':
-                // Chemistry Flask/Beaker
                 newObject = new fabric.Path('M 30 0 L 70 0 M 40 0 L 40 40 L 10 100 Q 0 120 20 120 L 80 120 Q 100 120 90 100 L 60 40 L 60 0 M 15 90 L 85 90', { ...commonProps, fill: 'transparent', strokeLineJoin: 'round' });
                 break;
             case 'cube':
-                // 3D Cube using paths
                 newObject = new fabric.Path('M 0 30 L 30 0 L 130 0 L 100 30 Z M 0 30 L 0 130 L 100 130 L 100 30 M 100 130 L 130 100 L 130 0 M 130 100 L 100 130', { ...commonProps, fill: 'transparent', strokeLineJoin: 'round' });
                 break;
         }
@@ -1176,6 +1217,143 @@ document.querySelectorAll('.asset-btn').forEach(btn => {
         
         assetMenu.classList.add('hidden'); // Auto-close menu after selecting
     });
+});
+
+// =====================================
+// 🚀 NEW: SHAPE FORMATTING ENGINE (PowerPoint Level Control)
+// =====================================
+const shapeToolbar = document.getElementById('shape-format-toolbar');
+let activeShapeObject = null;
+
+const shapeFillColorInput = document.getElementById('shape-fill-color');
+const shapeStrokeColorInput = document.getElementById('shape-stroke-color');
+const shapeStrokeWidthInput = document.getElementById('shape-stroke-width');
+const shapeToggleTransparentBtn = document.getElementById('shape-toggle-transparent');
+const shapeDeleteBtn = document.getElementById('shape-delete');
+
+// 1. Show/Hide Toolbar based on Shape Selection
+canvas.on('selection:created', handleShapeSelection);
+canvas.on('selection:updated', handleShapeSelection);
+canvas.on('selection:cleared', () => {
+    activeShapeObject = null;
+    shapeToolbar.classList.add('hidden');
+    shapeToolbar.classList.remove('flex');
+});
+
+function handleShapeSelection(options) {
+    const obj = options.selected[0];
+    
+    // Check if the selected object is a shape (not text, not an image/slide background, and not a path drawn by pen)
+    if (obj && !obj.isSlide && (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'triangle' || obj.type === 'polygon' || obj.type === 'line' || obj.type === 'group')) {
+        
+        // Exclude generic paths (like freehand drawings) from shape formatting
+        if(obj.type === 'path' && !obj.isCustomShape) {
+            shapeToolbar.classList.add('hidden');
+            shapeToolbar.classList.remove('flex');
+            activeShapeObject = null;
+            return;
+        }
+
+        activeShapeObject = obj;
+        
+        // Sync toolbar values with the selected shape's properties
+        // For groups (like our Benzene ring or Axis), we look at the first object in the group
+        const targetForColors = obj.type === 'group' ? obj._objects[0] : obj;
+
+        shapeFillColorInput.value = targetForColors.fill === 'transparent' ? '#ffffff' : targetForColors.fill;
+        shapeStrokeColorInput.value = targetForColors.stroke || '#0f172a';
+        shapeStrokeWidthInput.value = targetForColors.strokeWidth || 3;
+        
+        // Update Transparent Toggle Button UI
+        if (targetForColors.fill === 'transparent') {
+            shapeToggleTransparentBtn.innerHTML = '<i class="fa-regular fa-square"></i> Hollow';
+            shapeToggleTransparentBtn.classList.remove('bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600', 'border-emerald-200');
+            shapeToggleTransparentBtn.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'border-slate-200');
+        } else {
+            shapeToggleTransparentBtn.innerHTML = '<i class="fa-solid fa-square"></i> Solid';
+            shapeToggleTransparentBtn.classList.add('bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600', 'border-emerald-200');
+            shapeToggleTransparentBtn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'border-slate-200');
+        }
+
+        // Display the toolbar
+        shapeToolbar.classList.remove('hidden');
+        shapeToolbar.classList.add('flex');
+        
+    } else {
+        activeShapeObject = null;
+        shapeToolbar.classList.add('hidden');
+        shapeToolbar.classList.remove('flex');
+    }
+}
+
+// Helper to apply properties to shapes (handles single shapes and groups)
+function applyToShape(property, value) {
+    if (!activeShapeObject) return;
+    
+    if (activeShapeObject.type === 'group') {
+        activeShapeObject.getObjects().forEach(child => {
+            child.set(property, value);
+        });
+    } else {
+        activeShapeObject.set(property, value);
+    }
+    canvas.renderAll();
+    saveHistory(); // Save the formatting change
+}
+
+// 2. Control Listeners
+shapeFillColorInput.addEventListener('input', (e) => {
+    // If it's currently set to transparent, make it solid first
+    const targetForColors = activeShapeObject.type === 'group' ? activeShapeObject._objects[0] : activeShapeObject;
+    if (targetForColors.fill === 'transparent') {
+        applyToShape('fill', e.target.value);
+        // Update Toggle UI to Solid
+        shapeToggleTransparentBtn.innerHTML = '<i class="fa-solid fa-square"></i> Solid';
+        shapeToggleTransparentBtn.classList.add('bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600', 'border-emerald-200');
+        shapeToggleTransparentBtn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'border-slate-200');
+    } else {
+        applyToShape('fill', e.target.value);
+    }
+});
+
+shapeStrokeColorInput.addEventListener('input', (e) => {
+    applyToShape('stroke', e.target.value);
+});
+
+shapeStrokeWidthInput.addEventListener('input', (e) => {
+    applyToShape('strokeWidth', parseInt(e.target.value) || 0);
+});
+
+// Toggle Fill (Solid vs Transparent)
+shapeToggleTransparentBtn.addEventListener('click', () => {
+    if (!activeShapeObject) return;
+    
+    const targetForColors = activeShapeObject.type === 'group' ? activeShapeObject._objects[0] : activeShapeObject;
+    const isCurrentlyTransparent = targetForColors.fill === 'transparent';
+    
+    if (isCurrentlyTransparent) {
+        // Become Solid (use current color picker value)
+        applyToShape('fill', shapeFillColorInput.value);
+        shapeToggleTransparentBtn.innerHTML = '<i class="fa-solid fa-square"></i> Solid';
+        shapeToggleTransparentBtn.classList.add('bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600', 'border-emerald-200');
+        shapeToggleTransparentBtn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'border-slate-200');
+    } else {
+        // Become Hollow (Transparent)
+        applyToShape('fill', 'transparent');
+        shapeToggleTransparentBtn.innerHTML = '<i class="fa-regular fa-square"></i> Hollow';
+        shapeToggleTransparentBtn.classList.remove('bg-emerald-50', 'dark:bg-emerald-900/30', 'text-emerald-600', 'border-emerald-200');
+        shapeToggleTransparentBtn.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'border-slate-200');
+    }
+});
+
+// Delete Shape
+shapeDeleteBtn.addEventListener('click', () => {
+    if (activeShapeObject) {
+        canvas.remove(activeShapeObject);
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        saveHistory();
+    }
 });
 
 // =====================================

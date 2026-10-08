@@ -163,6 +163,36 @@
             <button id="fmt-delete" class="w-8 h-8 rounded hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-500 transition" title="Delete Text"><i class="fa-solid fa-trash-can"></i></button>
         </div>
 
+        <!-- 🚀 NEW: Floating Shape Format Toolbar -->
+        <div id="shape-format-toolbar" class="hidden absolute top-20 left-1/2 -translate-x-1/2 glass-toolbar dark:bg-slate-800/90 dark:border-slate-700 px-4 py-2 rounded-xl flex gap-3 items-center z-40 shadow-xl transition-all">
+            <!-- Fill Color (Andar ka rang) -->
+            <div class="flex items-center gap-1">
+                <i class="fa-solid fa-fill-drip text-slate-400 text-xs"></i>
+                <input type="color" id="shape-fill-color" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent" title="Fill Color" value="#ffffff">
+            </div>
+            
+            <!-- Stroke Color (Border ka rang) -->
+            <div class="flex items-center gap-1">
+                <i class="fa-solid fa-pen text-slate-400 text-xs"></i>
+                <input type="color" id="shape-stroke-color" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent" title="Border Color" value="#0f172a">
+            </div>
+            
+            <!-- Stroke Width (Border Motaai) -->
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                <i class="fa-solid fa-minus text-slate-400 text-[10px]"></i>
+                <input type="number" id="shape-stroke-width" class="w-8 h-6 bg-transparent text-slate-700 dark:text-slate-300 text-center text-xs outline-none border border-transparent focus:border-brand-blue transition" value="3" min="0" max="50" title="Border Width">
+            </div>
+
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            
+            <!-- Transparent Toggle (Hollow vs Solid) -->
+            <button id="shape-toggle-transparent" class="px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition text-xs border border-slate-200 dark:border-slate-600 shadow-sm" title="Toggle Transparent Fill"><i class="fa-regular fa-square"></i> Hollow</button>
+            
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+            
+            <!-- Delete Shape -->
+            <button id="shape-delete" class="w-7 h-7 rounded hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-500 transition flex items-center justify-center" title="Delete Shape"><i class="fa-solid fa-trash-can text-sm"></i></button>
+        </div>
         <!-- 🚀 NEW: Math Symbols Grid (Context Menu) -->
         <div id="math-symbols-grid" class="hidden absolute bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 rounded-lg shadow-xl z-50 grid grid-cols-4 gap-1">
             <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">α</button>
@@ -178,29 +208,45 @@
             <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">²</button>
             <button class="math-sym-btn w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300">³</button>
         </div>
-        <!-- 🚀 PRO: Educator Asset Library -->
-        <div id="asset-library-menu" class="hidden absolute top-20 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-2xl z-50 w-80 transition-all">
-            <!-- Math & Geometry -->
+        <!-- 🚀 PRO: Educator Asset Library (PowerPoint Level) -->
+        <div id="asset-library-menu" class="hidden absolute top-20 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-2xl z-50 w-[340px] transition-all">
+            
+            <!-- Basic Shapes -->
             <div class="mb-4">
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Geometry & Graphs</span>
-                <div class="grid grid-cols-5 gap-2">
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="rect" title="Rectangle"><i class="fa-regular fa-square"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="circle" title="Circle"><i class="fa-regular fa-circle"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="triangle" title="Triangle"><i class="fa-solid fa-caret-up"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="line" title="Straight Line"><i class="fa-solid fa-slash"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="axis" title="Coordinate Axis"><i class="fa-solid fa-chart-line"></i></button>
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Basic Shapes</span>
+                <div class="grid grid-cols-6 gap-1.5">
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="rect" title="Rectangle"><i class="fa-regular fa-square"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="circle" title="Circle"><i class="fa-regular fa-circle"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="triangle" title="Triangle"><i class="fa-solid fa-caret-up"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="diamond" title="Diamond"><i class="fa-solid fa-diamond"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="star" title="Star"><i class="fa-regular fa-star"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-brand-blue hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="line" title="Line"><i class="fa-solid fa-slash"></i></button>
+                </div>
+            </div>
+
+            <!-- Block Arrows & Callouts -->
+            <div class="mb-4">
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Arrows & Callouts</span>
+                <div class="grid grid-cols-6 gap-1.5">
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="arrow-right" title="Right Arrow"><i class="fa-solid fa-arrow-right-long"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="arrow-left" title="Left Arrow"><i class="fa-solid fa-arrow-left-long"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="arrow-double" title="Double Arrow"><i class="fa-solid fa-arrows-left-right"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="speech-bubble" title="Speech Bubble"><i class="fa-regular fa-message"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="cloud" title="Cloud"><i class="fa-solid fa-cloud"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="axis" title="Graph Axis"><i class="fa-solid fa-chart-line"></i></button>
                 </div>
             </div>
             
             <!-- Science Kits -->
             <div>
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Physics & Chemistry</span>
-                <div class="grid grid-cols-5 gap-2">
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="benzene" title="Benzene Ring"><i class="fa-solid fa-hexagon-nodes"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="resistor" title="Resistor"><i class="fa-solid fa-wave-square"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="battery" title="Battery"><i class="fa-solid fa-battery-half"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="beaker" title="Beaker/Flask"><i class="fa-solid fa-flask"></i></button>
-                    <button class="asset-btn h-10 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition" data-shape="cube" title="3D Cube"><i class="fa-solid fa-cube"></i></button>
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 block">Physics & Chemistry</span>
+                <div class="grid grid-cols-6 gap-1.5">
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="benzene" title="Benzene Ring"><i class="fa-solid fa-hexagon-nodes"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="resistor" title="Resistor"><i class="fa-solid fa-wave-square"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="battery" title="Battery"><i class="fa-solid fa-battery-half"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="beaker" title="Beaker/Flask"><i class="fa-solid fa-flask"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="cube" title="3D Cube"><i class="fa-solid fa-cube"></i></button>
+                    <button class="asset-btn h-9 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-500 hover:text-white rounded text-slate-600 dark:text-slate-300 transition text-sm" data-shape="cylinder" title="Cylinder"><i class="fa-solid fa-database"></i></button>
                 </div>
             </div>
         </div>
