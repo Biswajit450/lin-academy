@@ -548,9 +548,24 @@
                 <button type="button" onclick="window.handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl transition-all shadow-sm mb-4"><svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google</button>
                 <div class="relative flex items-center py-2 mb-4"><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div><span class="flex-shrink-0 mx-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">OR EMAIL</span><div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div></div>
                 <form id="auth-form" class="space-y-4" onsubmit="window.handleAuth(event)">
-                    <div><input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="student@gmail.com"></div>
-                    <div><input type="password" id="auth-password" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white" placeholder="••••••••"></div>
-                    <button type="submit" id="auth-submit-btn" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all mt-2">Sign In</button>
+                    <div>
+                        <input type="email" id="auth-email" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white transition-colors" placeholder="student@gmail.com">
+                    </div>
+                    <div>
+                        <input type="password" id="auth-password" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue dark:text-white transition-colors" placeholder="••••••••">
+                        
+                        <!-- 🚀 NEW: Forgot Password Link -->
+                        <div class="flex justify-end mt-2" id="forgot-pwd-container">
+                            <button type="button" onclick="window.handleForgotPassword()" class="text-[10px] font-bold text-slate-400 hover:text-brand-blue transition-colors">Forgot Password?</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 🚀 NEW: Inline Error & Success Message Display -->
+                    <p id="auth-error-msg" class="hidden text-[11px] font-bold text-center px-3 py-2 rounded-lg transition-all"></p>
+                    
+                    <button type="submit" id="auth-submit-btn" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all mt-2 flex items-center justify-center gap-2">
+                        Sign In
+                    </button>
                 </form>
                 <div class="mt-6 text-center"><button type="button" onclick="window.toggleAuthMode()" id="auth-toggle-btn" class="text-sm text-slate-500 hover:text-brand-blue font-semibold transition-colors">Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span></button></div>
             </div>

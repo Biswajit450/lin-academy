@@ -1,10 +1,26 @@
 // auth.js
 
-import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { auth, db, googleProvider } from "./firebase-config.js";
 
 let isLoginMode = true;
+
+// 🚀 NAYA: Smart Error Handling Engine (No more ugly alerts!)
+function showAuthError(message, isSuccess = false) {
+    const errorEl = document.getElementById('auth-error-msg');
+    if (errorEl) {
+        errorEl.innerHTML = isSuccess ? `<i class="fa-solid fa-check-circle mr-1"></i> ${message}` : `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${message}`;
+        errorEl.classList.remove('hidden');
+        if (isSuccess) {
+            errorEl.classList.remove('text-rose-500', 'bg-rose-50', 'dark:bg-rose-900/30');
+            errorEl.classList.add('text-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30');
+        } else {
+            errorEl.classList.remove('text-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-900/30');
+            errorEl.classList.add('text-rose-500', 'bg-rose-50', 'dark:bg-rose-900/30');
+        }
+    }
+}
 
 window.openAuthModal = function(mode = 'login') {
     document.getElementById('auth-modal').classList.remove('hidden'); 
@@ -12,15 +28,22 @@ window.openAuthModal = function(mode = 'login') {
     const title = document.getElementById('auth-title'); 
     const submitBtn = document.getElementById('auth-submit-btn'); 
     const toggleBtn = document.getElementById('auth-toggle-btn');
+    const forgotPwdContainer = document.getElementById('forgot-pwd-container');
     
+    // Naya form khulte hi purane errors chupa do
+    const errorEl = document.getElementById('auth-error-msg');
+    if (errorEl) errorEl.classList.add('hidden');
+
     if (isLoginMode) { 
         title.innerText = "Welcome Back"; 
         submitBtn.innerText = "Sign In"; 
         toggleBtn.innerHTML = `Don't have an account? <span class="text-slate-900 dark:text-white underline">Sign up here</span>`; 
+        if (forgotPwdContainer) forgotPwdContainer.classList.remove('hidden'); // Sign In mein Forgot Pwd dikhao
     } else { 
         title.innerText = "Create Account"; 
         submitBtn.innerText = "Create Account"; 
         toggleBtn.innerHTML = `Already have an account? <span class="text-slate-900 dark:text-white underline">Sign in here</span>`; 
+        if (forgotPwdContainer) forgotPwdContainer.classList.add('hidden'); // Sign Up mein chupa do
     }
 }
 
@@ -32,28 +55,84 @@ window.toggleAuthMode = function() {
     window.openAuthModal(!isLoginMode ? 'login' : 'signup'); 
 }
 
+// 🚀 NAYA: Forgot Password Reset Engine
+window.handleForgotPassword = async function() {
+    const email = document.getElementById('auth-email').value.trim();
+    if (!email) {
+        showAuthError("Please enter your email first to reset password.");
+        return;
+    }
+    
+    const btn = document.getElementById('auth-submit-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending Link...';
+    btn.disabled = true;
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showAuthError("Password reset link sent! Check your inbox.", true);
+    } catch (error) {
+        let errorMsg = "Failed to send reset link.";
+        if (error.code === 'auth/user-not-found') errorMsg = "No account found with this email.";
+        else if (error.code === 'auth/invalid-email') errorMsg = "Invalid email format.";
+        showAuthError(errorMsg);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 window.handleGoogleLogin = async function() { 
     try { 
+        // Hide previous errors
+        const errorEl = document.getElementById('auth-error-msg');
+        if (errorEl) errorEl.classList.add('hidden');
+
         await signInWithPopup(auth, googleProvider); 
         window.closeAuthModal(); 
     } catch (error) { 
-        alert("Login Failed: " + error.message); 
+        showAuthError("Google Login Cancelled or Failed."); 
     } 
 }
 
 window.handleAuth = async function(event) {
     event.preventDefault(); 
-    const email = document.getElementById('auth-email').value; 
+    const email = document.getElementById('auth-email').value.trim(); 
     const password = document.getElementById('auth-password').value;
+    
+    const btn = document.getElementById('auth-submit-btn');
+    const originalText = btn.innerHTML;
+    
+    // 🚀 Smart Loading Spinner
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+    btn.disabled = true;
+
+    // Hide previous errors
+    const errorEl = document.getElementById('auth-error-msg');
+    if (errorEl) errorEl.classList.add('hidden');
+
     try { 
         if (isLoginMode) { 
             await signInWithEmailAndPassword(auth, email, password); 
         } else { 
             await createUserWithEmailAndPassword(auth, email, password); 
         } 
-        window.closeAuthModal(); 
+        // Modal will close automatically via onAuthStateChanged
     } catch(error) { 
-        alert("Error: " + error.message); 
+        // 🚀 Human Readable Errors translation
+        let errorMsg = "Authentication failed. Please try again.";
+        if (error.code === 'auth/user-not-found') errorMsg = "Account not found. Please sign up.";
+        else if (error.code === 'auth/wrong-password') errorMsg = "Incorrect password.";
+        else if (error.code === 'auth/email-already-in-use') errorMsg = "Email is already registered. Please sign in.";
+        else if (error.code === 'auth/weak-password') errorMsg = "Password should be at least 6 characters.";
+        else if (error.code === 'auth/invalid-credential') errorMsg = "Invalid email or password combination.";
+        else if (error.code === 'auth/too-many-requests') errorMsg = "Too many attempts. Please try again later.";
+        
+        showAuthError(errorMsg);
+        
+        // Reset Button
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
@@ -84,6 +163,14 @@ onAuthStateChanged(auth, async (user) => {
             this.src = `https://ui-avatars.com/api/?name=${displayName}&background=2563eb&color=fff`;
         };
         profilePicEl.src = finalPhotoUrl;
+        
+        // Reset buttons if they were spinning before closing
+        const btn = document.getElementById('auth-submit-btn');
+        if(btn) {
+            btn.innerHTML = 'Sign In';
+            btn.disabled = false;
+        }
+
         window.closeAuthModal();
 
         try {
@@ -197,10 +284,11 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('header-unauth').classList.remove('hidden');
         document.getElementById('header-auth').classList.add('hidden'); 
         document.getElementById('header-auth').classList.remove('flex');
+        
         // 🚀 SAFELY HIDING NEW ADMIN BUTTONS ON LOGOUT
         const dAdmin = document.getElementById('nav-desk-admin');
         const mAdmin = document.getElementById('nav-mob-admin');
-        const dVault = document.getElementById('nav-desk-vault'); // 🚀 HIDE VAULT ON LOGOUT
+        const dVault = document.getElementById('nav-desk-vault'); 
         if(dAdmin) dAdmin.classList.add('hidden'); 
         if(mAdmin) mAdmin.classList.add('hidden');
         if(dVault) dVault.classList.add('hidden');
