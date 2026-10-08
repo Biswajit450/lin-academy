@@ -592,10 +592,22 @@ window.applySlateTheme = function(forceTheme, broadcast = false) {
         document.getElementById('pen-color').value = '#0f172a';
     }
 
-    // Update blank slide rectangles
+    // Auto-invert blank slides and ALL shapes/strokes for dark mode readability
     canvas.getObjects().forEach(obj => {
         if (obj.isSlide && obj.type === 'rect') {
             obj.set('fill', isDark ? '#1e293b' : '#ffffff');
+        } else if (!obj.isSlide) {
+            // 1. Single Objects (Paths, Rects, Circles, Polygons, etc.)
+            if (isDark && obj.stroke === '#0f172a') obj.set('stroke', '#ffffff');
+            else if (!isDark && obj.stroke === '#ffffff') obj.set('stroke', '#0f172a');
+            
+            // 2. Grouped Objects (Benzene, Axis, Cylinder)
+            if (obj.type === 'group') {
+                obj.getObjects().forEach(child => {
+                    if (isDark && child.stroke === '#0f172a') child.set('stroke', '#ffffff');
+                    else if (!isDark && child.stroke === '#ffffff') child.set('stroke', '#0f172a');
+                });
+            }
         }
     });
     canvas.renderAll();
