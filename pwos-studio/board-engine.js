@@ -1553,12 +1553,13 @@ document.getElementById('menu-delete').addEventListener('click', () => {
 // PRESENTER'S TELEPROMPTER (PRIVATE NOTES)
 // =====================================
 let slideNotesMemory = {}; // 🧠 Stores notes per slide
+let currentNoteFontSize = 3; // Default HTML font size scale (1 to 7)
 
 const btnNotes = document.getElementById('btn-presenter-notes');
 const notesWidget = document.getElementById('presenter-notes-widget');
 const btnCloseNotes = document.getElementById('btn-close-notes');
 const notesDragHandle = document.getElementById('notes-drag-handle');
-const notesTextarea = document.getElementById('notes-textarea');
+const notesEditor = document.getElementById('notes-editor'); // 🚀 Upgraded to Div
 const notesSlideNum = document.getElementById('notes-slide-num');
 
 // 1. Toggle Window
@@ -1572,15 +1573,22 @@ btnCloseNotes.addEventListener('click', () => {
 });
 
 // 2. Sync Logic (Save on type, restore on slide change)
-notesTextarea.addEventListener('input', (e) => {
-    slideNotesMemory[currentSlide] = e.target.value;
+notesEditor.addEventListener('input', (e) => {
+    slideNotesMemory[currentSlide] = e.target.innerHTML; // 🚀 Use innerHTML to save colors/sizes!
 });
 
-// 🚀 Add this line to the END of your existing `renderSlide(slideNum)` function manually:
-// syncNotesUI(); 
+// 🚀 NEW: Font Size Control Engine
+window.changeNotesFontSize = function(step) {
+    currentNoteFontSize += step;
+    if(currentNoteFontSize < 1) currentNoteFontSize = 1;
+    if(currentNoteFontSize > 7) currentNoteFontSize = 7;
+    document.execCommand('fontSize', false, currentNoteFontSize);
+};
+
+// 🚀 Update to render HTML
 function syncNotesUI() {
     notesSlideNum.textContent = currentSlide;
-    notesTextarea.value = slideNotesMemory[currentSlide] || "";
+    notesEditor.innerHTML = slideNotesMemory[currentSlide] || "";
 }
 
 // 3. Draggable Window Logic (HYBRID: Mouse + Touch)
