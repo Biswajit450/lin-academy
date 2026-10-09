@@ -104,8 +104,8 @@
             <button id="btn-upload" class="text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition p-2.5 rounded-full w-10 h-10 flex items-center justify-center" title="Upload Slide or PDF"><i class="fa-solid fa-file-pdf"></i></button>
             <input type="file" id="slide-upload" accept="image/*,application/pdf" class="hidden">
             
-            <!-- 🚀 UPGRADED: Universal Slide Navigation -->
-            <div id="pdf-nav" class="flex items-center bg-indigo-50/80 dark:bg-indigo-900/50 rounded-full px-2 py-1 mx-1 border border-indigo-100 dark:border-indigo-800">
+            <!-- Advanced PDF Navigation -->
+            <div id="pdf-nav" class="hidden items-center bg-indigo-50/80 dark:bg-indigo-900/50 rounded-full px-2 py-1 mx-1 border border-indigo-100 dark:border-indigo-800">
                 <button id="btn-close-pdf" class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition p-1.5 rounded-full w-8 h-8 flex items-center justify-center mr-1" title="Close Presentation"><i class="fa-solid fa-xmark"></i></button>
                 <button id="btn-prev-page" class="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800 transition p-1.5 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-sm"></i></button>
                 <span id="page-indicator" class="text-xs font-bold text-indigo-800 dark:text-indigo-300 px-3 tracking-wide">1 / 1</span>
@@ -146,19 +146,6 @@
         <!-- 🚀 16:9 FIXED THEATER MODE BOARD -->
         <div id="board-container" class="absolute shadow-2xl transition-all duration-300 z-0" style="aspect-ratio: 16/9; max-width: 100%; max-height: 100%; margin: auto; top: 0; bottom: 0; left: 0; right: 0;">
             <canvas id="studio-canvas"></canvas>
-        </div>
-        <!-- 🚀 NEW: Smart Slide Sorter (Visual Storyboard) -->
-        <div id="slide-storyboard-container" class="absolute bottom-4 left-4 right-20 glass-toolbar dark:bg-slate-800/90 rounded-2xl p-2 z-10 transition-all flex gap-3 overflow-x-auto hide-scrollbar shadow-lg h-24 hidden">
-            <!-- Thumbnails will be injected here via JS -->
-        </div>
-
-        <!-- 🚀 NEW: Slide Sorter Context Menu (Right Click) -->
-        <div id="slide-context-menu" class="fixed hidden z-[150] w-48 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden transform scale-95 opacity-0 transition-all duration-200 origin-top-left">
-            <div class="flex flex-col py-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                <button id="ctx-btn-duplicate" class="px-4 py-2 text-left hover:bg-brand-blue hover:text-white transition-colors flex items-center gap-3"><i class="fa-solid fa-copy text-xs"></i> Duplicate Slide</button>
-                <div class="h-px w-full bg-slate-200 dark:bg-slate-800 my-1"></div>
-                <button id="ctx-btn-delete" class="px-4 py-2 text-left hover:bg-rose-500 hover:text-white text-rose-500 transition-colors flex items-center gap-3"><i class="fa-solid fa-trash-can text-xs"></i> Delete Slide</button>
-            </div>
         </div>
         <!-- 🚀 NEW: Floating Text Format Toolbar -->
         <div id="text-format-toolbar" class="hidden absolute top-20 left-1/2 -translate-x-1/2 glass-toolbar dark:bg-slate-800/90 dark:border-slate-700 px-4 py-2 rounded-xl flex gap-2 items-center z-40 shadow-xl transition-all">

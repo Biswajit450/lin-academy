@@ -200,9 +200,6 @@ function saveHistory() {
 setTimeout(() => {
     isHistoryTracking = true;
     saveHistory();
-    // 🚀 FIX: Auto-load the storyboard for the first blank slide
-    document.getElementById('slide-storyboard-container').classList.remove('hidden');
-    if (typeof window.updateStoryboardUI === "function") window.updateStoryboardUI();
 }, 100);
 
 // Auto-track drawing, but ignore and vanish laser pointers
@@ -260,10 +257,9 @@ window.addEventListener('keydown', (e) => {
 let pdfDoc = null;
 let currentPdfUrl = null; // 🚀 NEW: Cloud URL Memory
 let currentSlide = 1;
-let totalSlides = 1; // 🚀 FIX: Default is now 1 blank slide
-let slideMap = { 1: { type: 'blank' } }; // 🚀 FIX: Map the first slide
+let totalSlides = 0;
+let slideMap = {}; // Tracks if a slide is a PDF page or a Blank Page
 let pageInkMemory = {}; // 🧠 Bug-Free Memory
-if (!window.slideThumbnails) window.slideThumbnails = {}; // Ensure safe init
 
 const pdfNav = document.getElementById('pdf-nav');
 const pageIndicator = document.getElementById('page-indicator');
@@ -404,84 +400,64 @@ window.addEventListener('message', (event) => {
             currentSlide = 1;
             slideMap = {};
             pageInkMemory = {}; 
-            window.slideThumbnails = {}; // 🚀 Reset Thumbnails
             
             for(let i = 1; i <= totalSlides; i++) {
                 slideMap[i] = { type: 'pdf', pdfPageIndex: i };
             }
-            document.getElementById('slide-storyboard-container').classList.remove('hidden'); // Reveal Strip
             renderSlide(currentSlide);
-            setTimeout(() => { if(window.updateStoryboardUI) window.updateStoryboardUI(); }, 1000);
         }).catch(e => {
             pageIndicator.textContent = "Failed to load PDF";
         });
     }
 });
 
-// 🚀 Dynamic Slide Controls & Storyboard Sync
+// 🚀 Dynamic Slide Controls
 document.getElementById('btn-prev-page').addEventListener('click', () => {
     if (currentSlide <= 1) return;
     saveCurrentPageInk();
-    if(window.captureCurrentSlideThumbnail) window.captureCurrentSlideThumbnail(); // Capture before leaving
     currentSlide--;
     renderSlide(currentSlide);
-    if (typeof syncNotesUI === "function") syncNotesUI();
-    if(window.updateStoryboardUI) window.updateStoryboardUI(); // Update Strip
+    if (typeof syncNotesUI === "function") syncNotesUI(); // 🚀 FIX: Wake up Notes!
 });
 
 document.getElementById('btn-next-page').addEventListener('click', () => {
     if (currentSlide >= totalSlides) return;
     saveCurrentPageInk();
-    if(window.captureCurrentSlideThumbnail) window.captureCurrentSlideThumbnail(); // Capture before leaving
     currentSlide++;
     renderSlide(currentSlide);
-    if (typeof syncNotesUI === "function") syncNotesUI();
-    if(window.updateStoryboardUI) window.updateStoryboardUI(); // Update Strip
+    if (typeof syncNotesUI === "function") syncNotesUI(); // 🚀 FIX: Wake up Notes!
 });
 
 document.getElementById('btn-add-blank').addEventListener('click', () => {
     saveCurrentPageInk();
-    if(totalSlides > 0 && window.captureCurrentSlideThumbnail) window.captureCurrentSlideThumbnail();
-    
     totalSlides++;
     
     // Shift all subsequent slides mapping forward
     for(let i = totalSlides; i > currentSlide + 1; i--) {
         slideMap[i] = slideMap[i - 1];
         pageInkMemory[i] = pageInkMemory[i - 1];
-        slideNotesMemory[i] = slideNotesMemory[i - 1];
-        if(window.slideThumbnails) window.slideThumbnails[i] = window.slideThumbnails[i - 1];
     }
     
     // Insert blank slide right after current
     currentSlide++;
     slideMap[currentSlide] = { type: 'blank' };
     pageInkMemory[currentSlide] = [];
-    if(window.slideThumbnails) window.slideThumbnails[currentSlide] = '';
-    
-    document.getElementById('slide-storyboard-container').classList.remove('hidden'); // Reveal Strip
     
     renderSlide(currentSlide);
-    if (typeof syncNotesUI === "function") syncNotesUI();
-    if(window.updateStoryboardUI) window.updateStoryboardUI();
+    if (typeof syncNotesUI === "function") syncNotesUI(); // 🚀 FIX: Wake up Notes!
 });
 
 document.getElementById('btn-close-pdf').addEventListener('click', () => {
-    if(confirm("Close presentation? All slide ink will be lost and board will reset.")) {
+    if(confirm("Close presentation? All slide ink will be lost.")) {
         pdfDoc = null;
-        totalSlides = 1;
+        totalSlides = 0;
         currentSlide = 1;
-        slideMap = { 1: { type: 'blank' } };
+        slideMap = {};
         pageInkMemory = {};
-        if(window.slideThumbnails) window.slideThumbnails = {};
-        
-        // 🚀 FIX: Do NOT hide nav and storyboard anymore!
+        pdfNav.classList.replace('flex', 'hidden');
         canvas.clear();
-        canvas.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
-        document.getElementById('slide-upload').value = ''; 
-        document.getElementById('page-indicator').textContent = '1 / 1';
-        
-        if (typeof window.updateStoryboardUI === "function") window.updateStoryboardUI();
+        canvas.backgroundColor = '#ffffff';
+        document.getElementById('slide-upload').value = ''; // Reset file input
     }
 });
 
@@ -1393,220 +1369,6 @@ shapeDeleteBtn.addEventListener('click', () => {
 });
 
 // =====================================
-// 🚀 SMART SLIDE SORTER (VISUAL STORYBOARD) ENGINE
-// =====================================
-window.slideThumbnails = {};
-const storyboardContainer = document.getElementById('slide-storyboard-container');
-const slideContextMenu = document.getElementById('slide-context-menu');
-let contextMenuTargetSlide = null;
-
-// 1. Capture Thumbnail
-window.captureCurrentSlideThumbnail = function() {
-    if (totalSlides === 0) return;
-    // Small thumbnail for high performance
-    window.slideThumbnails[currentSlide] = canvas.toDataURL({ format: 'jpeg', quality: 0.4, multiplier: 0.15 });
-}
-
-// Auto-capture thumbnail softly when user finishes drawing a stroke
-canvas.on('mouse:up', function() {
-    if (totalSlides > 0 && (currentMode === 'draw' || currentMode === 'highlight')) {
-        setTimeout(() => {
-            window.captureCurrentSlideThumbnail();
-            window.updateStoryboardUI();
-        }, 800); // Wait for stroke to fully render
-    }
-});
-
-// 2. Render Storyboard UI
-window.updateStoryboardUI = function() {
-    if (totalSlides === 0) {
-        storyboardContainer.classList.add('hidden');
-        return;
-    }
-    
-    storyboardContainer.classList.remove('hidden');
-    let html = '';
-    
-    for (let i = 1; i <= totalSlides; i++) {
-        const thumb = window.slideThumbnails[i] || `https://placehold.co/160x90/e2e8f0/475569?text=Slide+${i}`;
-        const isActive = i === currentSlide ? 'ring-2 ring-brand-blue ring-offset-2 ring-offset-slate-900' : 'border border-slate-300 dark:border-slate-600 opacity-60 hover:opacity-100';
-        
-        html += `
-        <div id="storyboard-thumb-${i}" 
-             class="shrink-0 w-32 h-full bg-white dark:bg-slate-900 rounded-md overflow-hidden cursor-pointer transition-all ${isActive} relative group"
-             onclick="window.jumpToSlide(${i})"
-             oncontextmenu="window.openSlideContextMenu(event, ${i}); return false;"
-             draggable="true" 
-             ondragstart="window.dragSlideStart(event, ${i})" 
-             ondragover="window.allowDrop(event)" 
-             ondrop="window.dropSlide(event, ${i})">
-             
-            <img src="${thumb}" class="w-full h-full object-cover pointer-events-none">
-            <div class="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none">${i}</div>
-        </div>`;
-    }
-    storyboardContainer.innerHTML = html;
-    
-    // Auto-scroll to keep active slide visible
-    const activeThumb = document.getElementById(`storyboard-thumb-${currentSlide}`);
-    if(activeThumb) activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-}
-
-// 3. Jump to Slide
-window.jumpToSlide = function(targetSlide) {
-    if (targetSlide === currentSlide) return;
-    saveCurrentPageInk();
-    window.captureCurrentSlideThumbnail();
-    currentSlide = targetSlide;
-    renderSlide(currentSlide);
-    if (typeof syncNotesUI === "function") syncNotesUI();
-    window.updateStoryboardUI();
-}
-
-// 4. Drag & Drop Reordering Logic
-let draggedSlideIndex = null;
-
-window.dragSlideStart = function(ev, index) {
-    draggedSlideIndex = index;
-    ev.dataTransfer.effectAllowed = "move";
-    setTimeout(() => ev.target.classList.add('opacity-50'), 0);
-}
-
-window.dropSlide = function(ev, targetIndex) {
-    ev.preventDefault();
-    if (draggedSlideIndex === null || draggedSlideIndex === targetIndex) return;
-    
-    // Extract the moving items
-    const movingMap = slideMap[draggedSlideIndex];
-    const movingInk = pageInkMemory[draggedSlideIndex];
-    const movingNotes = slideNotesMemory[draggedSlideIndex];
-    const movingThumb = window.slideThumbnails[draggedSlideIndex];
-    
-    // Remove from old position and rebuild arrays
-    let arrMap = [], arrInk = [], arrNotes = [], arrThumb = [];
-    for(let i = 1; i <= totalSlides; i++) {
-        if(i !== draggedSlideIndex) {
-            arrMap.push(slideMap[i]);
-            arrInk.push(pageInkMemory[i]);
-            arrNotes.push(slideNotesMemory[i]);
-            arrThumb.push(window.slideThumbnails[i]);
-        }
-    }
-    
-    // Insert at new position
-    const insertIndex = targetIndex > draggedSlideIndex ? targetIndex - 1 : targetIndex - 1;
-    arrMap.splice(insertIndex, 0, movingMap);
-    arrInk.splice(insertIndex, 0, movingInk);
-    arrNotes.splice(insertIndex, 0, movingNotes);
-    arrThumb.splice(insertIndex, 0, movingThumb);
-    
-    // Rebuild dictionaries
-    let newSlideMap = {}, newInkMemory = {}, newNotesMemory = {}, newThumbnails = {};
-    for(let i = 0; i < totalSlides; i++) {
-        newSlideMap[i+1] = arrMap[i];
-        newInkMemory[i+1] = arrInk[i];
-        newNotesMemory[i+1] = arrNotes[i];
-        newThumbnails[i+1] = arrThumb[i];
-    }
-    
-    slideMap = newSlideMap;
-    pageInkMemory = newInkMemory;
-    slideNotesMemory = newNotesMemory;
-    window.slideThumbnails = newThumbnails;
-    
-    // Adjust current slide pointer
-    if (currentSlide === draggedSlideIndex) {
-        currentSlide = insertIndex + 1;
-    } else {
-        if (currentSlide > draggedSlideIndex && currentSlide <= targetIndex) currentSlide--;
-        else if (currentSlide < draggedSlideIndex && currentSlide >= targetIndex) currentSlide++;
-    }
-    
-    draggedSlideIndex = null;
-    window.updateStoryboardUI();
-    renderSlide(currentSlide);
-    if (typeof syncNotesUI === "function") syncNotesUI();
-}
-
-// 5. Context Menu (Right Click)
-window.openSlideContextMenu = function(e, slideIndex) {
-    contextMenuTargetSlide = slideIndex;
-    slideContextMenu.classList.remove('hidden');
-    slideContextMenu.style.left = `${e.clientX}px`;
-    slideContextMenu.style.top = `${e.clientY - 90}px`; // Pop up above cursor
-    setTimeout(() => slideContextMenu.classList.remove('opacity-0', 'scale-95'), 10);
-}
-
-document.addEventListener('click', (e) => {
-    if (!slideContextMenu.contains(e.target)) {
-        slideContextMenu.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => slideContextMenu.classList.add('hidden'), 200);
-    }
-});
-
-document.getElementById('ctx-btn-duplicate').addEventListener('click', () => {
-    if (!contextMenuTargetSlide) return;
-    
-    if (contextMenuTargetSlide === currentSlide) {
-        saveCurrentPageInk();
-        window.captureCurrentSlideThumbnail();
-    }
-    
-    const srcMap = JSON.parse(JSON.stringify(slideMap[contextMenuTargetSlide]));
-    const srcInk = JSON.parse(JSON.stringify(pageInkMemory[contextMenuTargetSlide] || []));
-    const srcNotes = slideNotesMemory[contextMenuTargetSlide] || "";
-    const srcThumb = window.slideThumbnails[contextMenuTargetSlide] || "";
-    
-    totalSlides++;
-    
-    // Shift down
-    for (let i = totalSlides; i > contextMenuTargetSlide + 1; i--) {
-        slideMap[i] = slideMap[i - 1];
-        pageInkMemory[i] = pageInkMemory[i - 1];
-        slideNotesMemory[i] = slideNotesMemory[i - 1];
-        window.slideThumbnails[i] = window.slideThumbnails[i - 1];
-    }
-    
-    // Insert duplicate
-    const newIndex = contextMenuTargetSlide + 1;
-    slideMap[newIndex] = srcMap;
-    pageInkMemory[newIndex] = srcInk;
-    slideNotesMemory[newIndex] = srcNotes;
-    window.slideThumbnails[newIndex] = srcThumb;
-    
-    slideContextMenu.classList.add('hidden');
-    window.jumpToSlide(newIndex);
-});
-
-document.getElementById('ctx-btn-delete').addEventListener('click', () => {
-    if (!contextMenuTargetSlide) return;
-    if (totalSlides <= 1) return alert("Cannot delete the only remaining slide!");
-    if (!confirm(`Are you sure you want to delete Slide ${contextMenuTargetSlide}?`)) return;
-    
-    // Shift up
-    for (let i = contextMenuTargetSlide; i < totalSlides; i++) {
-        slideMap[i] = slideMap[i + 1];
-        pageInkMemory[i] = pageInkMemory[i + 1];
-        slideNotesMemory[i] = slideNotesMemory[i + 1];
-        window.slideThumbnails[i] = window.slideThumbnails[i + 1];
-    }
-    
-    // Delete last ref
-    delete slideMap[totalSlides];
-    delete pageInkMemory[totalSlides];
-    delete slideNotesMemory[totalSlides];
-    delete window.slideThumbnails[totalSlides];
-    
-    totalSlides--;
-    if (currentSlide > totalSlides) currentSlide = totalSlides;
-    
-    slideContextMenu.classList.add('hidden');
-    renderSlide(currentSlide);
-    if (typeof syncNotesUI === "function") syncNotesUI();
-    window.updateStoryboardUI();
-});
-
-// =====================================
 // SLATE COMMAND CENTER & VAULT INTEGRATION
 // =====================================
 const btnMenu = document.getElementById('btn-menu');
@@ -1632,7 +1394,7 @@ window.addEventListener('message', (event) => {
             currentFileName = fileData.name;
             renameInput.value = currentFileName;
             
-            // 🚀 THE BUG FIX: Restore the Brain (Notes, PDF URL, Slides AND Thumbnails)!
+            // 🚀 THE BUG FIX: Restore the Brain (Notes, PDF URL, Slides)!
             if (fileData.metaContent) {
                 try {
                     const meta = JSON.parse(fileData.metaContent);
@@ -1641,30 +1403,25 @@ window.addEventListener('message', (event) => {
                     slideMap = meta.slideMap || {};
                     pageInkMemory = meta.pageInkMemory || {};
                     slideNotesMemory = meta.slideNotesMemory || {};
-                    window.slideThumbnails = meta.slideThumbnails || {}; // 🚀 Load Thumbnails
-                    currentPdfUrl = meta.pdfUrl || null;
+                    currentPdfUrl = meta.pdfUrl || null; // 🚀 Extract Cloud URL
 
                     if (totalSlides > 0) {
                         document.getElementById('pdf-nav').classList.remove('hidden');
                         document.getElementById('pdf-nav').classList.add('flex');
                         document.getElementById('page-indicator').textContent = `${currentSlide} / ${totalSlides}`;
-                        
-                        // Show Storyboard
-                        document.getElementById('slide-storyboard-container').classList.remove('hidden');
-                        
                         if (typeof syncNotesUI === "function") syncNotesUI(); 
                         
+                        // 🚀 RE-LOAD CLOUD PDF IF EXISTS
                         if (currentPdfUrl) {
                             pdfjsLib.getDocument(currentPdfUrl).promise.then(pdf => {
                                 pdfDoc = pdf;
                                 renderSlide(currentSlide);
-                                setTimeout(window.updateStoryboardUI, 1000); // 🚀 Render Strip
                             }).catch(e => {
+                                console.error("Cloud PDF Error", e);
                                 renderSlide(currentSlide); 
                             });
                         } else {
                             renderSlide(currentSlide);
-                            setTimeout(window.updateStoryboardUI, 500); // 🚀 Render Strip
                         }
                     }
                 } catch(e) { console.error("Error parsing metaContent", e); }
@@ -1696,23 +1453,19 @@ renameInput.addEventListener('input', (e) => {
 document.getElementById('menu-save').addEventListener('click', () => {
     cmdMenu.classList.replace('flex', 'hidden');
     
-    // 🚀 NEW: Save current page ink and thumbnail before generating payload
-    if (totalSlides > 0) {
-        saveCurrentPageInk();
-        if(window.captureCurrentSlideThumbnail) window.captureCurrentSlideThumbnail();
-    }
+    // 🚀 NEW: Save current page ink before generating payload
+    if (totalSlides > 0) saveCurrentPageInk();
     
     const thumbnail = canvas.toDataURL({ format: 'jpeg', quality: 0.3, multiplier: 0.2 });
     const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
 
-    // 🚀 Pack the entire "Brain" including Thumbnails!
+    // 🚀 THE BUG FIX: Pack the entire "Brain" including PDF URL!
     const metaContent = JSON.stringify({
         currentSlide: currentSlide,
         totalSlides: totalSlides,
         slideMap: slideMap,
         pageInkMemory: pageInkMemory,
         slideNotesMemory: slideNotesMemory,
-        slideThumbnails: window.slideThumbnails || {}, // 🚀 Save Thumbnails
         pdfUrl: currentPdfUrl 
     });
 
