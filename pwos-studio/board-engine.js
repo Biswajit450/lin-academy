@@ -200,6 +200,9 @@ function saveHistory() {
 setTimeout(() => {
     isHistoryTracking = true;
     saveHistory();
+    // 🚀 FIX: Auto-load the storyboard for the first blank slide
+    document.getElementById('slide-storyboard-container').classList.remove('hidden');
+    if (typeof window.updateStoryboardUI === "function") window.updateStoryboardUI();
 }, 100);
 
 // Auto-track drawing, but ignore and vanish laser pointers
@@ -257,9 +260,10 @@ window.addEventListener('keydown', (e) => {
 let pdfDoc = null;
 let currentPdfUrl = null; // 🚀 NEW: Cloud URL Memory
 let currentSlide = 1;
-let totalSlides = 0;
-let slideMap = {}; // Tracks if a slide is a PDF page or a Blank Page
+let totalSlides = 1; // 🚀 FIX: Default is now 1 blank slide
+let slideMap = { 1: { type: 'blank' } }; // 🚀 FIX: Map the first slide
 let pageInkMemory = {}; // 🧠 Bug-Free Memory
+if (!window.slideThumbnails) window.slideThumbnails = {}; // Ensure safe init
 
 const pdfNav = document.getElementById('pdf-nav');
 const pageIndicator = document.getElementById('page-indicator');
@@ -463,18 +467,21 @@ document.getElementById('btn-add-blank').addEventListener('click', () => {
 });
 
 document.getElementById('btn-close-pdf').addEventListener('click', () => {
-    if(confirm("Close presentation? All slide ink will be lost.")) {
+    if(confirm("Close presentation? All slide ink will be lost and board will reset.")) {
         pdfDoc = null;
-        totalSlides = 0;
+        totalSlides = 1;
         currentSlide = 1;
-        slideMap = {};
+        slideMap = { 1: { type: 'blank' } };
         pageInkMemory = {};
         if(window.slideThumbnails) window.slideThumbnails = {};
-        pdfNav.classList.replace('flex', 'hidden');
-        document.getElementById('slide-storyboard-container').classList.add('hidden'); // Hide Strip
+        
+        // 🚀 FIX: Do NOT hide nav and storyboard anymore!
         canvas.clear();
-        canvas.backgroundColor = '#ffffff';
+        canvas.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
         document.getElementById('slide-upload').value = ''; 
+        document.getElementById('page-indicator').textContent = '1 / 1';
+        
+        if (typeof window.updateStoryboardUI === "function") window.updateStoryboardUI();
     }
 });
 
