@@ -147,6 +147,19 @@
         <div id="board-container" class="absolute shadow-2xl transition-all duration-300 z-0" style="aspect-ratio: 16/9; max-width: 100%; max-height: 100%; margin: auto; top: 0; bottom: 0; left: 0; right: 0;">
             <canvas id="studio-canvas"></canvas>
         </div>
+        <!-- 🚀 NEW: Smart Slide Sorter (Visual Storyboard) -->
+        <div id="slide-storyboard-container" class="absolute bottom-4 left-4 right-20 glass-toolbar dark:bg-slate-800/90 rounded-2xl p-2 z-10 transition-all flex gap-3 overflow-x-auto hide-scrollbar shadow-lg h-24 hidden">
+            <!-- Thumbnails will be injected here via JS -->
+        </div>
+
+        <!-- 🚀 NEW: Slide Sorter Context Menu (Right Click) -->
+        <div id="slide-context-menu" class="fixed hidden z-[150] w-48 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden transform scale-95 opacity-0 transition-all duration-200 origin-top-left">
+            <div class="flex flex-col py-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <button id="ctx-btn-duplicate" class="px-4 py-2 text-left hover:bg-brand-blue hover:text-white transition-colors flex items-center gap-3"><i class="fa-solid fa-copy text-xs"></i> Duplicate Slide</button>
+                <div class="h-px w-full bg-slate-200 dark:bg-slate-800 my-1"></div>
+                <button id="ctx-btn-delete" class="px-4 py-2 text-left hover:bg-rose-500 hover:text-white text-rose-500 transition-colors flex items-center gap-3"><i class="fa-solid fa-trash-can text-xs"></i> Delete Slide</button>
+            </div>
+        </div>
         <!-- 🚀 NEW: Floating Text Format Toolbar -->
         <div id="text-format-toolbar" class="hidden absolute top-20 left-1/2 -translate-x-1/2 glass-toolbar dark:bg-slate-800/90 dark:border-slate-700 px-4 py-2 rounded-xl flex gap-2 items-center z-40 shadow-xl transition-all">
             <button id="fmt-bold" class="w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition" title="Bold">B</button>
