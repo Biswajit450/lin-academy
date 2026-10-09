@@ -121,12 +121,22 @@
                 <!-- Action Bar -->
                 <div class="flex justify-between items-end">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white font-serif">Compose Question</h2>
-                        <p class="text-xs text-slate-500">Add text, formulas, or images securely.</p>
+                        <h2 id="compose-title" class="text-xl font-bold text-slate-900 dark:text-white font-serif">Compose Question</h2>
+                        <p id="compose-subtitle" class="text-xs text-slate-500">Add text, formulas, or images securely.</p>
                     </div>
-                    <button id="btn-add-draft" class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Add to Draft
-                    </button>
+                    <div class="flex gap-2">
+                        <!-- Add Button -->
+                        <button id="btn-add-draft" class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Add to Draft
+                        </button>
+                        <!-- 🚀 NEW: Update Button (Hidden initially) -->
+                        <button id="btn-update-draft" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-check-double"></i> Update Question
+                        </button>
+                        <button id="btn-cancel-edit" class="hidden bg-rose-100 dark:bg-rose-900/30 text-rose-600 hover:bg-rose-500 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-colors flex items-center gap-2">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Hidden Input for Auto Image Uploader -->

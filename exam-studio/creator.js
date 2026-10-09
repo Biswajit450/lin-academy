@@ -14,10 +14,16 @@ let autoSaveTimeout = null;
 // ==========================================
 // 1. RICH TEXT & MATH ENGINE INITIALIZATION
 // ==========================================
+let editingQuestionIndex = null; // 🚀 NAYA: Track karne ke liye ki konsa question edit ho raha hai
+
 function initEditors() {
+    // 🚀 UPDATED: Full Rich Text Options Added (Lists, Alignments)
     const toolbarOptions = [
         ['bold', 'italic', 'underline', 'strike'],
         [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }], // Numbers & Bullets
+        [{ 'indent': '-1'}, { 'indent': '+1' }],      // Spacing Left/Right
+        [{ 'align': [] }],                            // Center/Right align
         ['image', 'formula'],
         ['clean']
     ];
@@ -78,34 +84,56 @@ function initEditors() {
 // ==========================================
 // 2. WORKSPACE & QUESTION ARRAY MANAGEMENT
 // ==========================================
-document.getElementById('btn-add-draft').addEventListener('click', () => {
+
+function getWorkspaceData() {
     const qTextHtml = questionEditor.root.innerHTML;
     const qText = (qTextHtml === '<p><br></p>') ? '' : qTextHtml;
-    
     const optA = document.getElementById('q-opt0').value.trim();
     const optB = document.getElementById('q-opt1').value.trim();
     const optC = document.getElementById('q-opt2').value.trim();
     const optD = document.getElementById('q-opt3').value.trim();
     const correctAns = parseInt(document.getElementById('q-correct').value);
-    
     const expHtml = explanationEditor.root.innerHTML;
     const explanation = (expHtml === '<p><br></p>') ? '' : expHtml;
 
     if(!qText || !optA || !optB || !optC || !optD) {
         alert("Please write the question and fill out all 4 options!");
-        return;
+        return null;
     }
+    return { question: qText, options: [optA, optB, optC, optD], correctAnswerIndex: correctAns, explanation: explanation };
+}
 
-    draftQuestions.push({
-        question: qText,
-        options: [optA, optB, optC, optD],
-        correctAnswerIndex: correctAns,
-        explanation: explanation
-    });
+// Button: Add to Draft (New Question)
+document.getElementById('btn-add-draft').addEventListener('click', () => {
+    const data = getWorkspaceData();
+    if (!data) return;
 
+    draftQuestions.push(data);
     updateDraftUI();
     clearWorkspace();
     triggerAutoSave();
+});
+
+// 🚀 NEW Button: Update Existing Question
+document.getElementById('btn-update-draft').addEventListener('click', () => {
+    if (editingQuestionIndex === null) return;
+    const data = getWorkspaceData();
+    if (!data) return;
+
+    draftQuestions[editingQuestionIndex] = data; // Replace the old question with updated data
+    updateDraftUI();
+    clearWorkspace();
+    exitEditMode();
+    triggerAutoSave();
+    
+    // Smooth scroll back to list
+    document.querySelector('.w-80').scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// 🚀 NEW Button: Cancel Edit
+document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+    clearWorkspace();
+    exitEditMode();
 });
 
 function clearWorkspace() {
@@ -118,8 +146,23 @@ function clearWorkspace() {
     document.getElementById('q-correct').value = '0';
 }
 
-document.getElementById('btn-clear-workspace').addEventListener('click', clearWorkspace);
+document.getElementById('btn-clear-workspace').addEventListener('click', () => {
+    if(confirm("Clear everything typed in the workspace?")) clearWorkspace();
+});
 
+function exitEditMode() {
+    editingQuestionIndex = null;
+    document.getElementById('compose-title').innerText = "Compose Question";
+    document.getElementById('compose-subtitle').innerText = "Add text, formulas, or images securely.";
+    document.getElementById('btn-add-draft').classList.remove('hidden');
+    document.getElementById('btn-update-draft').classList.add('hidden');
+    document.getElementById('btn-cancel-edit').classList.add('hidden');
+    
+    // Remove blue highlights from draft list
+    document.querySelectorAll('.draft-card').forEach(c => c.classList.remove('border-brand-blue', 'bg-blue-50/50', 'dark:bg-blue-900/20'));
+}
+
+// 🚀 UPGRADED: Draft UI to support click-to-edit
 function updateDraftUI() {
     document.getElementById('draft-counter-badge').innerText = draftQuestions.length;
     const listEl = document.getElementById('draft-question-list');
@@ -131,25 +174,62 @@ function updateDraftUI() {
 
     listEl.innerHTML = '';
     draftQuestions.forEach((q, index) => {
-        // Strip HTML for quick preview
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = q.question;
         const plainText = tempDiv.textContent || tempDiv.innerText || "";
         const previewText = plainText.length > 35 ? plainText.substring(0, 35) + '...' : plainText;
+        
+        // Agar yahi question edit ho raha hai, toh highlight dikhao
+        const isEditing = (editingQuestionIndex === index);
+        const borderClass = isEditing ? 'border-brand-blue bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-brand-blue';
 
         listEl.innerHTML += `
-            <div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm relative group transition-colors hover:border-brand-blue">
-                <button onclick="window.removeDraftQuestion(${index})" class="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-trash text-xs"></i></button>
+            <div id="draft-card-${index}" class="draft-card cursor-pointer bg-white dark:bg-slate-800 p-3 rounded-lg border ${borderClass} shadow-sm relative group transition-colors" onclick="window.editDraftQuestion(${index})">
+                <button onclick="event.stopPropagation(); window.removeDraftQuestion(${index})" class="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-trash text-xs"></i></button>
                 <span class="text-[9px] font-bold text-brand-blue uppercase tracking-widest bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">Q${index + 1}</span>
-                <p class="text-xs text-slate-700 dark:text-slate-300 font-medium mt-1.5 truncate pr-6">${previewText}</p>
+                <p class="text-xs text-slate-700 dark:text-slate-300 font-medium mt-1.5 truncate pr-6 pointer-events-none">${previewText}</p>
+                <p class="text-[9px] text-slate-400 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Click to Edit</p>
             </div>
         `;
     });
 }
 
-// Attach to window so HTML onclick can access it
+// 🚀 NEW: Edit Engine Loader
+window.editDraftQuestion = function(index) {
+    const q = draftQuestions[index];
+    if (!q) return;
+
+    editingQuestionIndex = index;
+    
+    // UI Update to Edit Mode
+    document.getElementById('compose-title').innerText = `Editing Question ${index + 1}`;
+    document.getElementById('compose-title').classList.add('text-brand-blue');
+    document.getElementById('compose-subtitle').innerText = "Changes will overwrite the previous version.";
+    
+    document.getElementById('btn-add-draft').classList.add('hidden');
+    document.getElementById('btn-update-draft').classList.remove('hidden');
+    document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+    // Load Data into Workspace
+    questionEditor.root.innerHTML = q.question;
+    explanationEditor.root.innerHTML = q.explanation || "";
+    document.getElementById('q-opt0').value = q.options[0];
+    document.getElementById('q-opt1').value = q.options[1];
+    document.getElementById('q-opt2').value = q.options[2];
+    document.getElementById('q-opt3').value = q.options[3];
+    document.getElementById('q-correct').value = q.correctAnswerIndex;
+
+    // Highlight active card
+    updateDraftUI();
+}
+
 window.removeDraftQuestion = function(index) {
     if(confirm("Remove this question from the draft?")) {
+        // Agar jo delete kar rahe hain, wahi edit bhi kar rahe the, toh edit mode band karo
+        if (editingQuestionIndex === index) exitEditMode();
+        // Agar uske upar wali delete ki, toh index shift karna padega
+        else if (editingQuestionIndex > index) editingQuestionIndex--;
+
         draftQuestions.splice(index, 1);
         updateDraftUI();
         triggerAutoSave();
