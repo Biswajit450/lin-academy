@@ -1074,7 +1074,7 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
                         <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
                         <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <div class="font-bold text-slate-900 dark:text-white text-sm truncate">${title}</div>
+                    <div class="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-snug">${title}</div>
                     <div class="text-[10px] text-slate-500 font-medium mt-0.5"><span class="admin-input-area inline-block mr-1">Vault ID: ${vaultId} • </span>${qCount} Questions</div>
                     <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${vaultId}')">📝 Start Mock Test</button>
                 </div>
