@@ -15,6 +15,7 @@ let autoSaveTimeout = null;
 // 1. RICH TEXT & MATH ENGINE INITIALIZATION
 // ==========================================
 let editingQuestionIndex = null; // 🚀 NAYA: Track karne ke liye ki konsa question edit ho raha hai
+window.activeExamImages = []; // 🚀 THE GHOST TRACKER: Keeps track of all uploaded images
 
 function initEditors() {
     // 🚀 UPDATED: Full Rich Text Options Added (Lists, Alignments)
@@ -47,6 +48,22 @@ function initEditors() {
                     
                     await uploadBytes(storageRef, file);
                     const url = await getDownloadURL(storageRef);
+                    
+                    // 🚀 NEW: Register the image in the Vault for Tracking
+                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                    const fileId = 'img_' + Date.now();
+                    
+                    await setDoc(doc(db, "PWOS_Vault", uid, "projects", fileId), {
+                        id: fileId,
+                        name: file.name,
+                        type: 'image',
+                        metaContent: url, // This holds the Firebase Storage URL!
+                        thumbnail: url,   // Beautiful thumbnail for the Scrap Bin
+                        timestamp: new Date().toISOString(),
+                        trashed: false
+                    });
+                    
+                    window.activeExamImages.push({ id: fileId, url: url }); // Start tracking
                     
                     editor.deleteText(range.index, 18);
                     editor.insertEmbed(range.index, 'image', url);
@@ -237,11 +254,43 @@ window.removeDraftQuestion = function(index) {
 }
 
 // ==========================================
-// 3. SECURE VAULT INTEGRATION (AUTO-SAVE)
+// 3. SECURE VAULT INTEGRATION (AUTO-SAVE & GHOST SWEEPER)
 // ==========================================
+async function sweepDeletedImages() {
+    if (!window.activeExamImages || window.activeExamImages.length === 0) return;
+    
+    const qHtml = questionEditor ? questionEditor.root.innerHTML : '';
+    const eHtml = explanationEditor ? explanationEditor.root.innerHTML : '';
+    
+    // Check inside drafted questions too!
+    let draftsHtml = '';
+    draftQuestions.forEach(q => { draftsHtml += q.question + (q.explanation || ''); });
+    
+    const allHtml = qHtml + eHtml + draftsHtml;
+    const uid = auth.currentUser ? auth.currentUser.uid : null;
+    if(!uid) return;
+
+    for (let i = window.activeExamImages.length - 1; i >= 0; i--) {
+        const img = window.activeExamImages[i];
+        // Check if the image URL is completely missing from all editor areas
+        if (!allHtml.includes(img.url)) {
+            console.log("Ghost Sweeper: Image removed from canvas. Moving to Scrap Bin...", img.id);
+            try {
+                const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                await updateDoc(doc(db, "PWOS_Vault", uid, "projects", img.id), {
+                    trashed: true,
+                    trashedAt: new Date().toISOString()
+                });
+                window.activeExamImages.splice(i, 1); // Stop tracking it
+            } catch(e) { console.error("Trash failed", e); }
+        }
+    }
+}
+
 function triggerAutoSave() {
     clearTimeout(autoSaveTimeout);
     document.getElementById('auto-save-status').classList.add('hidden');
+    sweepDeletedImages(); // 🚀 Sweeps deleted images before saving
     // Debounce wait time: 1.5 seconds after user stops typing
     autoSaveTimeout = setTimeout(saveToVault, 1500);
 }
@@ -297,6 +346,14 @@ window.addEventListener('load', () => {
     
     auth.onAuthStateChanged(async (user) => {
         if (user) {
+            // 🚀 Boot up the Ghost Tracker to find existing images
+            try {
+                const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+                const q = query(collection(db, "PWOS_Vault", user.uid, "projects"), where("type", "==", "image"), where("trashed", "==", false));
+                const snap = await getDocs(q);
+                window.activeExamImages = [];
+                snap.forEach(d => { window.activeExamImages.push({ id: d.id, url: d.data().metaContent }); });
+            } catch(e) { console.log("Image tracker init error", e); }
             // Check if App.js opened an existing file
             const urlParams = new URLSearchParams(window.location.search);
             const fileId = urlParams.get('fileId');
