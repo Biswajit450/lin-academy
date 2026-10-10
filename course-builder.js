@@ -1064,22 +1064,27 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
     const dropzone = document.getElementById('editor-canvas-dropzone');
     if(dropzone) {
         const testHtml = `
-            <div id="${blockId}" class="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-4 shadow-sm block-hover-effect cursor-move mb-3" draggable="true" ondragstart="window.drag(event)">
+            <div id="${blockId}" class="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4 shadow-sm block-hover-effect cursor-move mb-3 min-w-0" draggable="true" ondragstart="window.drag(event)">
                 <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 text-xl border border-emerald-200 dark:border-emerald-700">
                     <i class="fa-solid fa-clipboard-list"></i>
                 </div>
-                <!-- 🚀 BUG FIX: Added min-w-0 to enable proper truncation on Mobile! -->
                 <div class="flex-grow w-full min-w-0">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
                         <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <div class="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-snug">${title}</div>
+                    
+                    <!-- 🚀 UPGRADED: Editable Textarea for Custom Student Titles (Wraps to 2 lines natively!) -->
+                    <textarea rows="2" placeholder="Custom Test Title for Students" class="w-full bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-brand-blue outline-none text-sm font-bold text-slate-900 dark:text-white pb-1 mb-2 transition-colors resize-none hide-scrollbar" onchange="window.autoSaveDraft()">${title}</textarea>
+                    
                     <div class="text-[10px] text-slate-500 font-medium mt-0.5"><span class="admin-input-area inline-block mr-1">Vault ID: ${vaultId} • </span>${qCount} Questions</div>
-                    <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white" onclick="window.consumeContent('test', '${vaultId}')">📝 Start Mock Test</button>
+                    
+                    <!-- 🚀 UPGRADED: Button ab 'this' pass karta hai taaki custom title extract ho sake -->
+                    <button class="student-action-btn mt-3 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105 active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto text-center justify-center items-center gap-2" onclick="window.consumeContent('test', this)" data-vaultid="${vaultId}">📝 Start Mock Test</button>
                 </div>
             </div>`;
-        // 🚀 NEW: Smart Insertion Logic (Top or Bottom)
+        
+        // Smart Insertion Logic
         const position = document.getElementById('admin-insert-position')?.value || 'bottom';
         if (position === 'top') {
             if (dropzone.querySelector('#canvas-placeholder')) window.clearCanvasPlaceholder();
@@ -1111,10 +1116,26 @@ window.consumeContent = async function(type, elementOrId) {
     }
 
     // 🚀 ROUTE TO NEW MOBILE-FRIENDLY EXAM PLAYER
-    if(type === 'test') { 
-        window.location.href = `exam-studio/player.html?testId=${elementOrId}&course=${encodeURIComponent(activeCourseName)}`;
-        return; 
-    }
+        if(type === 'test') { 
+            // 🚀 NEW: Extract Custom Title from block and send it via URL!
+            // Backward compatibility: Agar purana saved course hai jisme sirf ID pass hoti thi, tab bhi perfectly chalega!
+            const vaultId = elementOrId.getAttribute ? elementOrId.getAttribute('data-vaultid') : elementOrId;
+            let customTitle = '';
+            
+            if (elementOrId.closest) {
+                const block = elementOrId.closest('[id^="block-"]');
+                if (block) {
+                    const titleArea = block.querySelector('textarea');
+                    if (titleArea) customTitle = titleArea.value;
+                }
+            }
+            
+            let url = `exam-studio/player.html?testId=${vaultId}&course=${encodeURIComponent(activeCourseName)}`;
+            if (customTitle) url += `&customTitle=${encodeURIComponent(customTitle)}`;
+            
+            window.location.href = url;
+            return; 
+        }
     
     const block = elementOrId.closest('[id^="block-"]'); 
     const linkInput = block.querySelector('.link-input'); 

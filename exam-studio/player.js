@@ -58,9 +58,14 @@ async function fetchTestData(testId) {
             state.userAnswers = new Array(state.questions.length).fill(null);
             state.timeRemaining = (state.settings.totalTimeInMinutes || 0) * 60;
             
+            // 🚀 SMART TITLE ENGINE: Use custom title from URL if passed, else fallback to Vault Title
+            const urlParams = new URLSearchParams(window.location.search);
+            const customTitle = urlParams.get('customTitle');
+            const finalTitle = customTitle ? decodeURIComponent(customTitle) : state.settings.testTitle;
+
             // Populate Intro Screen
-            document.getElementById('intro-title').innerText = state.settings.testTitle;
-            document.getElementById('top-test-name').innerText = state.settings.testTitle;
+            document.getElementById('intro-title').innerText = finalTitle;
+            document.getElementById('top-test-name').innerText = finalTitle;
             document.getElementById('intro-qs').innerText = state.questions.length;
             document.getElementById('intro-time').innerText = state.settings.totalTimeInMinutes;
             document.getElementById('intro-pos').innerText = "+" + state.settings.marksForCorrectAnswer;
