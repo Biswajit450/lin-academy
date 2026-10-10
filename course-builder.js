@@ -142,7 +142,8 @@ window.addBlock = function(type) {
             <div class="w-12 h-12 rounded-xl flex items-center justify-center border ${color} shrink-0 text-xl shadow-inner">
                 <i class="fa-solid ${icon}"></i>
             </div>
-            <div class="flex-grow w-full">
+            <!-- 🚀 BUG FIX: Added min-w-0 to prevent flex blowout on Mobile screens! -->
+            <div class="flex-grow w-full min-w-0">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${typeName}</span>
                     <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors" title="Delete Resource"><i class="fa-solid fa-trash"></i></button>
@@ -1067,7 +1068,8 @@ window.renderTestBlockToCanvas = function(vaultId, title, qCount) {
                 <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 text-xl border border-emerald-200 dark:border-emerald-700">
                     <i class="fa-solid fa-clipboard-list"></i>
                 </div>
-                <div class="flex-grow w-full">
+                <!-- 🚀 BUG FIX: Added min-w-0 to enable proper truncation on Mobile! -->
+                <div class="flex-grow w-full min-w-0">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Premium Mock Test</span>
                         <button onclick="document.getElementById('${blockId}').remove(); window.autoSaveDraft();" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
