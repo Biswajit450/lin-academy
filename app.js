@@ -2989,7 +2989,7 @@ window.loadVaultFiles = async function() {
                     <div class="w-full h-28 bg-slate-100 dark:bg-slate-800 relative overflow-hidden" onclick="${clickAction}">
                         <img src="${thumb}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                            <span class="text-white text-[9px] font-bold ${badgeColor} px-1.5 py-0.5 rounded shadow-sm"><i class="fa-solid ${badgeIcon} mr-1"></i>${isTest ? '.test' : (isPdf ? '.pdf' : '.slate')}</span>
+                            <span class="text-white text-[9px] font-bold ${badgeColor} px-1.5 py-0.5 rounded shadow-sm"><i class="fa-solid ${badgeIcon} mr-1"></i>${isTest ? '.test' : (isPdf ? '.pdf' : (isVideo ? '.video' : '.slate'))}</span>
                         </div>
                     </div>
                     <div class="p-3" onclick="${clickAction}">
@@ -3057,7 +3057,7 @@ window.openVaultFolder = function(folderType) {
         return;
     }
 
-    // 🚀 PREMIUM GRID VIEW WITH 3-DOT MENU
+    // 🚀 PREMIUM GRID VIEW WITH 3-DOT MENU (100% BUG FIXED)
     let html = '';
     filteredFiles.forEach(f => {
         const dateObj = new Date(f.timestamp);
@@ -3065,15 +3065,18 @@ window.openVaultFolder = function(folderType) {
         
         const isTest = (f.type === 'test');
         const isPdf = (f.type === 'pdf');
+        const isVideo = (f.type === 'video'); // 🚀 THE FIX: Video type defined correctly!
         
-        const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas'));
+        // 🚀 THE FIX: Proper thumbnails for all 4 asset types
+        const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : (isVideo ? 'https://placehold.co/300x169/e2e8f0/475569?text=Recorded+Video' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas')));
         
-        let safeName = f.name.replace(/'/g, "\\'");
+        let safeName = f.name ? f.name.replace(/'/g, "\\'") : 'Vault_File';
         
+        // 🚀 THE FIX: Correct click actions & Secure Player for Video
         let clickAction = '';
         if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
         else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
-        else if (isVideo) clickAction = `window.previewVaultVideo('${f.metaContent}', '${safeName}')`; // 🚀 SECURE FIX: In-App Player
+        else if (isVideo) clickAction = `window.previewVaultVideo('${f.metaContent}', '${safeName}')`;
         else clickAction = `window.launchPWOSStudio('${f.id}')`;
         
         html += `
@@ -3098,9 +3101,9 @@ window.openVaultFolder = function(folderType) {
                     <h4 id="card-title-${f.id}" class="font-bold text-sm text-slate-800 dark:text-white truncate" title="${f.name}">${f.name}</h4>
                     <div class="flex justify-between items-center mt-1.5">
                         <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold flex items-center gap-2">
-                            <span><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</span>${isPdf && f.fileSize ? `<span class="text-slate-300 dark:text-slate-600">•</span> <span><i class="fa-solid fa-hard-drive mr-1"></i> ${f.fileSize}</span>` : ''}
+                            <span><i class="fa-regular fa-clock mr-1"></i> ${dateStr}</span>${(isPdf || isVideo) && f.fileSize ? `<span class="text-slate-300 dark:text-slate-600">•</span> <span><i class="fa-solid fa-hard-drive mr-1"></i> ${f.fileSize}</span>` : ''}
                         </p>
-                        ${isPdf ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase">PDF</span>` : ''}
+                        ${isPdf ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase">PDF</span>` : (isVideo ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase">VIDEO</span>` : '')}
                     </div>
                 </div>
             </div>
