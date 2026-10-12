@@ -2804,6 +2804,48 @@ window.endAdminLiveSession = async function() {
 // Global cache for folder deep-dive
 window.cachedVaultFiles = [];
 
+// 🚀 NEW: SECURE IN-APP VIDEO PREVIEWER FOR VAULT
+window.previewVaultVideo = function(url, title) {
+    const modal = document.getElementById('content-player-modal');
+    const iframe = document.getElementById('player-iframe');
+    const loader = document.getElementById('player-loading');
+    const loaderText = document.getElementById('player-loading-text');
+    const pdfContainer = document.getElementById('native-pdf-container');
+    const playerBox = document.getElementById('player-container-box');
+    const headerBar = document.getElementById('player-header-bar');
+    const playerTitle = document.getElementById('player-title');
+
+    if(modal) modal.classList.remove('hidden');
+    if(pdfContainer) pdfContainer.classList.add('hidden');
+    if(loader) loader.style.display = 'flex';
+    if(loaderText) loaderText.innerText = "Securing Stream...";
+    if(iframe) {
+        iframe.classList.remove('hidden');
+        iframe.src = '';
+    }
+
+    // Setup UI for Cinematic Video Mode
+    if(headerBar) {
+        headerBar.classList.remove('bg-gradient-to-b');
+        headerBar.classList.add('bg-transparent');
+    }
+    if(playerTitle) playerTitle.classList.add('hidden');
+    if(playerBox) {
+        playerBox.classList.remove('sm:h-[85vh]');
+        playerBox.classList.add('sm:aspect-video', 'sm:h-auto');
+    }
+
+    // Bunny.net Auto-play Processing
+    let finalUrl = url;
+    if (finalUrl.includes('iframe.mediadelivery.net') || finalUrl.includes('bunny.net')) {
+        const separator = finalUrl.includes('?') ? '&' : '?';
+        finalUrl = finalUrl + separator + 'autoplay=true&loop=false&muted=false&preload=true&responsive=true';
+    }
+
+    if(iframe) iframe.src = finalUrl;
+    setTimeout(() => { if(loader) loader.style.display = 'none'; }, 1500);
+}
+
 // ==========================================
 // 🚀 STORAGE USAGE CALCULATOR ENGINE
 // ==========================================
@@ -2934,10 +2976,11 @@ window.loadVaultFiles = async function() {
             const badgeColor = isTest ? 'bg-emerald-600' : (isPdf ? 'bg-rose-600' : (isVideo ? 'bg-indigo-600' : 'bg-cyan-600'));
             const badgeIcon = isTest ? 'fa-flask' : (isPdf ? 'fa-file-pdf' : (isVideo ? 'fa-video' : 'fa-pen-nib'));
             
+            let safeName = f.name ? f.name.replace(/'/g, "\\'") : 'Video';
             let clickAction = '';
             if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
             else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
-            else if (isVideo) clickAction = `window.open('${f.metaContent}', '_blank')`; // Temporary action, aage badh kar hum isko Course Builder mein integrate karenge
+            else if (isVideo) clickAction = `window.previewVaultVideo('${f.metaContent}', '${safeName}')`; // 🚀 SECURE FIX: In-App Player
             else clickAction = `window.launchPWOSStudio('${f.id}')`;
 
             html += `
@@ -3025,12 +3068,13 @@ window.openVaultFolder = function(folderType) {
         
         const thumb = f.thumbnail || (isTest ? 'https://placehold.co/300x169/e2e8f0/475569?text=Exam+Studio' : (isPdf ? 'https://placehold.co/300x169/e2e8f0/475569?text=PDF+Document' : 'https://placehold.co/300x169/e2e8f0/475569?text=Slate+Canvas'));
         
+        let safeName = f.name.replace(/'/g, "\\'");
+        
         let clickAction = '';
         if (isTest) clickAction = `window.launchExamStudio('${f.id}')`;
         else if (isPdf) clickAction = `window.open('${f.metaContent}', '_blank')`;
+        else if (isVideo) clickAction = `window.previewVaultVideo('${f.metaContent}', '${safeName}')`; // 🚀 SECURE FIX: In-App Player
         else clickAction = `window.launchPWOSStudio('${f.id}')`;
-        
-        let safeName = f.name.replace(/'/g, "\\'");
         
         html += `
             <div id="vault-card-${f.id}" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:border-brand-blue hover:shadow-md transition-all cursor-pointer relative flex flex-col">
