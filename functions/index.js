@@ -274,3 +274,69 @@ exports.deleteBunnyVideo = onCall(async (request) => {
         return { success: true };
     } catch (error) { throw new HttpsError("internal", error.message); }
 });
+
+// ============================================================================
+// API 6: SECURE PREMIUM EXAM FETCHER (THE UNHACKABLE BOUNCER) 🚀
+// ============================================================================
+exports.getPremiumTest = onCall(async (request) => {
+    // 1. Level-1 Security: Token Check (Bacha logged in hai?)
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Access Denied: Please login first.");
+    }
+
+    const { testId, courseName } = request.data;
+    if (!testId) {
+        throw new HttpsError("invalid-argument", "Missing Test ID.");
+    }
+
+    try {
+        const uid = request.auth.uid;
+        const userSnap = await db.collection("users").doc(uid).get();
+        
+        if (!userSnap.exists) {
+            throw new HttpsError("permission-denied", "User profile not found.");
+        }
+
+        const userData = userSnap.data();
+        const role = String(userData.role || 'student').toLowerCase();
+        const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
+        
+        // 2. Level-2 Security: Role & Enrollment Check
+        if (!isGodMode) {
+            // Agar Admin test preview/manager se request kar raha hai toh courseName blank/undefined ho sakta hai. 
+            // Par student ke liye courseName hona ZAROORI hai!
+            if (!courseName) {
+                 throw new HttpsError("permission-denied", "Security Alert: Invalid Request Signature.");
+            }
+
+            const unlocked = userData.unlocked_courses || [];
+            if (!unlocked.includes(courseName)) {
+                throw new HttpsError("permission-denied", "Security Alert: You are not enrolled in this course!");
+            }
+
+            // 3. Level-3 Security: Expiry Time-Bomb Check
+            if (userData.course_expiries && userData.course_expiries[courseName]) {
+                const expDate = new Date(userData.course_expiries[courseName]);
+                if (new Date() > expDate) {
+                    throw new HttpsError("permission-denied", "Subscription Expired. Please renew to access tests.");
+                }
+            }
+        }
+
+        // 4. All Clear! Fetch the actual Test JSON from the Locked 'exams' collection
+        const examSnap = await db.collection("exams").doc(testId).get();
+        
+        if (!examSnap.exists) {
+            throw new HttpsError("not-found", "Test not found or removed by educator.");
+        }
+
+        // Return the premium test payload to the frontend
+        return examSnap.data();
+
+    } catch (error) {
+        console.error("Secure Exam Fetcher Error:", error);
+        // Agar pehle se HttpsError hai toh wahi feko, warna generic internal error
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "Server failed to verify security tokens.");
+    }
+});

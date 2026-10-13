@@ -1,6 +1,7 @@
 // player.js - PWOS Exam Studio Student Engine
 
 import { doc, getDoc, setDoc, collection, query, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 import { auth, db } from "../firebase-config.js";
 
 let state = {
@@ -24,9 +25,13 @@ window.addEventListener('load', () => {
     
     document.getElementById('top-course-name').innerText = state.courseName;
 
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
         if (user) {
             if (state.testId) {
+                // 🛡️ THE PREMIUM BOUNCER: Security Check Before Loading!
+                const hasAccess = await verifyStudentAccess(state.courseName, user.uid);
+                if (!hasAccess) return; // Agar access nahi hai, toh yahin rok do (Bouncer redirect kar dega)
+
                 fetchTestData(state.testId);
             } else {
                 alert("Invalid Test Link!");
@@ -46,42 +51,93 @@ window.addEventListener('load', () => {
     }
 });
 
+// 🛡️ THE PREMIUM BOUNCER: URL SHARING BLOCKER
+async function verifyStudentAccess(courseName, uid) {
+    // Agar link me course ka naam nahi hai (Superadmin Direct Vault Preview), toh aage badhne do
+    if (!courseName || courseName === 'Premium Course') return true; 
+
+    try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const role = String(userData.role || 'student').toLowerCase();
+            const isGodMode = role.includes('admin') || role.includes('educator') || role === 'superadmin';
+            const unlocked = userData.unlocked_courses || [];
+
+            // 1. Admins aur Educators ke liye rasta saaf hai
+            if (isGodMode) return true; 
+
+            // 2. Anti-Piracy Lock: Check if the course is unlocked
+            if (!unlocked.includes(courseName)) {
+                alert("🚨 Security Alert: You are not enrolled in this course! Access Denied.");
+                window.location.replace('../index.html'); // Kick to homepage
+                return false;
+            }
+
+            // 3. Expiry Lock: Check if the subscription has expired
+            if (userData.course_expiries && userData.course_expiries[courseName]) {
+                const expDate = new Date(userData.course_expiries[courseName]);
+                if (new Date() > expDate) {
+                    alert("⏳ Your subscription for this course has expired. Please renew to access tests.");
+                    window.location.replace('../index.html');
+                    return false;
+                }
+            }
+            
+            // All checks passed! Student is valid.
+            return true; 
+        }
+    } catch(e) {
+        console.error("Security check failed:", e);
+    }
+    
+    // Agar kuch bhi gadbad ho (Net chala jaye, user hide ho), toh deny kardo
+    alert("Connection Error. Unable to verify your subscription.");
+    window.location.replace('../index.html');
+    return false;
+}
+
 async function fetchTestData(testId) {
     try {
-        // 🚀 THE FIX: Sirf public 'exams' collection se fetch karo!
-        const examSnap = await getDoc(doc(db, "exams", testId));
+        // 🚀 THE MAGIC: Backend Server Guard (Cloud Function) ko bulana!
+        const functions = getFunctions(auth.app);
+        const getPremiumTest = httpsCallable(functions, 'getPremiumTest');
+        
+        // Guard ko Test ID aur Course Name bhej kar data maango
+        const response = await getPremiumTest({ testId: testId, courseName: state.courseName });
+        const data = response.data; // Guard ne test bhej diya!
 
-        if (examSnap.exists()) {
-            const data = examSnap.data();
-            state.settings = data.settings;
-            state.questions = data.questions || [];
-            state.userAnswers = new Array(state.questions.length).fill(null);
-            state.timeRemaining = (state.settings.totalTimeInMinutes || 0) * 60;
-            
-            // 🚀 SMART TITLE ENGINE: Use custom title from URL if passed, else fallback to Vault Title
-            const urlParams = new URLSearchParams(window.location.search);
-            const customTitle = urlParams.get('customTitle');
-            const finalTitle = customTitle ? decodeURIComponent(customTitle) : state.settings.testTitle;
+        state.settings = data.settings;
+        state.questions = data.questions || [];
+        state.userAnswers = new Array(state.questions.length).fill(null);
+        state.timeRemaining = (state.settings.totalTimeInMinutes || 0) * 60;
+        
+        // Smart Title Engine
+        const urlParams = new URLSearchParams(window.location.search);
+        const customTitle = urlParams.get('customTitle');
+        const finalTitle = customTitle ? decodeURIComponent(customTitle) : state.settings.testTitle;
 
-            // Populate Intro Screen
-            document.getElementById('intro-title').innerText = finalTitle;
-            document.getElementById('top-test-name').innerText = finalTitle;
-            document.getElementById('intro-qs').innerText = state.questions.length;
-            document.getElementById('intro-time').innerText = state.settings.totalTimeInMinutes;
-            document.getElementById('intro-pos').innerText = "+" + state.settings.marksForCorrectAnswer;
-            document.getElementById('intro-neg').innerText = "-" + state.settings.marksForWrongAnswer;
-            
-            const btnStart = document.getElementById('btn-start-test');
-            btnStart.disabled = false;
-            document.getElementById('start-test-text').innerText = "Begin Assessment";
-        } else {
-            alert("Test not found or has been removed by the educator.");
-            window.closePlayer();
-        }
+        // Populate Intro Screen
+        document.getElementById('intro-title').innerText = finalTitle;
+        document.getElementById('top-test-name').innerText = finalTitle;
+        document.getElementById('intro-qs').innerText = state.questions.length;
+        document.getElementById('intro-time').innerText = state.settings.totalTimeInMinutes;
+        document.getElementById('intro-pos').innerText = "+" + state.settings.marksForCorrectAnswer;
+        document.getElementById('intro-neg').innerText = "-" + state.settings.marksForWrongAnswer;
+        
+        const btnStart = document.getElementById('btn-start-test');
+        btnStart.disabled = false;
+        document.getElementById('start-test-text').innerText = "Begin Assessment";
+
     } catch (e) {
-        console.error("Failed to fetch test:", e);
-        document.getElementById('intro-title').innerText = "Network Error";
-        document.getElementById('start-test-text').innerText = "Cannot Load Data";
+        console.error("Failed to fetch test from secure server:", e);
+        document.getElementById('intro-title').innerText = "Access Denied / Error";
+        document.getElementById('start-test-text').innerText = "Cannot Load Test";
+        
+        // Agar bache ne course nahi kharida hai, Guard error bhejega aur wapas phek dega
+        alert("🔒 " + e.message);
+        window.location.replace('../index.html');
     }
 }
 
