@@ -152,30 +152,29 @@ if (roomId) {
     safeSetText('educator-name', "Invalid Room ID");
 }
 
-let studentPdfDoc = null;
-let lastStudentPdfUrl = null;
-let lastStudentSlide = null;
-
-// The Core Rendering Logic (WITH SMART AUTO-SCALING & CLOUD PDF)
+// The Core Rendering Logic (WITH SMART AUTO-SCALING)
 window.syncEducatorBoard = function(jsonContent, metaContent) {
     if (!jsonContent) return;
 
     let educatorWidth = 1920; 
-    let educatorHeight = 1080; 
-    let currentPdfUrl = null;
-    let currentSlide = 1;
+    let educatorHeight = 1080; // 🚀 NAYA: Height bhi track kar rahe hain
     
     if (metaContent) {
         try {
             const meta = JSON.parse(metaContent);
-            if (meta.canvasWidth) educatorWidth = meta.canvasWidth;
-            if (meta.canvasHeight) educatorHeight = meta.canvasHeight;
-            if (meta.pdfUrl) currentPdfUrl = meta.pdfUrl;
-            if (meta.currentSlide) currentSlide = meta.currentSlide;
+            if (meta.canvasWidth) {
+                educatorWidth = meta.canvasWidth;
+                lastEducatorWidth = meta.canvasWidth; 
+            }
+            // 🚀 NAYA: Educator ki screen ki height save karo
+            if (meta.canvasHeight) {
+                educatorHeight = meta.canvasHeight;
+                lastEducatorHeight = meta.canvasHeight;
+            }
         } catch(e) {
             console.error("Sync parsing error:", e);
         }
-    } else if (typeof lastEducatorWidth !== 'undefined' && lastEducatorWidth) {
+    } else if (lastEducatorWidth) {
         educatorWidth = lastEducatorWidth; 
         if (typeof lastEducatorHeight !== 'undefined') educatorHeight = lastEducatorHeight;
     }
@@ -184,14 +183,20 @@ window.syncEducatorBoard = function(jsonContent, metaContent) {
         const studentWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
         const studentHeight = wrapper ? wrapper.clientHeight : window.innerHeight;
         
+        // 🚀 MASTER FIX: Smart Contain Scaling (Prevents Clipping on small screens)
         const scaleX = studentWidth / educatorWidth;
         const scaleY = studentHeight / educatorHeight;
+        
+        // Dono mein se jo sabse chhota scale hoga, uspe lock karenge
         const scaleMultiplier = Math.min(scaleX, scaleY);
         
         canvas.setZoom(scaleMultiplier);
+
+        // NAYA: Canvas ka width aur height us scale ke hisaab se adjust karo
         canvas.setWidth(educatorWidth * scaleMultiplier);
         canvas.setHeight(educatorHeight * scaleMultiplier);
 
+        // CSS se us chhote hue canvas ko wrapper ke ekdum center mein set kar do
         const canvasContainer = document.querySelector('.canvas-container');
         if (canvasContainer) {
             canvasContainer.style.margin = 'auto';
@@ -209,65 +214,13 @@ window.syncEducatorBoard = function(jsonContent, metaContent) {
         canvas.renderAll();
         window.applyStudentTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         
+        // 🚀 SMART CLEAR: Firebase se data aate hi live WebRTC layer saaf kar do
+        // Taaki double ink aur lag ka illusion na ho
         if (typeof ctx !== 'undefined' && typeof liveInkCanvas !== 'undefined') {
             ctx.clearRect(0, 0, liveInkCanvas.width, liveInkCanvas.height);
         }
-
-        // 🚀 SMART PDF ENGINE FOR STUDENTS
-        if (currentPdfUrl) {
-            if (currentPdfUrl !== lastStudentPdfUrl) {
-                // New PDF detected, fetch from cloud
-                safeSetText('class-title', "Loading PDF...");
-                pdfjsLib.getDocument(currentPdfUrl).promise.then(pdf => {
-                    studentPdfDoc = pdf;
-                    lastStudentPdfUrl = currentPdfUrl;
-                    renderStudentPdfPage(currentSlide, educatorWidth, educatorHeight);
-                    safeSetText('class-title', document.title || "Live Class");
-                }).catch(e => console.error("Student PDF load error:", e));
-            } else if (currentSlide !== lastStudentSlide && studentPdfDoc) {
-                // Same PDF, but slide changed
-                renderStudentPdfPage(currentSlide, educatorWidth, educatorHeight);
-            } else if (studentPdfDoc) {
-                 // Same slide, ensure PDF image stays at the back below pen strokes
-                 const existingImg = canvas.getObjects().find(o => o.isSlide && o.type === 'image');
-                 if (existingImg) canvas.sendToBack(existingImg);
-            }
-        }
     });
 };
-
-function renderStudentPdfPage(pageNum, educatorW, educatorH) {
-    if (!studentPdfDoc) return;
-    lastStudentSlide = pageNum;
-    
-    studentPdfDoc.getPage(pageNum).then(page => {
-        const viewport = page.getViewport({ scale: 2.0 });
-        const tempCanvas = document.createElement('canvas');
-        const ctx = tempCanvas.getContext('2d');
-        tempCanvas.height = viewport.height;
-        tempCanvas.width = viewport.width;
-
-        page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
-            fabric.Image.fromURL(tempCanvas.toDataURL(), function(img) {
-                const scale = Math.min((educatorW * 0.9) / img.width, (educatorH * 0.9) / img.height);
-                img.set({
-                    scaleX: scale, scaleY: scale,
-                    left: educatorW / 2, top: educatorH / 2,
-                    originX: 'center', originY: 'center',
-                    selectable: false, evented: false, isSlide: true
-                });
-                
-                // Remove old slide if exists
-                const oldSlide = canvas.getObjects().find(o => o.isSlide && o.type === 'image');
-                if (oldSlide) canvas.remove(oldSlide);
-                
-                canvas.add(img);
-                canvas.sendToBack(img); // Background set
-                canvas.renderAll();
-            });
-        });
-    });
-}
 
 // =====================================
 // 📱 SLIDING DRAWER & CAMERA ENGINE
