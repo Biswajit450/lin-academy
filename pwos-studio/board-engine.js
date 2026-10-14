@@ -180,7 +180,14 @@ function saveHistory() {
         canvasHistory = canvasHistory.slice(0, historyIndex + 1);
     }
     
-    const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
+    // 🚀 BUG FIX: Safely completely exclude rendered PDF slide images from JSON history!
+    const canvasData = canvas.toJSON(['isSlide', 'isCustomShape']);
+    
+    // Hard filter: Filter out ANY object that is both an image AND a slide.
+    canvasData.objects = canvasData.objects.filter(obj => !(obj.isSlide && obj.type === 'image'));
+    
+    const jsonContent = JSON.stringify(canvasData);
+    
     canvasHistory.push(jsonContent);
     historyIndex++;
 
@@ -1457,7 +1464,14 @@ document.getElementById('menu-save').addEventListener('click', () => {
     if (totalSlides > 0) saveCurrentPageInk();
     
     const thumbnail = canvas.toDataURL({ format: 'jpeg', quality: 0.3, multiplier: 0.2 });
-    const jsonContent = JSON.stringify(canvas.toJSON(['isSlide']));
+    
+    // 🚀 BUG FIX: Safely completely exclude rendered PDF slide images from JSON saving to Vault
+    const canvasData = canvas.toJSON(['isSlide', 'isCustomShape']);
+    
+    // Hard filter: Filter out ANY object that is both an image AND a slide.
+    canvasData.objects = canvasData.objects.filter(obj => !(obj.isSlide && obj.type === 'image'));
+    
+    const jsonContent = JSON.stringify(canvasData);
 
     // 🚀 THE BUG FIX: Pack the entire "Brain" including PDF URL!
     const metaContent = JSON.stringify({
