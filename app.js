@@ -2847,19 +2847,19 @@ window.previewVaultVideo = function(url, title) {
 }
 
 // ==========================================
-// 🚀 STORAGE USAGE CALCULATOR ENGINE
+// 🚀 STORAGE USAGE CALCULATOR ENGINE (UPGRADED)
 // ==========================================
 window.calculateVaultStorage = function(allFiles) {
     let totalBytes = 0;
     
     allFiles.forEach(f => {
         // 1. Calculate Firestore String Size (JSON Canvas Data, Meta, Text)
+        // Humara JSON ab bohot chhota ho gaya hai (thanks to our recent optimization!)
         const textData = (f.jsonContent || "") + (f.metaContent || "") + (f.name || "");
-        totalBytes += new Blob([textData]).size; // Gets exact byte size of text/json
+        totalBytes += new Blob([textData]).size; 
 
-        // 2. Calculate Firebase Storage Size (PDF Files)
-        if (f.type === 'pdf' && f.fileSize) {
-            // Extracts numeric MB value from string like "1.25 MB"
+        // 2. Calculate Cloud Storage Size (For ANY file that has fileSize saved)
+        if (f.fileSize) {
             const mbValue = parseFloat(f.fileSize.replace(/[^0-9.]/g, ''));
             if (!isNaN(mbValue)) {
                 totalBytes += (mbValue * 1024 * 1024); // Convert MB back to Bytes
