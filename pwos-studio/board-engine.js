@@ -800,16 +800,12 @@ if (btnCloudRecord) {
                 canvasStream.addTrack(localStream.getAudioTracks()[0]);
             }
 
-            // 🚀 SMART FORMAT DETECTOR (With Extension Fix)
+            // Smart Format Detector (MP4/WebM)
             let options = { mimeType: 'video/webm; codecs=vp9' };
-            let ext = 'webm'; // Naya Extension Variable
-            
             if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.424028, mp4a.40.2"')) {
                 options = { mimeType: 'video/mp4; codecs="avc1.424028, mp4a.40.2"' };
-                ext = 'mp4';
             } else if (MediaRecorder.isTypeSupported('video/mp4')) {
                 options = { mimeType: 'video/mp4' };
-                ext = 'mp4';
             }
 
             cloudMediaRecorder = new MediaRecorder(canvasStream, options);
@@ -822,15 +818,12 @@ if (btnCloudRecord) {
                 // 🚀 THE MAGIC: Bypass Local Download & Send to App.js Background Uploader
                 const blob = new Blob(cloudRecordedChunks, { type: options.mimeType });
                 
-                // 🚀 THE BUG FIX: Append .mp4 or .webm to the filename so Bunny.net processes it successfully!
-                const finalFileName = currentFileName.includes('.') ? currentFileName : `${currentFileName}.${ext}`;
-                
                 if (window.parent !== window) {
                     window.parent.postMessage({
                         type: 'START_CLOUD_UPLOAD',
                         payload: { 
                             blob: blob, 
-                            fileName: finalFileName, 
+                            fileName: currentFileName, 
                             blockId: (typeof currentLiveSessionData !== 'undefined' && currentLiveSessionData ? currentLiveSessionData.blockId : null)
                         }
                     }, '*');
