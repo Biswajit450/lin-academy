@@ -681,39 +681,59 @@ offscreenCanvas.height = 1080;
 const offCtx = offscreenCanvas.getContext('2d');
 
 function drawFrame() {
-    // 🚀 THE FIX: Agar local ya cloud dono mein se koi bhi recording on hai, toh frames draw karo
+    // Agar local ya cloud dono mein se koi bhi recording on hai, toh frames draw karo
     if (!isRecording && !window.isCloudRecording) return;
     
-    // Fill background (Dark Mode Support)
-    offCtx.fillStyle = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
+    // 1. 🚀 THE GOOGLE MEET STYLE BACKGROUND (Solid Black)
+    offCtx.fillStyle = '#000000';
     offCtx.fillRect(0, 0, 1920, 1080);
     
-    // 🚀 THE FIX: Draw BOTH canvases (Lower for saved objects, Upper for live pen strokes)
+    // 2. 🚀 SMART SCALING (Left side 16:9 Canvas without overlapping)
+    const boardW = 1632; // 85% of 1920 (Maintains exactly 16:9 aspect ratio)
+    const boardH = 918;
+    const boardX = 20; // Left padding
+    const boardY = (1080 - boardH) / 2; // Perfectly centered vertically
+    
     const lowerCanvas = canvas.getElement();
     const upperCanvas = canvas.upperCanvasEl;
     
-    // Paint Base Layer
-    offCtx.drawImage(lowerCanvas, 0, 0, 1920, 1080);
+    // Paint Base Layer (Shrunk down to boardW x boardH)
+    offCtx.drawImage(lowerCanvas, boardX, boardY, boardW, boardH);
     // Paint Live Ink Layer on top
     if (upperCanvas) {
-        offCtx.drawImage(upperCanvas, 0, 0, 1920, 1080);
+        offCtx.drawImage(upperCanvas, boardX, boardY, boardW, boardH);
     }
 
-    // Draw Webcam PiP (Picture-in-Picture)
+    // Optional: Subtle border around the Slate for a premium separated look
+    offCtx.strokeStyle = '#1e293b'; 
+    offCtx.lineWidth = 2;
+    offCtx.strokeRect(boardX, boardY, boardW, boardH);
+
+    // 3. 🚀 THE SEPARATED WEBCAM (Right side, Vertically Centered)
     if (localStream && liveVideo.videoWidth > 0) {
-        const camW = 400;
+        const camW = 230;
         const camH = (liveVideo.videoHeight / liveVideo.videoWidth) * camW;
-        const pad = 30;
+        
+        // Center the webcam in the remaining space on the right
+        const remainingSpaceX = boardX + boardW;
+        const spaceWidth = 1920 - remainingSpaceX;
+        
+        const camX = remainingSpaceX + ((spaceWidth - camW) / 2);
+        const camY = (1080 - camH) / 2; // Perfectly centered vertically
         
         offCtx.save();
-        offCtx.translate(1920 - pad, pad + camH);
-        offCtx.scale(-1, 1);
-        offCtx.drawImage(liveVideo, 0, -camH, camW, camH);
-        offCtx.restore();
         
-        offCtx.strokeStyle = '#cbd5e1';
-        offCtx.lineWidth = 4;
-        offCtx.strokeRect(1920 - pad - camW, pad, camW, camH);
+        // Optional: Subtle border for webcam
+        offCtx.strokeStyle = '#334155';
+        offCtx.lineWidth = 3;
+        offCtx.strokeRect(camX - 2, camY - 2, camW + 4, camH + 4);
+        
+        // Mirror Effect for Webcam
+        offCtx.translate(camX + camW, camY);
+        offCtx.scale(-1, 1);
+        offCtx.drawImage(liveVideo, 0, 0, camW, camH);
+        
+        offCtx.restore();
     }
 
     animationFrameId = requestAnimationFrame(drawFrame);
