@@ -255,7 +255,20 @@ function renderStudentPdfPage(pageNum, educatorW, educatorH) {
 
         page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
             fabric.Image.fromURL(tempCanvas.toDataURL(), function(img) {
-                const scale = Math.min((educatorW * 0.9) / img.width, (educatorH * 0.9) / img.height);
+                
+                // 🚀 SMART ASPECT RATIO SYNC (Matches Educator Exactly)
+                const pdfRatio = img.width / img.height;
+                const canvasRatio = educatorW / educatorH;
+                let scale;
+                
+                // Agar PDF exactly 16:9 hai, toh Edge-to-Edge (100%) render karo
+                if (Math.abs(pdfRatio - canvasRatio) < 0.05) {
+                    scale = Math.min(educatorW / img.width, educatorH / img.height);
+                } else {
+                    // Portrait ya A4 hai, toh 10% Margin chhod kar render karo
+                    scale = Math.min((educatorW * 0.9) / img.width, (educatorH * 0.9) / img.height);
+                }
+
                 img.set({
                     scaleX: scale, scaleY: scale,
                     left: educatorW / 2, top: educatorH / 2,

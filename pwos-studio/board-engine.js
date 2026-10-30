@@ -330,7 +330,20 @@ function renderSlide(slideNum) {
 
             page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
                 fabric.Image.fromURL(tempCanvas.toDataURL(), function(img) {
-                    const scale = Math.min((CANVAS_W * 0.9) / img.width, (CANVAS_H * 0.9) / img.height);
+                    
+                    // 🚀 THE MAGICAL ASPECT RATIO DETECTOR
+                    const pdfRatio = img.width / img.height;
+                    const canvasRatio = CANVAS_W / CANVAS_H;
+                    let scale;
+                    
+                    // Agar 16:9 hai (0.05 ki rounding tolerance ke sath), toh 100% Edge-to-Edge fit karo!
+                    if (Math.abs(pdfRatio - canvasRatio) < 0.05) {
+                        scale = Math.min(CANVAS_W / img.width, CANVAS_H / img.height);
+                    } else {
+                        // Dusra koi ratio hai (jaise Portrait A4), toh 10% margin chhod do
+                        scale = Math.min((CANVAS_W * 0.9) / img.width, (CANVAS_H * 0.9) / img.height);
+                    }
+
                     img.set({
                         scaleX: scale, scaleY: scale,
                         left: CANVAS_W / 2, top: CANVAS_H / 2,
