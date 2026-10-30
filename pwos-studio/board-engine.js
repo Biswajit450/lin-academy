@@ -688,10 +688,10 @@ function drawFrame() {
     offCtx.fillStyle = '#000000';
     offCtx.fillRect(0, 0, 1920, 1080);
     
-    // 2. 🚀 SMART SCALING (Left side 16:9 Canvas without overlapping)
-    const boardW = 1632; // 85% of 1920 (Maintains exactly 16:9 aspect ratio)
-    const boardH = 918;
-    const boardX = 20; // Left padding
+    // 2. 🚀 SMART SCALING (Left side 16:9 Canvas)
+    const boardW = 1440; // 75% of 1920 (Thoda chhota kiya taaki webcam ko jagah mile)
+    const boardH = 810;
+    const boardX = 40; // Left padding
     const boardY = (1080 - boardH) / 2; // Perfectly centered vertically
     
     const lowerCanvas = canvas.getElement();
@@ -709,9 +709,9 @@ function drawFrame() {
     offCtx.lineWidth = 2;
     offCtx.strokeRect(boardX, boardY, boardW, boardH);
 
-    // 3. 🚀 THE SEPARATED WEBCAM (Right side, Vertically Centered)
+    // 3. 🚀 THE LARGER WEBCAM (Right side, Vertically Centered)
     if (localStream && liveVideo.videoWidth > 0) {
-        const camW = 230;
+        const camW = 380; // 🔥 NAYA BADA SIZE (Pehle 230 tha, ab 380px kaafi bada aur clear hai)
         const camH = (liveVideo.videoHeight / liveVideo.videoWidth) * camW;
         
         // Center the webcam in the remaining space on the right
