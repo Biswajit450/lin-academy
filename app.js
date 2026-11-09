@@ -127,7 +127,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE
+// 🚀 DYNAMIC COLOR NAV ENGINE (APPLE LIQUID GLASS EDITION)
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -135,28 +135,47 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'enrollments', color: 'text-emerald-500' }, 
         { id: 'admin', color: 'text-rose-500' },          
         { id: 'profile', color: 'text-amber-500' },       
-        { id: 'vault', color: 'text-cyan-500' } // 🚀 NEW: Vault color added
+        { id: 'vault', color: 'text-cyan-500' }
+    ];
+
+    // 🍎 Apple Liquid Glass Capsule Classes (Flowchart: Delay Shape)
+    const glassClasses = [
+        'bg-slate-200/60', 'dark:bg-slate-700/50', // Translucent Liquid Base
+        'backdrop-blur-md', // Apple Glass Blur Effect
+        'border', 'border-white/60', 'dark:border-slate-600/50', // Glass Edge Reflection
+        'shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]', // Inner 3D Highlight
+        'rounded-3xl', 'px-4', 'py-1.5', 'scale-110' // Capsule/Pill Shape (Delay Symbol)
     ];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
-        if(deskBtn || mobBtn) { // Changed && to || so it works even if mobile tab is missing
-            // 1. Purane sabhi colors aur glows ko saaf karo
-            ['text-blue-500', 'text-emerald-500', 'text-rose-500', 'text-amber-500', 'text-cyan-500', 'opacity-40', 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
+        if(deskBtn || mobBtn) { 
+            // 1. Purane sabhi liquid glass states saaf karo
+            [...glassClasses, 'opacity-40', 'opacity-85', 'opacity-100'].forEach(cls => {
                 if(deskBtn) deskBtn.classList.remove(cls);
                 if(mobBtn) mobBtn.classList.remove(cls);
             });
             
-            // 2. Agar yeh tab ACTIVE hai (Glow & Bright Mode)
+            // 2. 🌟 PERMA-GLOW ENGINE: Har icon hamesha glow karega!
+            [nav.color, 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
+                if(deskBtn) deskBtn.classList.add(cls);
+                if(mobBtn) mobBtn.classList.add(cls);
+            });
+            
+            // 3. 🍎 THE LIQUID GLASS SELECTION
             if(`screen-${nav.id}` === activeScreenId) {
-                if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
-                if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-100', 'scale-110', 'drop-shadow-[0_0_8px_currentColor]');
+                glassClasses.forEach(cls => {
+                    if(deskBtn) deskBtn.classList.add(cls);
+                    if(mobBtn) mobBtn.classList.add(cls);
+                });
+                if(deskBtn) deskBtn.classList.add('opacity-100');
+                if(mobBtn) mobBtn.classList.add('opacity-100');
             } else {
-                // 3. Agar yeh tab INACTIVE hai (Dim Mode)
-                if(deskBtn) deskBtn.classList.add(nav.color, 'opacity-40');
-                if(mobBtn) mobBtn.classList.add(nav.color, 'opacity-40');
+                // Inactive icons glow karenge, par halki si opacity kam hogi taaki Glass highlight ekdum POP hoke bahar aaye
+                if(deskBtn) deskBtn.classList.add('opacity-85');
+                if(mobBtn) mobBtn.classList.add('opacity-85');
             }
         }
     });
