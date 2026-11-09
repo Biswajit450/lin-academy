@@ -127,7 +127,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE (STABILIZED LIQUID GLASS EDITION)
+// 🚀 DYNAMIC COLOR NAV ENGINE (ZERO-JITTER LIQUID GLASS)
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -138,38 +138,41 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'vault', color: 'text-cyan-500' }
     ];
 
-    // 🌟 BASE EFFECTS (Background & Glass Blur)
-    const baseActive = [
-        'bg-slate-200/60', 'dark:bg-slate-700/50', 
-        'backdrop-blur-md', 
-        'shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
-        'border', 'border-white/60', 'dark:border-slate-600/50', 'opacity-100'
-    ];
-    
-    const baseInactive = [
-        'bg-transparent', 'backdrop-blur-none', 'border-transparent', 'shadow-none', 'opacity-85'
+    // 🌟 1. MASTER BUTTON DIMENSIONS (Locks the content in place - ZERO JITTER)
+    // Desktop me sabhi 24-unit (96px) ke honge, jisse sabka size barabar rahega
+    const deskBtnFixed = ['relative', 'z-10', 'w-24', 'h-[4.5rem]', 'justify-center']; 
+    const mobBtnFixed = ['relative', 'z-10', 'w-[4.5rem]', 'h-[4.5rem]', 'justify-center'];
+
+    // 🌟 2. GHOST LAYER BASE (The separate Liquid Glass background behind text)
+    const pseudoBase = [
+        "before:content-['']", 'before:absolute', 'before:-z-10', 'before:transition-all', 'before:duration-300',
+        'before:bg-slate-200/60', 'dark:before:bg-slate-700/50', 'before:backdrop-blur-md',
+        'before:shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:before:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
+        'before:border', 'before:border-white/60', 'dark:before:border-slate-600/50'
     ];
 
-    // 🖥️ DESKTOP STATES (Math: -margin offsets +padding perfectly to keep content pinned)
-    // -ml-6 pulls shape left, pl-6 pushes content right (Net movement = 0 pixels!)
-    const deskActive = [...baseActive, '-ml-6', 'pl-6', 'pr-6', 'py-3', 'rounded-r-3xl', 'rounded-l-none', 'border-l-0'];
-    const deskInactive = [...baseInactive, 'ml-0', 'pl-0', 'pr-0', 'py-0', 'rounded-none'];
+    // 🖥️ DESKTOP: Ghost Layer locked to Left Edge
+    const deskPseudo = [...pseudoBase, 'before:left-0', 'before:top-1/2', 'before:-translate-y-1/2', 'before:h-[4.2rem]', 'before:border-l-0', 'before:rounded-r-3xl'];
+    // Width 0 se badhkar 5.2rem hogi (Left to Right smooth sliding)
+    const deskActive = ['before:w-[5.2rem]', 'before:opacity-100', 'opacity-100'];
+    const deskInactive = ['before:w-0', 'before:opacity-0', 'opacity-85'];
 
-    // 📱 MOBILE STATES (Math: -margin offsets +padding perfectly to keep content pinned)
-    // -mb-3 pulls shape down, pb-3 pushes content up (Net movement = 0 pixels!)
-    const mobActive = [...baseActive, '-mb-3', 'pb-3', 'pt-4', 'px-5', 'rounded-t-3xl', 'rounded-b-none', 'border-b-0'];
-    const mobInactive = [...baseInactive, 'mb-0', 'pb-0', 'pt-0', 'px-0', 'rounded-none'];
+    // 📱 MOBILE: Ghost Layer locked to Bottom Edge
+    const mobPseudo = [...pseudoBase, 'before:bottom-0', 'before:left-1/2', 'before:-translate-x-1/2', 'before:w-[4rem]', 'before:border-b-0', 'before:rounded-t-3xl'];
+    // Height 0 se badhkar 4.2rem hogi (Bottom to Top smooth sliding)
+    const mobActive = ['before:h-[4.2rem]', 'before:opacity-100', 'opacity-100'];
+    const mobInactive = ['before:h-0', 'before:opacity-0', 'opacity-85'];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
         if(deskBtn || mobBtn) { 
-            // 1. PERMA-GLOW (Har icon humesha apne color mein roshan rahega)
-            if(deskBtn) deskBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
-            if(mobBtn) mobBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
+            // 1. STRUCTURE LOCK: Always apply fixed size and Ghost Layer base 
+            if(deskBtn) deskBtn.classList.add(...deskBtnFixed, ...deskPseudo, nav.color, 'drop-shadow-[0_0_8px_currentColor]');
+            if(mobBtn) mobBtn.classList.add(...mobBtnFixed, ...mobPseudo, nav.color, 'drop-shadow-[0_0_8px_currentColor]');
             
-            // 2. 🪄 THE STABILIZED MORPHING LOGIC
+            // 2. 🪄 THE ZERO-JITTER MORPH ANIMATION
             if(`screen-${nav.id}` === activeScreenId) {
                 if(deskBtn) {
                     deskBtn.classList.remove(...deskInactive);
