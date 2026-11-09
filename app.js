@@ -127,7 +127,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE (ASYMMETRIC LIQUID GLASS EDITION)
+// 🚀 DYNAMIC COLOR NAV ENGINE (ANIMATED LIQUID GLASS EDITION)
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -138,51 +138,57 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'vault', color: 'text-cyan-500' }
     ];
 
-    // 🌟 Base Liquid Glass Effects (Common for both)
-    const glassBase = [
+    // 🌟 BASE EFFECTS (Jo shape active hone par aayegi)
+    const baseActive = [
         'bg-slate-200/60', 'dark:bg-slate-700/50', 
         'backdrop-blur-md', 
         'shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
-        'border', 'border-white/60', 'dark:border-slate-600/50', 'justify-center'
+        'border', 'border-white/60', 'dark:border-slate-600/50', 'justify-center', 'opacity-100'
+    ];
+    
+    // 🌑 BASE INACTIVE (Jab shape border ke andar chali jayegi)
+    const baseInactive = [
+        'bg-transparent', 'backdrop-blur-none', 'border-transparent', 'shadow-none', 'opacity-85'
     ];
 
-    // 🖥️ Desktop Shape: Fixed Size, Flat on Left, Round on Right, Sticks to left edge
-    const deskGlass = [
-        ...glassBase, 
-        'w-20', 'h-[4.5rem]',             // 100% Uniform Size
-        'rounded-r-full', 'rounded-l-none', // The Half-Capsule Shape
-        '-ml-2', 'border-l-0'             // Pulls it to exactly touch the left screen border
-    ];
+    // 🖥️ DESKTOP STATES (Left se right sliding)
+    const deskActive = [...baseActive, 'w-20', 'h-[4.5rem]', 'rounded-r-full', 'rounded-l-none', '-ml-2', 'border-l-0'];
+    const deskInactive = [...baseInactive, 'w-12', 'h-12', 'rounded-none', 'ml-0'];
 
-    // 📱 Mobile Shape: Fixed Size, Flat on Bottom, Round on Top, Sticks to bottom edge
-    const mobGlass = [
-        ...glassBase, 
-        'w-[4.2rem]', 'h-[4.2rem]',       // 100% Uniform Size
-        'rounded-t-full', 'rounded-b-none', // The Half-Capsule Shape
-        '-mb-3', 'pt-2', 'border-b-0'     // Pulls it to exactly touch the bottom screen border
-    ];
+    // 📱 MOBILE STATES (Bottom se top sliding)
+    const mobActive = [...baseActive, 'w-[4.2rem]', 'h-[4.2rem]', 'rounded-t-full', 'rounded-b-none', '-mb-3', 'pt-2', 'border-b-0'];
+    const mobInactive = [...baseInactive, 'w-12', 'h-12', 'rounded-none', 'mb-0', 'pt-0'];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
         if(deskBtn || mobBtn) { 
-            // 1. Reset Purane aur Inactive States (Clean slate)
-            if(deskBtn) deskBtn.classList.remove(...deskGlass, 'opacity-40', 'opacity-85', 'opacity-100', 'scale-110');
-            if(mobBtn) mobBtn.classList.remove(...mobGlass, 'opacity-40', 'opacity-85', 'opacity-100', 'scale-110');
-            
-            // 2. 🌟 PERMA-GLOW: Har icon ko uska original color aur glow wapas do
+            // 1. PERMA-GLOW (Har icon humesha glow karega)
             if(deskBtn) deskBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
             if(mobBtn) mobBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
             
-            // 3. 🍎 APPLY THE 3D EDGE-CAPSULE EFFECT ONLY TO THE ACTIVE TAB
+            // 2. 🪄 THE SMOOTH MORPHING LOGIC
             if(`screen-${nav.id}` === activeScreenId) {
-                if(deskBtn) deskBtn.classList.add(...deskGlass, 'opacity-100');
-                if(mobBtn) mobBtn.classList.add(...mobGlass, 'opacity-100');
+                // Activate New Tab (Slides OUT from edge)
+                if(deskBtn) {
+                    deskBtn.classList.remove(...deskInactive);
+                    deskBtn.classList.add(...deskActive);
+                }
+                if(mobBtn) {
+                    mobBtn.classList.remove(...mobInactive);
+                    mobBtn.classList.add(...mobActive);
+                }
             } else {
-                // Inactive tabs halka sa dim rahenge taaki active glass shape chamke
-                if(deskBtn) deskBtn.classList.add('opacity-85');
-                if(mobBtn) mobBtn.classList.add('opacity-85');
+                // Deactivate Old Tab (Slides IN to edge)
+                if(deskBtn) {
+                    deskBtn.classList.remove(...deskActive);
+                    deskBtn.classList.add(...deskInactive);
+                }
+                if(mobBtn) {
+                    mobBtn.classList.remove(...mobActive);
+                    mobBtn.classList.add(...mobInactive);
+                }
             }
         }
     });
