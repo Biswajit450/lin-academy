@@ -127,7 +127,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE (APPLE LIQUID GLASS EDITION)
+// 🚀 DYNAMIC COLOR NAV ENGINE (ASYMMETRIC LIQUID GLASS EDITION)
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -138,13 +138,28 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'vault', color: 'text-cyan-500' }
     ];
 
-    // 🍎 Apple Liquid Glass Capsule Classes (Flowchart: Delay Shape)
-    const glassClasses = [
-        'bg-slate-200/60', 'dark:bg-slate-700/50', // Translucent Liquid Base
-        'backdrop-blur-md', // Apple Glass Blur Effect
-        'border', 'border-white/60', 'dark:border-slate-600/50', // Glass Edge Reflection
-        'shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]', // Inner 3D Highlight
-        'rounded-3xl', 'px-4', 'py-1.5', 'scale-110' // Capsule/Pill Shape (Delay Symbol)
+    // 🌟 Base Liquid Glass Effects (Common for both)
+    const glassBase = [
+        'bg-slate-200/60', 'dark:bg-slate-700/50', 
+        'backdrop-blur-md', 
+        'shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
+        'border', 'border-white/60', 'dark:border-slate-600/50', 'justify-center'
+    ];
+
+    // 🖥️ Desktop Shape: Fixed Size, Flat on Left, Round on Right, Sticks to left edge
+    const deskGlass = [
+        ...glassBase, 
+        'w-20', 'h-[4.5rem]',             // 100% Uniform Size
+        'rounded-r-full', 'rounded-l-none', // The Half-Capsule Shape
+        '-ml-2', 'border-l-0'             // Pulls it to exactly touch the left screen border
+    ];
+
+    // 📱 Mobile Shape: Fixed Size, Flat on Bottom, Round on Top, Sticks to bottom edge
+    const mobGlass = [
+        ...glassBase, 
+        'w-[4.2rem]', 'h-[4.2rem]',       // 100% Uniform Size
+        'rounded-t-full', 'rounded-b-none', // The Half-Capsule Shape
+        '-mb-3', 'pt-2', 'border-b-0'     // Pulls it to exactly touch the bottom screen border
     ];
 
     navs.forEach(nav => {
@@ -152,28 +167,20 @@ window.updateNavHighlight = function(activeScreenId) {
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
         if(deskBtn || mobBtn) { 
-            // 1. Purane sabhi liquid glass states saaf karo
-            [...glassClasses, 'opacity-40', 'opacity-85', 'opacity-100'].forEach(cls => {
-                if(deskBtn) deskBtn.classList.remove(cls);
-                if(mobBtn) mobBtn.classList.remove(cls);
-            });
+            // 1. Reset Purane aur Inactive States (Clean slate)
+            if(deskBtn) deskBtn.classList.remove(...deskGlass, 'opacity-40', 'opacity-85', 'opacity-100', 'scale-110');
+            if(mobBtn) mobBtn.classList.remove(...mobGlass, 'opacity-40', 'opacity-85', 'opacity-100', 'scale-110');
             
-            // 2. 🌟 PERMA-GLOW ENGINE: Har icon hamesha glow karega!
-            [nav.color, 'drop-shadow-[0_0_8px_currentColor]'].forEach(cls => {
-                if(deskBtn) deskBtn.classList.add(cls);
-                if(mobBtn) mobBtn.classList.add(cls);
-            });
+            // 2. 🌟 PERMA-GLOW: Har icon ko uska original color aur glow wapas do
+            if(deskBtn) deskBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
+            if(mobBtn) mobBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
             
-            // 3. 🍎 THE LIQUID GLASS SELECTION
+            // 3. 🍎 APPLY THE 3D EDGE-CAPSULE EFFECT ONLY TO THE ACTIVE TAB
             if(`screen-${nav.id}` === activeScreenId) {
-                glassClasses.forEach(cls => {
-                    if(deskBtn) deskBtn.classList.add(cls);
-                    if(mobBtn) mobBtn.classList.add(cls);
-                });
-                if(deskBtn) deskBtn.classList.add('opacity-100');
-                if(mobBtn) mobBtn.classList.add('opacity-100');
+                if(deskBtn) deskBtn.classList.add(...deskGlass, 'opacity-100');
+                if(mobBtn) mobBtn.classList.add(...mobGlass, 'opacity-100');
             } else {
-                // Inactive icons glow karenge, par halki si opacity kam hogi taaki Glass highlight ekdum POP hoke bahar aaye
+                // Inactive tabs halka sa dim rahenge taaki active glass shape chamke
                 if(deskBtn) deskBtn.classList.add('opacity-85');
                 if(mobBtn) mobBtn.classList.add('opacity-85');
             }
