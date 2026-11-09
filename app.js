@@ -127,7 +127,7 @@ window.initRichEditors = function() {
 }
 
 // ==========================================
-// 🚀 DYNAMIC COLOR NAV ENGINE (ANIMATED LIQUID GLASS EDITION)
+// 🚀 DYNAMIC COLOR NAV ENGINE (STABILIZED LIQUID GLASS EDITION)
 // ==========================================
 window.updateNavHighlight = function(activeScreenId) {
     const navs = [
@@ -138,39 +138,39 @@ window.updateNavHighlight = function(activeScreenId) {
         { id: 'vault', color: 'text-cyan-500' }
     ];
 
-    // 🌟 BASE EFFECTS (Jo shape active hone par aayegi)
+    // 🌟 BASE EFFECTS (Background & Glass Blur)
     const baseActive = [
         'bg-slate-200/60', 'dark:bg-slate-700/50', 
         'backdrop-blur-md', 
         'shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]', 'dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]',
-        'border', 'border-white/60', 'dark:border-slate-600/50', 'justify-center', 'opacity-100'
+        'border', 'border-white/60', 'dark:border-slate-600/50', 'opacity-100'
     ];
     
-    // 🌑 BASE INACTIVE (Jab shape border ke andar chali jayegi)
     const baseInactive = [
         'bg-transparent', 'backdrop-blur-none', 'border-transparent', 'shadow-none', 'opacity-85'
     ];
 
-    // 🖥️ DESKTOP STATES (Left se right sliding)
-    const deskActive = [...baseActive, 'w-20', 'h-[4.5rem]', 'rounded-r-full', 'rounded-l-none', '-ml-2', 'border-l-0'];
-    const deskInactive = [...baseInactive, 'w-12', 'h-12', 'rounded-none', 'ml-0'];
+    // 🖥️ DESKTOP STATES (Math: -margin offsets +padding perfectly to keep content pinned)
+    // -ml-6 pulls shape left, pl-6 pushes content right (Net movement = 0 pixels!)
+    const deskActive = [...baseActive, '-ml-6', 'pl-6', 'pr-6', 'py-3', 'rounded-r-3xl', 'rounded-l-none', 'border-l-0'];
+    const deskInactive = [...baseInactive, 'ml-0', 'pl-0', 'pr-0', 'py-0', 'rounded-none'];
 
-    // 📱 MOBILE STATES (Bottom se top sliding)
-    const mobActive = [...baseActive, 'w-[4.2rem]', 'h-[4.2rem]', 'rounded-t-full', 'rounded-b-none', '-mb-3', 'pt-2', 'border-b-0'];
-    const mobInactive = [...baseInactive, 'w-12', 'h-12', 'rounded-none', 'mb-0', 'pt-0'];
+    // 📱 MOBILE STATES (Math: -margin offsets +padding perfectly to keep content pinned)
+    // -mb-3 pulls shape down, pb-3 pushes content up (Net movement = 0 pixels!)
+    const mobActive = [...baseActive, '-mb-3', 'pb-3', 'pt-4', 'px-5', 'rounded-t-3xl', 'rounded-b-none', 'border-b-0'];
+    const mobInactive = [...baseInactive, 'mb-0', 'pb-0', 'pt-0', 'px-0', 'rounded-none'];
 
     navs.forEach(nav => {
         const deskBtn = document.getElementById(`nav-desk-${nav.id}`);
         const mobBtn = document.getElementById(`nav-mob-${nav.id}`);
         
         if(deskBtn || mobBtn) { 
-            // 1. PERMA-GLOW (Har icon humesha glow karega)
+            // 1. PERMA-GLOW (Har icon humesha apne color mein roshan rahega)
             if(deskBtn) deskBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
             if(mobBtn) mobBtn.classList.add(nav.color, 'drop-shadow-[0_0_8px_currentColor]');
             
-            // 2. 🪄 THE SMOOTH MORPHING LOGIC
+            // 2. 🪄 THE STABILIZED MORPHING LOGIC
             if(`screen-${nav.id}` === activeScreenId) {
-                // Activate New Tab (Slides OUT from edge)
                 if(deskBtn) {
                     deskBtn.classList.remove(...deskInactive);
                     deskBtn.classList.add(...deskActive);
@@ -180,7 +180,6 @@ window.updateNavHighlight = function(activeScreenId) {
                     mobBtn.classList.add(...mobActive);
                 }
             } else {
-                // Deactivate Old Tab (Slides IN to edge)
                 if(deskBtn) {
                     deskBtn.classList.remove(...deskActive);
                     deskBtn.classList.add(...deskInactive);
